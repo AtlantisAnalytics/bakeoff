@@ -4,7 +4,7 @@ version = 1
 split = "public"
 license = "MIT"
 grader = "numeric"
-max_tokens = 1024
+max_tokens = 4096
 system = "Solve the problem. End your reply with a final line of the form 'Answer: <number>'."
 
 [source]

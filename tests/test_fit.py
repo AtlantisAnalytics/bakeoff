@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from fake_openai import FakeOpenAI, FakeReply
+from fake_openai import FakeOpenAI, FakeReply, default_responder
 
 from bakeoff.client import EndpointClient
 from bakeoff.config import FitConfig
@@ -124,12 +124,12 @@ def test_no_usage_falls_back():
     assert all(r["within_5pct"] is None and r["retrieved"] for r in records)
 
 
-def test_max_tokens_is_1024_for_fit_requests():
+def test_max_tokens_is_2048_for_fit_requests():
     fake = FakeOpenAI()
     go(fake, FitConfig(steps=[4096]))
     fit_bodies = [b for b in fake.requests if b["max_tokens"] != 1]
     assert len(fit_bodies) == 3
-    assert all(b["max_tokens"] == 1024 for b in fit_bodies)
+    assert all(b["max_tokens"] == 2048 for b in fit_bodies)
 
 
 def test_small_step_is_skipped_with_reason():
@@ -150,7 +150,7 @@ def test_steps_sorted_and_marked_and_kv():
 
     fake = FakeOpenAI(extras={"/metrics": '# HELP x\nvllm:gpu_cache_usage_perc{model="m"} 0.25\n'})
     _, s = go(fake, FitConfig(steps=[8192, 4096]), runtime="vllm", sampler=S())
-    assert marks == ["fit:4096", "fit:8192"]
+    assert marks == ["fit:calibrate", "fit:4096", "fit:8192"]
     assert s["steps"]["4096"]["kv_cache_usage"] == 0.25
     _, s2 = go(fake, FitConfig(steps=[4096]), runtime="ollama")
     assert s2["steps"]["4096"]["kv_cache_usage"] is None
@@ -215,7 +215,7 @@ def test_context_400_stays_fail_without_abort():
 def test_usage_missing_after_calibration_is_error():
     class Drops(FakeOpenAI):
         def _chat(self, body):
-            if body["max_tokens"] == 1024:
+            if body["max_tokens"] == 2048:
                 body = {k: v for k, v in body.items() if k != "stream_options"}
             return super()._chat(body)
 
@@ -229,3 +229,51 @@ def test_usage_missing_after_calibration_is_error():
     }
     assert s["steps"]["8192"]["status"] == "not_run"
     assert all(r["within_5pct"] is None for r in records)
+
+
+def test_fit_records_carry_finish_reason():
+    records, _ = go(FakeOpenAI(), FitConfig(steps=[4096]))
+    assert {r["finish_reason"] for r in records} == {"stop"}
+
+
+def test_length_truncated_without_key_is_error_not_fail():
+    def reply(messages):
+        text = "\n".join(str(m.get("content", "")) for m in messages)
+        if len(text) > 20000:  # the 8k step: a reasoning model out of tokens mid-thought
+            return FakeReply(content="thinking...", finish_reason="length")
+        return default_responder(messages)
+
+    with pytest.raises(AbortRun) as ei:
+        go(FakeOpenAI(responder=reply), FitConfig(steps=[4096, 8192, 16384]))
+    _, s = ei.value.partial
+    assert s["steps"]["8192"]["status"] == "error"
+    assert s["steps"]["8192"]["reason"] == "truncated output"
+    assert s["steps"]["16384"]["status"] == "not_run"
+    assert s["max_context_passed"] == 4096
+
+
+def test_length_but_key_found_is_a_pass():
+    def reply(messages):
+        r = default_responder(messages)
+        return FakeReply(content=r.content, finish_reason="length")
+
+    _, s = go(FakeOpenAI(responder=reply), FitConfig(steps=[4096]))
+    assert s["steps"]["4096"]["status"] == "pass"
+
+
+def test_calibrate_runs_under_its_own_mark_and_probe_is_recorded():
+    marks = []
+
+    class S:
+        def mark(self, name):
+            marks.append(name)
+
+    _, s = go(FakeOpenAI(), FitConfig(steps=[4096]), sampler=S(), server_context=9999)
+    assert marks[0] == "fit:calibrate" and marks[1] == "fit:4096"
+
+    async def main():
+        async with EndpointClient("http://fake/v1", "m", transport=FakeOpenAI().transport) as c:
+            return await run_fit(c, FitConfig(steps=[4096]), "ollama", 8192, None, "pre_fit")
+
+    _, s = asyncio.run(main())
+    assert s["server_context_probe"] == "pre_fit" and s["server_context"] == 8192

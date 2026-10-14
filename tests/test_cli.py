@@ -25,7 +25,7 @@ repeats = 1
 warmup = 0
 
 [fit]
-steps = [2048]
+steps = [4096]
 """  # scrub-ok
 
 

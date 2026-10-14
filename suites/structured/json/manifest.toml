@@ -4,4 +4,4 @@ version = 1
 split = "public"
 license = "CC-BY-4.0"
 grader = "json_schema"
-max_tokens = 1024
+max_tokens = 4096

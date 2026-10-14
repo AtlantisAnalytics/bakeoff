@@ -42,7 +42,7 @@ def make_cfg(
         model=ModelConfig(label="Demo Model", weights="hf:demo/demo@rev", runtime="other"),
         quality=QualityConfig(suites=list(suites), private_suites=list(private)),
         speed=SpeedConfig(concurrency=[1], repeats=1, warmup=0),
-        fit=FitConfig(steps=[2048]),
+        fit=FitConfig(steps=[4096]),
     )
 
 

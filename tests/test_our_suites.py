@@ -75,7 +75,7 @@ def test_json_values_are_checked():
 
 
 def test_needle_and_open_ended_settings():
-    assert _suites()["longctx/needle"].max_tokens == 1024
+    assert _suites()["longctx/needle"].max_tokens == 2048
     assert all(i.expected is None for i in _suites()["general/open-ended"].items)
 
 
@@ -115,3 +115,16 @@ def test_all_suite_text_scrub_clean():
 def test_lock_matches():
     found = list(_suites().values())
     assert check_lock(found, json.loads(LOCK.read_text(encoding="utf-8"))) == []
+
+
+def test_output_caps_leave_room_for_reasoning_models():
+    caps = {k: s.max_tokens for k, s in _suites().items()}
+    assert caps == {
+        "general/gsm8k": 4096,
+        "general/ifeval": 4096,
+        "structured/json": 4096,
+        "grounding/context-only": 4096,
+        "format/exact-reply": 2048,
+        "longctx/needle": 2048,
+        "general/open-ended": 2048,
+    }

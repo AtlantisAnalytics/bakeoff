@@ -10,8 +10,8 @@ from bakeoff.needle import needle_messages
 from bakeoff.sampler import Sampler
 
 DEPTHS = (0.1, 0.5, 0.9)
-MAX_TOKENS = 1024  # reasoning models burn tight output budgets
-HEADROOM = 1280  # the 1024 output tokens plus a margin; the intercept covers the question
+MAX_TOKENS = 2048  # reasoning models burn tight output budgets
+HEADROOM = 2304  # the 2048 output tokens plus a margin; the intercept covers the question
 DEFAULT_TOKENS_PER_LINE = 25.0
 DEFAULT_INTERCEPT = 50.0
 TOLERANCE = 0.05
@@ -49,6 +49,7 @@ def _expected_failure(r: ChatResult) -> bool:
 
 def _summary(
     server_context: int | None,
+    probe: str | None,
     source: str,
     calibrated: bool,
     steps: dict[str, dict],
@@ -58,6 +59,7 @@ def _summary(
     return {
         "max_context_passed": max(passed) if passed else None,
         "server_context": server_context,
+        "server_context_probe": probe,
         "limit_source": source,
         "truncation_check": "measured" if calibrated else "not_captured",
         "incomplete": incomplete,
@@ -71,14 +73,20 @@ async def run_fit(
     runtime: str,
     server_context: int | None,
     sampler: Sampler | None = None,
+    probe: str | None = None,
 ) -> tuple[list[dict], dict]:
-    """Run the fit pass. On AbortRun the exception gains `partial = (records, summary)`."""
+    """Run the fit pass. On AbortRun the exception gains `partial = (records, summary)`.
+
+    `probe` records which runtime probe produced `server_context` (it goes in the summary).
+    """
     if cfg.max_context > 0:
         limit, source = cfg.max_context, "operator"
     elif server_context:
         limit, source = server_context, "reported"
     else:
         limit, source = None, "none"
+    if sampler is not None:
+        sampler.mark("fit:calibrate")
     cal = await calibrate(client)
     per_line, intercept = cal if cal else (DEFAULT_TOKENS_PER_LINE, DEFAULT_INTERCEPT)
     budget = ErrorBudget("fit")
@@ -86,7 +94,7 @@ async def run_fit(
     steps: dict[str, dict] = {}
 
     def summary(incomplete: bool = False) -> dict:
-        return _summary(server_context, source, cal is not None, steps, incomplete)
+        return _summary(server_context, probe, source, cal is not None, steps, incomplete)
 
     ordered = sorted(cfg.steps)
     failed = False
@@ -139,12 +147,20 @@ async def run_fit(
                         "accepted": accepted,
                         "within_5pct": within,
                         "retrieved": retrieved,
+                        "finish_reason": r.finish_reason,
                         "ttft_s": r.ttft_s,
                         "error": r.error,
                     }
                 )
                 if not accepted and not _expected_failure(r) and step_error is None:
                     step_error = (r.error or "unknown error")[:200]
+                if (
+                    accepted
+                    and not retrieved
+                    and r.finish_reason == "length"
+                    and step_error is None
+                ):
+                    step_error = "truncated output"  # inconclusive, never a fail
                 if not (accepted and within is not False and retrieved):
                     step_ok = False
                 try:

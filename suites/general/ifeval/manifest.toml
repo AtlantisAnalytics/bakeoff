@@ -4,7 +4,7 @@ version = 1
 split = "public"
 license = "Apache-2.0"
 grader = "ifeval"
-max_tokens = 1024
+max_tokens = 4096
 
 [source]
 url = "https://huggingface.co/datasets/google/IFEval/resolve/966cd89545d6b6acfd7638bc708b98261ca58e84/ifeval_input_data.jsonl"
