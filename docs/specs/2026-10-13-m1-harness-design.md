@@ -46,7 +46,7 @@ Flags on `run` can override any `run.toml` key. Useful ones: `--only quality|spe
 
 ```toml
 [endpoint]
-base_url = "http://localhost:8000/v1"   # used for the run, never written to the bundle
+base_url = "http://localhost:8000/v1"   # scrub-ok; used for the run, never written to the bundle
 model = "served-model-name"
 api_key_env = "BAKEOFF_ENDPOINT_API_KEY" # optional; the env var's name, never the key itself
 timeout_s = 600
