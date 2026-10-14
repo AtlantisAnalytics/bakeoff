@@ -38,7 +38,7 @@ def test_load_generated_suite(tmp_path):
     d = tmp_path / "gen"
     d.mkdir()
     (d / "manifest.toml").write_text(
-        'track = "longctx"\nname = "needle"\nversion = 1\nsplit = "public"\n'
+        'track = "longctx"\nlicense = "CC0-1.0"\nname = "needle"\nversion = 1\nsplit = "public"\n'
         'grader = "needle"\nmax_tokens = 32\n'
         '[generator]\nname = "needle"\nlines = [10, 20]\ndepths = [0.1, 0.9]\nseed = 5\n'
     )
@@ -95,11 +95,11 @@ def test_item_errors(tmp_path):
 
 def test_resolve_by_name_and_path(tmp_path):
     assert [s.key for s in resolve_suites([str(DEMO)])] == ["demo/exact"]
-    assert [s.key for s in resolve_suites([str(DATA)])] == ["demo/exact"]
+    assert [s.key for s in resolve_suites([str(DATA)])] == ["demo/exact", "demo/needle"]
     with pytest.raises(SuiteError):
         resolve_suites(["no/such/suite"])
-    # names resolve under suites_root(); the demo fixtures never live there
-    assert "tests" not in suites_root().parts[-2:]
+    assert suites_root().name == "suites"
+    assert "tests" not in suites_root().parts
 
 
 def test_check_lock_detects_unbumped_edit():
@@ -110,3 +110,146 @@ def test_check_lock_detects_unbumped_edit():
     assert check_lock([s], {s.key: {str(s.version): s.hash}}) == []
     assert "lock_suites" in check_lock([s], {})[0]
     assert "lock_suites" in check_lock([s], {s.key: {"99": s.hash}})[0]
+
+
+DEMO_SHA = "1ff408296a48a634081c1936e88ccfc5174bf85e0ef42a5d647b915b5e4d2940"
+GEN_SHA = "40477e5e9bf900678a76a5ed72696ecf61be37f471c983ad155a7ba7f3f35e7f"
+
+
+def test_golden_hashes():
+    assert load_suite(DEMO).hash == DEMO_SHA
+    assert load_suite(DATA / "needle-demo").hash == GEN_SHA
+
+
+def _edit(tmp_path, name, old, new):
+    d = tmp_path / name
+    shutil.copytree(DATA / name, d)
+    m = d / "manifest.toml"
+    text = m.read_text()
+    assert old in text
+    m.write_text(text.replace(old, new))
+    return d
+
+
+def test_manifest_value_changes_hash(tmp_path):
+    d = _edit(tmp_path, "demo", "max_tokens = 16", "max_tokens = 17")
+    assert load_suite(d).hash != DEMO_SHA
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [("seed = 11", "seed = 12"), ("lines = [5, 8]", "lines = [5, 9]"), ("0.5]", "0.6]")],
+)
+def test_generator_param_changes_hash(tmp_path, old, new):
+    d = _edit(tmp_path, "needle-demo", old, new)
+    assert load_suite(d).hash != GEN_SHA
+
+
+def test_generated_hash_covers_materialised_items(tmp_path, monkeypatch):
+    import bakeoff.needle as needle
+
+    monkeypatch.setattr(needle, "QUESTION", "\n\nCode?")
+    assert load_suite(DATA / "needle-demo").hash != GEN_SHA
+
+
+def test_generated_id_rounding(tmp_path):
+    d = _edit(tmp_path, "needle-demo", "depths = [0.0, 0.5]", "depths = [0.29]")
+    assert [i.id for i in load_suite(d).items] == ["needle-5-29", "needle-8-29"]
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('name = "needle"\nlines', 'name = "bogus"\nlines'),
+        ("lines = [5, 8]", "lines = []"),
+        ("lines = [5, 8]", "lines = [0]"),
+        ("lines = [5, 8]", "lines = [1.5]"),
+        ("lines = [5, 8]", "lines = [true]"),
+        ("depths = [0.0, 0.5]", "depths = [1.5]"),
+        ("depths = [0.0, 0.5]", "depths = [-0.1]"),
+        ("depths = [0.0, 0.5]", 'depths = ["a"]'),
+        ("depths = [0.0, 0.5]", "depths = []"),
+        ("seed = 11", "seed = 1.5"),
+        ("seed = 11", 'seed = "x"'),
+        ("seed = 11\n", ""),
+    ],
+)
+def test_bad_generator_raises(tmp_path, old, new):
+    d = _edit(tmp_path, "needle-demo", old, new)
+    with pytest.raises(SuiteError):
+        load_suite(d)
+
+
+def test_generator_plus_items_raises(tmp_path):
+    d = _edit(tmp_path, "needle-demo", "seed = 11", "seed = 11")
+    (d / "items.jsonl").write_text("")
+    with pytest.raises(SuiteError):
+        load_suite(d)
+
+
+def test_duplicate_item_ids_raise(tmp_path):
+    d = _copy(tmp_path)
+    (d / "items.jsonl").write_text(
+        '{"id": "a", "prompt": "x", "expected": "x"}\n{"id": "a", "prompt": "y", "expected": "y"}\n'
+    )
+    with pytest.raises(SuiteError, match="duplicate"):
+        load_suite(d)
+
+
+def test_duplicate_suite_keys_raise(tmp_path):
+    a = tmp_path / "a"
+    b = tmp_path / "b"
+    shutil.copytree(DEMO, a)
+    shutil.copytree(DEMO, b)
+    with pytest.raises(SuiteError, match="duplicate"):
+        resolve_suites([str(a), str(b)])
+
+
+def test_unicode_line_separator_in_item(tmp_path):
+    d = _copy(tmp_path)
+    (d / "items.jsonl").write_bytes(
+        '{"id": "a", "prompt": "x\u2028y", "expected": "e"}\r\n'.encode().replace(
+            b"\\u2028", "\u2028".encode()
+        )
+    )
+    s = load_suite(d)
+    assert len(s.items) == 1
+    assert s.items[0].messages[-1]["content"] == "x\u2028y"
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("[source]", "source = 3\n#"),
+        ('license = "CC0-1.0"\n', ""),
+        ('license = "CC0-1.0"', 'license = ""'),
+        ("\n[source]", 'grader_options = "x"\n[source]'),
+    ],
+)
+def test_bad_tables_and_license(tmp_path, old, new):
+    d = _copy(tmp_path)
+    m = d / "manifest.toml"
+    m.write_text(m.read_text().replace(old, new))
+    with pytest.raises(SuiteError):
+        load_suite(d)
+
+
+@pytest.mark.parametrize(
+    "msgs",
+    ["[]", '["x"]', '[{"role": "user"}]', '[{"role": 1, "content": "x"}]', '"x"'],
+)
+def test_bad_messages_raise(tmp_path, msgs):
+    d = _copy(tmp_path)
+    (d / "items.jsonl").write_text(f'{{"id": "a", "messages": {msgs}, "expected": "x"}}\n')
+    with pytest.raises(SuiteError):
+        load_suite(d)
+
+
+def test_system_not_duplicated(tmp_path):
+    d = _copy(tmp_path)
+    (d / "items.jsonl").write_text(
+        '{"id": "a", "messages": [{"role": "system", "content": "mine"},'
+        ' {"role": "user", "content": "q"}], "expected": "x"}\n'
+    )
+    msgs = load_suite(d).items[0].messages
+    assert [m["content"] for m in msgs] == ["mine", "q"]

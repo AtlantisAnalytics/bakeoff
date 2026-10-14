@@ -57,21 +57,49 @@ def _is_int(v: Any) -> bool:
     return isinstance(v, int) and not isinstance(v, bool)
 
 
+def _is_num(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _with_system(msgs: list[dict], system: str) -> list[dict]:
+    if system and msgs[0].get("role") != "system":
+        return [{"role": "system", "content": system}, *msgs]
+    return msgs
+
+
 def _generate(gen: dict, system: str, where: Path) -> list[Item]:
     if gen.get("name") != "needle":
         raise SuiteError(f"{where}: unknown generator {gen.get('name')!r}")
-    try:
-        lines, depths, seed = gen["lines"], gen["depths"], gen["seed"]
-    except KeyError as e:
-        raise SuiteError(f"{where}: generator is missing {e.args[0]!r}") from e
+    lines, depths, seed = gen.get("lines"), gen.get("depths"), gen.get("seed")
+    if not isinstance(lines, list) or not lines or not all(_is_int(n) and n > 0 for n in lines):
+        raise SuiteError(f"{where}: generator lines must be a non-empty list of ints > 0")
+    if (
+        not isinstance(depths, list)
+        or not depths
+        or not all(_is_num(d) and 0 <= d <= 1 for d in depths)
+    ):
+        raise SuiteError(f"{where}: generator depths must be a non-empty list of numbers in [0, 1]")
+    if not _is_int(seed):
+        raise SuiteError(f"{where}: generator seed must be an int")
     items = []
     for n in lines:
         for depth in depths:
             msgs, key = needle_messages(n, depth, seed)
-            if system:
-                msgs = [{"role": "system", "content": system}, *msgs]
-            items.append(Item(f"needle-{n}-{int(depth * 100)}", msgs, key))
+            items.append(Item(f"needle-{n}-{round(depth * 100)}", _with_system(msgs, system), key))
     return items
+
+
+def _valid_messages(msgs: Any) -> bool:
+    return (
+        isinstance(msgs, list)
+        and bool(msgs)
+        and all(
+            isinstance(m, dict)
+            and isinstance(m.get("role"), str)
+            and isinstance(m.get("content"), str)
+            for m in msgs
+        )
+    )
 
 
 def _read_items(path: Path, system: str) -> tuple[list[dict], list[Item]]:
@@ -80,7 +108,8 @@ def _read_items(path: Path, system: str) -> tuple[list[dict], list[Item]]:
     f = path / "items.jsonl"
     if not f.is_file():
         raise SuiteError(f"{path}: missing items.jsonl")
-    for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+    for n, line in enumerate(f.read_text(encoding="utf-8").split("\n"), 1):
+        line = line.removesuffix("\r")
         if not line.strip():
             continue
         try:
@@ -90,15 +119,17 @@ def _read_items(path: Path, system: str) -> tuple[list[dict], list[Item]]:
         if not isinstance(d, dict) or "id" not in d or "expected" not in d:
             raise SuiteError(f"{f}:{n}: item needs 'id' and 'expected'")
         if "messages" in d:
-            msgs = list(d["messages"])
-        elif "prompt" in d:
+            msgs = d["messages"]
+        elif isinstance(d.get("prompt"), str):
             msgs = [{"role": "user", "content": d["prompt"]}]
         else:
-            raise SuiteError(f"{f}:{n}: item needs 'messages' or 'prompt'")
-        if system:
-            msgs = [{"role": "system", "content": system}, *msgs]
+            raise SuiteError(f"{f}:{n}: item needs 'messages' or a string 'prompt'")
+        if not _valid_messages(msgs):
+            raise SuiteError(
+                f"{f}:{n}: messages must be a non-empty list of {{role, content}} strings"
+            )
         raw.append(d)
-        items.append(Item(str(d["id"]), msgs, d["expected"]))
+        items.append(Item(str(d["id"]), _with_system(list(msgs), system), d["expected"]))
     return raw, items
 
 
@@ -128,12 +159,19 @@ def load_suite(path: Path) -> Suite:
     if not isinstance(system, str):
         raise SuiteError(f"{mf}: system must be a string")
 
+    license_ = _require_str(manifest, "license", mf)
+    for k in ("source", "grader_options"):
+        if not isinstance(manifest.get(k, {}), dict):
+            raise SuiteError(f"{mf}: {k} must be a table")
+
     gen = manifest.get("generator")
     if gen is not None:
         if not isinstance(gen, dict):
             raise SuiteError(f"{mf}: generator must be a table")
-        raw_items: list[dict] = []
+        if (path / "items.jsonl").exists():
+            raise SuiteError(f"{path}: a generated suite must not ship items.jsonl")
         items = _generate(gen, system, mf)
+        raw_items = [{"id": i.id, "messages": i.messages, "expected": i.expected} for i in items]
     else:
         raw_items, items = _read_items(path, system)
 
@@ -147,7 +185,7 @@ def load_suite(path: Path) -> Suite:
         name=name,
         version=version,
         split=split,
-        license=str(manifest.get("license", "")),
+        license=license_,
         source=dict(manifest.get("source", {})),
         grader=grader,
         grader_options=dict(manifest.get("grader_options", {})),

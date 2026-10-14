@@ -1,0 +1,13 @@
+track = "demo"
+name = "needle"
+version = 1
+split = "public"
+license = "CC0-1.0"
+grader = "needle"
+max_tokens = 32
+
+[generator]
+name = "needle"
+lines = [5, 8]
+depths = [0.0, 0.5]
+seed = 11
