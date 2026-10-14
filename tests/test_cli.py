@@ -127,3 +127,77 @@ def test_cli_env_without_config_never_makes_client(monkeypatch, capsys):
 
     monkeypatch.setattr(cli, "make_client", boom)
     assert cli.main(["env"]) == 0
+
+
+def _planted_bundle(tmp_path, text):
+    from bakeoff.bundle import write_bundle
+
+    run = tmp_path / "planted"
+    write_bundle(run, {"status": "complete"}, {"speed.jsonl": [{"a": text}]})
+    return run
+
+
+@pytest.mark.parametrize(
+    "name", ["root", "ROOT", "ubuntu", "ec2-user", "nobody", "pi", "bob", "ab"]
+)
+def test_generic_and_short_usernames_are_skipped(monkeypatch, name):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: name)
+    assert cli.pick_username(False, lambda: "") == (None, None)
+
+
+def test_getuser_failure_skips_the_check(monkeypatch):
+    def boom():
+        raise KeyError("uid not found")
+
+    monkeypatch.setattr(cli.getpass, "getuser", boom)
+    assert cli.pick_username(False, lambda: "") == (None, None)
+
+
+def test_username_that_is_a_suite_word_is_skipped_with_notice(monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "natalia")
+    name, notice = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
+    assert name is None and "natalia" in notice and "public suites" in notice
+
+
+def test_distinctive_username_is_scanned(monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")
+    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None)
+    assert cli.pick_username(True) == (None, None)
+
+
+def test_real_suites_text_is_consulted(monkeypatch):
+    import re
+
+    text = cli._public_suite_text()
+    word = next(w for w in re.findall(r"[A-Za-z]{6,}", text))
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: word)
+    name, notice = cli.pick_username(False)
+    assert name is None and notice
+
+
+def test_verify_username_flag_and_notice(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")  # scrub-ok
+    run = _planted_bundle(tmp_path, "built by alice-dev")  # scrub-ok
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 1
+    assert "username" in capsys.readouterr().out
+    argv = ["verify", str(run), "--denylist", str(tmp_path / "none"), "--no-username"]
+    assert cli.main(argv) == 0
+
+
+def test_verify_notes_private_outputs(tmp_path, monkeypatch, capsys):
+    from bakeoff.bundle import write_bundle
+
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    run = tmp_path / "r"
+    write_bundle(run, {"status": "complete"}, {"private/x.y.jsonl": [{"a": 1}]})
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0
+    assert "private-suite outputs; do not share" in capsys.readouterr().err
+    clean = _planted_bundle(tmp_path, "fine")
+    cli.main(["verify", str(clean), "--denylist", str(tmp_path / "none")])
+    assert "private" not in capsys.readouterr().err
+
+
+def test_verify_does_not_fail_on_root_user_and_ordinary_text(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    run = _planted_bundle(tmp_path, "the square root of 144 is 12")
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0

@@ -9,6 +9,11 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
 
+GENERIC_USERNAMES = frozenset(
+    "root user admin ubuntu ec2-user debian centos fedora pi guest runner docker vagrant "
+    "nobody".split()
+)
+
 
 def slug(label: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")[:40].strip("-")
