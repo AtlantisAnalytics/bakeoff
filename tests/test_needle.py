@@ -24,3 +24,10 @@ def test_needle_depth_edges():
     assert msgs[0]["content"].startswith(f"The access code for the vault is {key}.")
     msgs, key = needle_messages(10, 1.0, 1)
     assert msgs[0]["content"].split("\n")[10] == f"The access code for the vault is {key}."
+
+
+def test_golden_values():
+    assert build_haystack(5, 3)[0] == (
+        "Record 00000: the Hollowmere depot logged 608 crates of wool on day 67."
+    )
+    assert needle_messages(100, 0.5, 7)[1] == "BEACON-4071"
