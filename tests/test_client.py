@@ -400,3 +400,64 @@ def test_fake_context_limit():
     assert r.status == 400 and "maximum context length" in r.error
     r = run(go(truncate_silently=True))
     assert r.error is None and r.prompt_tokens == 50
+
+
+def test_error_text_hides_the_endpoint_before_truncation():
+    url = "http://lab-box-7.lan:11434"  # scrub-ok
+    body = "x" * 495 + f"{url}/v1/chat"  # a late URL must not survive as a cut-off fragment
+    fake = FakeOpenAI(responder=lambda m: FakeReply(status=400, body=body))
+
+    async def go():
+        async with EndpointClient(f"{url}/v1", "m", transport=fake.transport) as c:
+            return await c.chat(MSGS, 4)
+
+    r = run(go())
+    assert len(r.error) <= 500 and "lab-box" not in r.error and "http://" not in r.error
+    assert r.error.endswith("<endpoint>/v1/chat"[:5]) or "<endpoint>" in r.error
+
+
+def test_error_text_hides_bare_netloc_root_and_key():
+    key = "sk-secret-1234"
+    body = f"cannot reach lab-box-7.lan:11434 at http://lab-box-7.lan:11434 with {key}"  # scrub-ok
+    fake = FakeOpenAI(responder=lambda m: FakeReply(status=400, body=body))
+
+    async def go():
+        async with EndpointClient(
+            "http://lab-box-7.lan:11434/v1",  # scrub-ok
+            "m",
+            api_key=key,
+            transport=fake.transport,
+        ) as c:
+            return await c.chat(MSGS, 4)
+
+    r = run(go())
+    assert r.error == "cannot reach <endpoint> at <endpoint> with <endpoint>"
+
+
+def test_transport_error_text_is_redacted():
+    def boom(request):
+        raise httpx.ConnectError("connect to http://lab-box-7.lan:11434 failed")  # scrub-ok
+
+    async def go():
+        async with EndpointClient(
+            "http://lab-box-7.lan:11434", "m", transport=httpx.MockTransport(boom), backoff_s=()
+        ) as c:  # scrub-ok
+            return await c.chat(MSGS, 4)
+
+    assert "lab-box" not in run(go()).error
+
+
+def test_short_host_does_not_mangle_error_text():
+    fake = FakeOpenAI(responder=lambda m: FakeReply(status=400, body="the hash h failed"))
+    _, (r,) = run(_chat(fake))
+    assert r.error == "the hash h failed"
+
+
+def test_non_finite_kv_metric_is_none():
+    fake = FakeOpenAI(extras={"/metrics": "vllm:gpu_cache_usage_perc nan\n"})
+
+    async def go():
+        async with make(fake) as c:
+            return await c.kv_cache_usage()
+
+    assert run(go()) is None

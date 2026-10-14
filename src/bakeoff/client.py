@@ -2,9 +2,11 @@
 
 import asyncio
 import json
+import math
 import re
 import time
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -91,6 +93,16 @@ class EndpointClient:
         backoff_s: tuple[float, ...] = (1.0, 2.0),
     ):
         self.api_base, self.root = normalize_base_url(base_url)
+        netloc = urlsplit(self.root if "//" in self.root else "//" + self.root).netloc
+        # URL forms are replaced anywhere; the bare netloc only at token edges; very short
+        # strings are never replaced (they would mangle ordinary text)
+        pats = [re.escape(t) for t in {self.api_base, self.root, base_url.strip()} if t]
+        if len(netloc) >= 4:
+            pats.append(rf"(?<![\w.-]){re.escape(netloc)}(?![\w.-])")
+        if api_key and len(api_key) >= 4:
+            pats.append(re.escape(api_key))
+        pats.sort(key=len, reverse=True)
+        self._own = re.compile("|".join(pats), re.I) if pats else None
         self.model = model
         self.backoff_s = backoff_s
         self.usage_supported = True
@@ -104,6 +116,12 @@ class EndpointClient:
 
     async def __aexit__(self, *exc) -> None:
         await self._http.aclose()
+
+    def _clean(self, text: str) -> str:
+        """Hide this client's own endpoint (and key) in text that may be stored, then truncate."""
+        if self._own is not None:
+            text = self._own.sub("<endpoint>", text)
+        return text[:ERROR_BODY_MAX]
 
     async def _get_json(self, url: str):
         try:
@@ -175,8 +193,8 @@ class EndpointClient:
                     if resp.status_code == 400 and with_usage and "stream_options" in text.lower():
                         raise _StreamOptionsRejected
                     if resp.status_code >= 500:
-                        raise _Retryable(text[:ERROR_BODY_MAX], resp.status_code)
-                    res.error = text[:ERROR_BODY_MAX]
+                        raise _Retryable(self._clean(text), resp.status_code)
+                    res.error = self._clean(text)
                     return res
                 async for line in resp.aiter_lines():
                     if not line.startswith("data:"):
@@ -194,7 +212,7 @@ class EndpointClient:
                     if err:
                         msg = err.get("message") if isinstance(err, dict) else err
                         res.status = None
-                        res.error = str(msg if msg else err)[:ERROR_BODY_MAX]
+                        res.error = self._clean(str(msg if msg else err))
                         return res
                     if isinstance(obj.get("usage"), dict) and obj["usage"]:
                         usage = obj["usage"]
@@ -223,10 +241,10 @@ class EndpointClient:
         except httpx.TimeoutException as e:
             raise _Retryable(f"timeout: {type(e).__name__}") from e
         except httpx.TransportError as e:
-            raise _Retryable(f"transport error: {type(e).__name__}: {e}") from e
+            raise _Retryable(self._clean(f"transport error: {type(e).__name__}: {e}")) from e
         except httpx.HTTPError as e:
             res.status = None
-            res.error = f"http error: {type(e).__name__}: {e}"[:ERROR_BODY_MAX]
+            res.error = self._clean(f"http error: {type(e).__name__}: {e}")
             return res
         if res.t_first is None and not usage:
             res.status = None
@@ -290,7 +308,8 @@ class EndpointClient:
                     continue
                 for name in KV_METRICS:
                     if re.match(rf"{re.escape(name)}(\{{.*\}})?\s", line):
-                        return float(line.rsplit(None, 1)[-1])
+                        value = float(line.rsplit(None, 1)[-1])
+                        return value if math.isfinite(value) else None
         except (httpx.HTTPError, ValueError):
             return None
         return None
