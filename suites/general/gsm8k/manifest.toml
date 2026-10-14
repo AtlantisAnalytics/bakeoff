@@ -1,0 +1,16 @@
+track = "general"
+name = "gsm8k"
+version = 1
+split = "public"
+license = "MIT"
+grader = "numeric"
+max_tokens = 1024
+system = "Solve the problem. End your reply with a final line of the form 'Answer: <number>'."
+
+[source]
+url = "https://raw.githubusercontent.com/openai/grade-school-math/3101c7d5072418e28b9008a6636bde82a006892c/grade_school_math/data/test.jsonl"
+revision = "3101c7d5072418e28b9008a6636bde82a006892c"
+sha256 = "3730d312f6e3440559ace48831e51066acaca737f6eabec99bccb9e4b3c39d14"
+license_url = "https://github.com/openai/grade-school-math/blob/3101c7d5072418e28b9008a6636bde82a006892c/LICENSE"
+pool_size = 1319
+dropped_scrub = 0
