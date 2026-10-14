@@ -61,31 +61,31 @@ def test_live_decode_matches_runtime_counters(capsys):
     messages = speed.SHAPES["short"]
     n = 3
 
-    async def ours():
-        out = []
-        async with EndpointClient(api_base, MODEL, timeout_s=600) as client:
-            await client.chat(messages, 256, temperature=0.0, seed=0)  # warm the model
-            for _ in range(n):
-                r = await client.chat(messages, 256, temperature=0.0, seed=0)
-                assert r.error is None, r.error
-                out.append(r)
-        return out
-
-    results = asyncio.run(ours())
-    our_decode = [(r.completion_tokens - 1) / (r.t_last - r.t_first) for r in results]
-    our_ttft = [r.ttft_s for r in results]
-
     payload = {
         "model": MODEL,
         "messages": messages,
         "stream": False,
         "options": {"temperature": 0, "seed": 0, "num_predict": 256},
     }
-    native = []
-    for _ in range(n):
-        resp = httpx.post(f"{root}/api/chat", json=payload, timeout=600)
-        resp.raise_for_status()
-        native.append(resp.json())
+
+    async def both():
+        # interleaved, so machine-speed drift between runs hits both measurements alike
+        out, native = [], []
+        async with EndpointClient(api_base, MODEL, timeout_s=600) as client:
+            await client.chat(messages, 256, temperature=0.0, seed=0)  # warm the model
+            async with httpx.AsyncClient(timeout=600) as http:
+                for _ in range(n):
+                    r = await client.chat(messages, 256, temperature=0.0, seed=0)
+                    assert r.error is None, r.error
+                    out.append(r)
+                    resp = await http.post(f"{root}/api/chat", json=payload)
+                    resp.raise_for_status()
+                    native.append(resp.json())
+        return out, native
+
+    results, native = asyncio.run(both())
+    our_decode = [(r.completion_tokens - 1) / (r.t_last - r.t_first) for r in results]
+    our_ttft = [r.ttft_s for r in results]
     rt_decode = [d["eval_count"] / (d["eval_duration"] / 1e9) for d in native]
     rt_prefill_s = [d["prompt_eval_duration"] / 1e9 for d in native]
     rt_prefill_tps = [

@@ -71,9 +71,12 @@ steps = [4096, 8192, 16384, 32768, 65536, 131072]
 
 - `bakeoff run CONFIG [--only quality|speed|fit] [--suite PATH] [--set key=value] [--out DIR]` writes a
   hashed bundle to `runs/<id>/` and exits 0 only when the run is complete.
-- `bakeoff verify DIR [--denylist FILE]` checks the bundle's hashes and scans it for scrub violations
-  (hostnames with ports, private IPs, home paths, the current username and any denylist terms). It
-  exits non-zero on any finding.
+- `bakeoff verify DIR [--denylist FILE] [--no-username]` checks the bundle's hashes and scans it for
+  scrub violations (hostnames with ports, private IPs, home paths, the current username and any
+  denylist terms). It exits non-zero on any finding. The username check is skipped for generic
+  accounts (`root`, `ubuntu`, `runner` and similar), for names of three characters or fewer, and for
+  names that are ordinary words in the public suites (a notice says so); `--no-username` turns it off.
+  A bundle with a `private/` folder holds private-suite outputs, and verify says so: do not share it.
 - `bakeoff env [--config run.toml]` prints exactly what the environment capture records.
 - `bakeoff judge A B --max-usd N` runs the blind pairwise judge over two bundles' `general/open-ended`
   outputs. It needs a paid API key in `BAKEOFF_JUDGE_API_KEY`, plus the judge's base URL, model and
@@ -88,7 +91,14 @@ variable values, or GPU serials and UUIDs.
 ### Known limits
 
 - The pairwise judge is blind, but a model can name itself in its answers.
-- Run bundles and judge output should go through `bakeoff verify` before they are shared.
+- Run bundles and judge output should go through `bakeoff verify` before they are shared. A bundle
+  with a `private/` folder holds private-suite outputs and must not be shared.
+- Output caps are 4096 tokens for the reasoning-heavy suites (`gsm8k`, `ifeval`, `structured/json`,
+  `grounding/context-only`) and 2048 for the rest and for the fit pass. A model that needs more
+  thinking than that is scored as truncated (a fail) in quality; in the fit pass a truncated depth
+  without the key is inconclusive and ends the run as incomplete, never a fail.
+- A judge call that fails is recorded as an `error` item, not a tie, and the judge stops as
+  incomplete when more than 20% of its calls fail.
 - The `structured/json` suite checks values on unambiguous fields only. Output must be one JSON value,
   optionally in a code fence. A model that wraps its JSON in other tags fails the item.
 - The IFEval slice implements 16 instruction types, in strict mode only.
@@ -101,17 +111,21 @@ Measured on 2026-10-14 with IBM Granite 3.3 8B Instruct (`granite3.3:8b`, Q4_K_M
 an Apple M4 Max 36 GB unified machine. These are measurements of a public model.
 
 **Speed against the runtime's own counters.** Ollama's native `/api/chat` reports `eval_count` and
-`eval_duration`. For the short speed prompt with 256 output tokens, three repeats each:
+`eval_duration`. For the short speed prompt with 256 output tokens, three repeats each, with the
+harness's request and the runtime's own request interleaved so that machine-speed drift hits both:
 
 | Check | Harness (client side) | Ollama counters | Ratio |
 |---|---|---|---|
-| Decode tok/s, run 1 | 57.9 | 58.7 | 0.99 |
-| Decode tok/s, run 2 | 49.0 | 50.4 | 0.97 |
+| Decode tok/s, run 1 | 57.1 | 57.5 | 0.99 |
+| Decode tok/s, run 2 | 56.6 | 56.8 | 1.00 |
+| Decode tok/s, run 3 | 55.4 | 55.5 | 1.00 |
 
-Both runs are within the 15% tolerance (the absolute rate varied between the two runs on this machine).
-The harness's time to first token was 0.04 s, against 0.02 s for the runtime's own prompt evaluation.
-It is the larger of the two, as expected: it also includes the HTTP round trip and the first token.
-Prefill rates are informational only, because Ollama's prompt cache makes repeated prompts nearly free.
+All three are within the 15% tolerance. The absolute rate on this machine drifts by 10 to 20% from one
+run to the next (and was lower during the 40-minute full run, below), which is why the check
+interleaves the two measurements. The harness's time to first token was 0.04 s, against 0.02 s for
+the runtime's own prompt evaluation. It is the larger of the two, as expected: it also includes the
+HTTP round trip and the first token. Prefill rates are informational only, because Ollama's prompt
+cache makes repeated prompts nearly free.
 
 **Quality against published scores.** Source: the Evaluation Results table of the model card at
 https://huggingface.co/ibm-granite/granite-3.3-8b-instruct (evaluated by IBM with OLMES), which lists
@@ -121,19 +135,21 @@ IFEval variant.
 | Suite | Harness (n, 95% CI) | Published |
 |---|---|---|
 | `general/gsm8k` | 87% (87/100, 79 to 92) | 80.89 |
-| `general/ifeval` | 79% (79/100, 70 to 86) | 74.82 |
+| `general/ifeval` | 81% (81/100, 72 to 87) | 74.82 |
 
 The harness scores are within about 6 points of the published ones, and the published figures sit
-inside or at the edge of the intervals. The setups differ: a 100-item slice, our prompt, our 16-type
-strict IFEval subset, and Q4_K_M quantization instead of the original weights. Expect the same
-ballpark, not a match.
+inside the intervals. The setups differ: a 100-item slice, our prompt, our 16-type strict IFEval
+subset, and Q4_K_M quantization instead of the original weights. Expect the same ballpark, not a
+match. An earlier run with a 1024-token output cap truncated 4 IFEval items and scored 79%; raising
+the cap to 4096 tokens removed every truncation (0 of 100) and moved the score to 81%.
 
 Other suites for the same run: `format/exact-reply` 85%, `grounding/context-only` 97%,
-`longctx/needle` 6/6, `structured/json` 40% (every failure we inspected was the model wrapping its
-JSON in `<json>` tags, which the strict grader rejects, not a grader bug). The largest context that
-passed the fit pass was 32768 tokens, with the server reporting a 64000-token window, and the larger
-steps were skipped as above that limit. Decode was about 47 tok/s at both concurrency 1 and 4, because
-this Ollama setup queues concurrent requests.
+`longctx/needle` 6/6, `structured/json` 40% (all 18 failures were the
+model wrapping its JSON in `<json>` tags, which the strict grader rejects, not a grader bug). The
+largest context that passed the fit pass was 32768 tokens, with the server reporting a 64000-token
+window (probed again just before the fit pass, once the model was loaded), and the larger steps were
+skipped as above that limit. Decode was about 48 to 50 tok/s at both concurrency 1 and 4, because this
+Ollama setup queues concurrent requests (time to first token at concurrency 4 was about 8 s).
 
 ## License
 
