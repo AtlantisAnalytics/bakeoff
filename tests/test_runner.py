@@ -77,9 +77,8 @@ def test_end_to_end_bundle_verifies(tmp_path):
 
 def test_endpoint_url_never_written(tmp_path):
     def responder(messages):
-        return FakeReply(
-            status=400, body=f"cannot reach {URL}/chat via lab-box-7.lan:11434"
-        )  # scrub-ok
+        body = f"cannot reach {URL}/chat via lab-box-7.lan:11434"  # scrub-ok
+        return FakeReply(status=400, body=body)
 
     fake = FakeOpenAI(responder=responder)
     path = go(make_cfg(), fake, tmp_path, run=fake_nvidia, platform="linux")

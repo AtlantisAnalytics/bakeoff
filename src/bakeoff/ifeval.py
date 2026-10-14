@@ -5,7 +5,6 @@ in google-research/google-research (Apache-2.0):
 https://github.com/google-research/google-research/tree/master/instruction_following_eval
 
 Deviations from upstream:
-- Words are counted with `re.findall(r"\\w+", text)` instead of nltk's tokenizer.
 - The language check (langdetect) in `change_case:english_*` is not performed; only
   `isupper()` / `islower()` apply.
 - Missing or invalid kwargs are an error (BadExpected) instead of being replaced by random
