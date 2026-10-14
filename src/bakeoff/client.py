@@ -1,0 +1,271 @@
+"""Async OpenAI-compatible streaming client with retries and runtime probes."""
+
+import asyncio
+import json
+import re
+import time
+from dataclasses import dataclass
+
+import httpx
+
+THINK_OPEN = "<think>"
+THINK_CLOSE = "</think>"
+KV_METRICS = ("vllm:gpu_cache_usage_perc", "vllm:kv_cache_usage_perc")
+ERROR_BODY_MAX = 500
+
+
+def normalize_base_url(url: str) -> tuple[str, str]:
+    """Return (api_base ending in /v1, root without /v1)."""
+    root = url.strip().rstrip("/")
+    if root.endswith("/v1"):
+        root = root[: -len("/v1")]
+    root = root.rstrip("/")
+    return root + "/v1", root
+
+
+def split_think(content: str) -> tuple[str, str]:
+    """Split a leading <think> block off content: (answer, think_text)."""
+    stripped = content.lstrip()
+    if not stripped.startswith(THINK_OPEN):
+        return content, ""
+    rest = stripped[len(THINK_OPEN) :]
+    head, sep, tail = rest.partition(THINK_CLOSE)
+    if not sep:
+        return "", rest.strip()
+    return tail.strip(), head.strip()
+
+
+@dataclass
+class ChatResult:
+    content: str = ""
+    reasoning: str = ""
+    finish_reason: str | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    usage_source: str = "estimated"
+    chunk_count: int = 0
+    t_start: float = 0.0
+    t_first: float | None = None
+    t_last: float | None = None
+    status: int | None = None
+    error: str | None = None
+
+    @property
+    def ttft_s(self) -> float | None:
+        return None if self.t_first is None else self.t_first - self.t_start
+
+    @property
+    def total_s(self) -> float | None:
+        return None if self.t_last is None else self.t_last - self.t_start
+
+
+class _Retryable(Exception):
+    def __init__(self, error: str, status: int | None = None):
+        super().__init__(error)
+        self.error = error
+        self.status = status
+
+
+class _StreamOptionsRejected(Exception):
+    pass
+
+
+class EndpointClient:
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        api_key: str | None = None,
+        timeout_s: float = 600.0,
+        transport: httpx.AsyncBaseTransport | None = None,
+        backoff_s: tuple[float, ...] = (1.0, 2.0),
+    ):
+        self.api_base, self.root = normalize_base_url(base_url)
+        self.model = model
+        self.backoff_s = backoff_s
+        self.usage_supported = True
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        self._http = httpx.AsyncClient(
+            transport=transport, timeout=httpx.Timeout(timeout_s), headers=headers
+        )
+
+    async def __aenter__(self) -> "EndpointClient":
+        return self
+
+    async def __aexit__(self, *exc) -> None:
+        await self._http.aclose()
+
+    async def _get_json(self, url: str):
+        try:
+            r = await self._http.get(url)
+            if r.status_code != 200:
+                return None
+            return r.json()
+        except (httpx.HTTPError, ValueError):
+            return None
+
+    async def list_models(self) -> list[str]:
+        r = await self._http.get(f"{self.api_base}/models")
+        r.raise_for_status()
+        return [m["id"] for m in r.json().get("data", [])]
+
+    async def chat(
+        self,
+        messages: list[dict],
+        max_tokens: int,
+        temperature: float = 0.0,
+        seed: int = 0,
+        extra: dict | None = None,
+    ) -> ChatResult:
+        last = ChatResult()
+        for attempt in range(len(self.backoff_s) + 1):
+            if attempt:
+                await asyncio.sleep(self.backoff_s[attempt - 1])
+            try:
+                try:
+                    return await self._chat_once(
+                        messages, max_tokens, temperature, seed, extra, self.usage_supported
+                    )
+                except _StreamOptionsRejected:
+                    self.usage_supported = False
+                    return await self._chat_once(
+                        messages, max_tokens, temperature, seed, extra, False
+                    )
+            except _Retryable as e:
+                last = ChatResult(status=e.status, error=e.error, t_start=time.perf_counter())
+        return last
+
+    async def _chat_once(
+        self, messages, max_tokens, temperature, seed, extra, with_usage: bool
+    ) -> ChatResult:
+        body = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "seed": seed,
+            "stream": True,
+        }
+        if with_usage:
+            body["stream_options"] = {"include_usage": True}
+        if extra:
+            body.update(extra)
+        res = ChatResult()
+        raw_content: list[str] = []
+        reasoning: list[str] = []
+        usage: dict | None = None
+        res.t_start = time.perf_counter()
+        try:
+            async with self._http.stream(
+                "POST", f"{self.api_base}/chat/completions", json=body
+            ) as resp:
+                res.status = resp.status_code
+                if resp.status_code != 200:
+                    text = (await resp.aread()).decode("utf-8", errors="replace")
+                    if resp.status_code == 400 and with_usage and "stream_options" in text.lower():
+                        raise _StreamOptionsRejected
+                    if resp.status_code >= 500:
+                        raise _Retryable(text[:ERROR_BODY_MAX], resp.status_code)
+                    res.error = text[:ERROR_BODY_MAX]
+                    return res
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        obj = json.loads(data)
+                    except ValueError:
+                        continue
+                    if obj.get("usage"):
+                        usage = obj["usage"]
+                    for choice in obj.get("choices") or []:
+                        delta = choice.get("delta") or {}
+                        c = delta.get("content") or ""
+                        r = delta.get("reasoning_content") or delta.get("reasoning") or ""
+                        if c or r:
+                            now = time.perf_counter()
+                            if res.t_first is None:
+                                res.t_first = now
+                            res.t_last = now
+                        if c:
+                            raw_content.append(c)
+                            res.chunk_count += 1
+                        if r:
+                            reasoning.append(r)
+                        if choice.get("finish_reason"):
+                            res.finish_reason = choice["finish_reason"]
+        except (_StreamOptionsRejected, _Retryable):
+            raise
+        except httpx.TimeoutException as e:
+            raise _Retryable(f"timeout: {type(e).__name__}", res.status) from e
+        except httpx.TransportError as e:
+            raise _Retryable(f"transport error: {type(e).__name__}: {e}", res.status) from e
+        content, think = split_think("".join(raw_content))
+        res.content = content
+        res.reasoning = "".join(reasoning) + think
+        if usage:
+            res.usage_source = "reported"
+            res.prompt_tokens = usage.get("prompt_tokens")
+            res.completion_tokens = usage.get("completion_tokens")
+            details = usage.get("completion_tokens_details") or {}
+            res.reasoning_tokens = details.get("reasoning_tokens")
+        else:
+            res.usage_source = "estimated"
+            res.completion_tokens = res.chunk_count
+            res.prompt_tokens = None
+        return res
+
+    async def runtime_info(self, runtime: str) -> dict:
+        info = {"version": None, "context_length": None, "size_vram": None}
+        try:
+            if runtime == "vllm":
+                v = await self._get_json(f"{self.root}/version")
+                info["version"] = _str_or_none((v or {}).get("version"))
+                models = await self._get_json(f"{self.api_base}/models")
+                data = (models or {}).get("data") or []
+                mine = [m for m in data if m.get("id") == self.model] or data
+                for m in mine:
+                    if isinstance(m.get("max_model_len"), int):
+                        info["context_length"] = m["max_model_len"]
+                        break
+            elif runtime == "llamacpp":
+                p = await self._get_json(f"{self.root}/props") or {}
+                info["version"] = _str_or_none(p.get("build_info"))
+                n_ctx = (p.get("default_generation_settings") or {}).get("n_ctx", p.get("n_ctx"))
+                info["context_length"] = n_ctx if isinstance(n_ctx, int) else None
+            elif runtime == "ollama":
+                v = await self._get_json(f"{self.root}/api/version")
+                info["version"] = _str_or_none((v or {}).get("version"))
+                ps = await self._get_json(f"{self.root}/api/ps") or {}
+                names = {self.model, f"{self.model}:latest"}
+                for m in ps.get("models") or []:
+                    if m.get("name") in names or m.get("model") in names:
+                        cl, sv = m.get("context_length"), m.get("size_vram")
+                        info["context_length"] = cl if isinstance(cl, int) else None
+                        info["size_vram"] = sv if isinstance(sv, int) else None
+                        break
+        except (AttributeError, TypeError):
+            return {"version": None, "context_length": None, "size_vram": None}
+        return info
+
+    async def kv_cache_usage(self) -> float | None:
+        try:
+            r = await self._http.get(f"{self.root}/metrics")
+            if r.status_code != 200:
+                return None
+            for line in r.text.splitlines():
+                if line.startswith("#"):
+                    continue
+                for name in KV_METRICS:
+                    if re.match(rf"{re.escape(name)}(\{{.*\}})?\s", line):
+                        return float(line.rsplit(None, 1)[-1])
+        except (httpx.HTTPError, ValueError):
+            return None
+        return None
+
+
+def _str_or_none(v) -> str | None:
+    return None if v is None else str(v)
