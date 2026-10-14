@@ -440,8 +440,11 @@ def test_transport_error_text_is_redacted():
 
     async def go():
         async with EndpointClient(
-            "http://lab-box-7.lan:11434", "m", transport=httpx.MockTransport(boom), backoff_s=()
-        ) as c:  # scrub-ok
+            "http://lab-box-7.lan:11434",  # scrub-ok
+            "m",
+            transport=httpx.MockTransport(boom),
+            backoff_s=(),
+        ) as c:
             return await c.chat(MSGS, 4)
 
     assert "lab-box" not in run(go()).error
