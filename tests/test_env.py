@@ -484,3 +484,16 @@ def test_parse_cuda_version():
 def test_parse_vm_stat():
     assert parse_vm_stat(fx("vm_stat.txt")) == (90000 + 200000 + 30000) * 16384
     assert parse_vm_stat("garbage") is None
+
+
+def test_driver_string_goes_through_the_identity_cleaner():
+    env = capture_env(
+        CFG,
+        None,
+        "m",
+        run=nvidia_run("0, GPU, 100, 1.2.3 lab-box-7, 10, 1, 1\n"),  # scrub-ok
+        read=fake_read({}),
+        platform="linux",
+        identity=["lab-box-7"],  # scrub-ok
+    )
+    assert env["gpus"][0]["driver"] == {"value": None, "source": "not_captured"}

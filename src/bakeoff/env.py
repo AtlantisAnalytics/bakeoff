@@ -189,7 +189,7 @@ def _nvidia_gpus(run: Runner, clean: Cleaner) -> list[dict]:
         {
             "name": field(clean(r["name"]), "measured"),
             "vram_mib": field(r["vram_mib"], "measured"),
-            "driver": field(r["driver"], "measured"),
+            "driver": field(clean(r["driver"]), "measured"),
             "cuda": field(cuda, "measured"),
             "power_limit_w": field(r["power_limit_w"], "measured"),
         }
