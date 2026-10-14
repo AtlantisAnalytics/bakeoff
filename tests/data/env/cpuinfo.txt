@@ -1,0 +1,7 @@
+processor	: 0
+vendor_id	: AuthenticAMD
+model name	: AMD Ryzen 9 7950X 16-Core Processor
+
+processor	: 1
+vendor_id	: AuthenticAMD
+model name	: AMD Ryzen 9 7950X 16-Core Processor
