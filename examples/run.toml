@@ -13,7 +13,7 @@ runtime = "vllm"                         # vllm | llamacpp | ollama | mlx | othe
 envelope = "1x RTX 3090 Ti 24 GB"
 
 [quality]
-suites = ["suites/general", "suites/format", "suites/structured", "suites/grounding", "suites/longctx"]
+suites = ["general", "format", "structured", "grounding", "longctx"]
 private_suites = []                      # absolute paths outside the repo
 
 [speed]
