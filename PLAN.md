@@ -82,7 +82,7 @@ the site. The bot never pushes to `main` and has no merge path; the rulesets enf
 | | Scope |
 |---|---|
 | **M0** ✅ | Repo seed: README, plan, licenses, the holding page in `site/`, the logo source and asset script |
-| **M1** | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
+| **M1** 🚧 | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
 | **M2** | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
 | **M3** | Private side: scouting, the weekend schedule, the Monday standup and [Publish] opening a draft PR here |
 | **M4** | Two or three private dry-run weekends; review the report quality and the scrub |
@@ -97,11 +97,11 @@ Later:
 
 ## Repo admin to finish
 
-- [ ] Give the GitHub App installation access to this repo.
-- [ ] Rulesets, imported from the Athena repo's exports:
+- [x] Give the GitHub App installation access to this repo.
+- [x] Rulesets, imported from the Athena repo's exports:
   - `protect-main`: PR + 1 approval, no force push or deletion;
   - `bot-branches-only`: bots may create and update `athena/**` branches only.
-- [ ] Connect the `bakeoff` Worker to this repo in Workers Builds. **Check at the first Git deploy that
+- [x] Connect the `bakeoff` Worker to this repo in Workers Builds. **Check at the first Git deploy that
   the custom domains survive and workers.dev stays off.**
 
 ## Open questions
