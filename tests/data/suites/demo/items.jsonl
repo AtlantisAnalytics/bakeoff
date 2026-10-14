@@ -1,0 +1,2 @@
+{"id": "a", "prompt": "Reply with exactly: ok", "expected": "ok"}
+{"id": "b", "messages": [{"role": "user", "content": "Reply with exactly: yes"}], "expected": "yes"}
