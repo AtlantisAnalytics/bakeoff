@@ -323,6 +323,7 @@ def test_refuses_incomplete_input_bundle(tmp_path):
     files = {
         rel: [json.loads(x) for x in (b / rel).read_text().splitlines()] for rel in meta["files"]
     }
+    shutil.rmtree(b)
     write_bundle(b, meta, files)  # re-hashed, so only the status marks it incomplete
     with pytest.raises(JudgeError, match="not complete"):
         run((a, b), tmp_path / "o", judge_fake())

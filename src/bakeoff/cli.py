@@ -40,22 +40,33 @@ def _cmd_run(args: argparse.Namespace) -> int:
         _err(str(e))
         return 1
 
+    written = {"bundle": False}
+
     async def go() -> Path:
         async with make_client(cfg) as client:
-            return await execute_run(
-                cfg,
-                client,
-                Path(args.out),
-                only=set(args.only) if args.only else None,
-                extra_suites=args.suite,
-            )
+            try:
+                return await execute_run(
+                    cfg,
+                    client,
+                    Path(args.out),
+                    only=set(args.only) if args.only else None,
+                    extra_suites=args.suite,
+                )
+            except (KeyboardInterrupt, asyncio.CancelledError) as e:
+                # asyncio.run may re-raise a fresh KeyboardInterrupt, so note it here
+                written["bundle"] = bool(getattr(e, "bundle_written", False))
+                raise
 
     try:
         path = asyncio.run(go())
     except (KeyboardInterrupt, asyncio.CancelledError):
-        _err("interrupted; an incomplete bundle was written")
+        _err(
+            "interrupted; an incomplete bundle was written"
+            if written["bundle"]
+            else "interrupted; no bundle was written"
+        )
         return 130
-    except (PreflightError, SuiteError, ConfigError) as e:
+    except (PreflightError, SuiteError, ConfigError, FileExistsError) as e:
         _err(str(e))
         return 1
     except Exception as e:  # noqa: BLE001 - one line, no traceback unless debugging

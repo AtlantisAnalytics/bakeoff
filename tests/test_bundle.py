@@ -263,3 +263,35 @@ def test_username_and_denylist_whole_word():
         username="alice",  # scrub-ok
     )
     assert sorted(k for _, k, _ in hits) == ["denylist", "username"]
+
+
+def test_non_finite_numbers_are_refused(tmp_path):
+    from bakeoff.hashing import canonical_json
+
+    with pytest.raises(ValueError):
+        canonical_json({"x": float("nan")})
+    with pytest.raises(ValueError):
+        write_bundle(tmp_path / "a", {"status": "complete"}, {"s.jsonl": [{"x": float("inf")}]})
+    with pytest.raises(ValueError):
+        write_bundle(tmp_path / "b", {"status": "complete", "x": float("nan")}, {})
+
+
+def test_verify_survives_nan_in_a_hand_edited_bundle(tmp_path):
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    p = tmp_path / "bundle.json"
+    p.write_text(p.read_text().replace('"complete"', '"complete", "x": NaN'))
+    assert "bundle_hash" in _kinds(verify_bundle(tmp_path, None, None))
+
+
+def test_write_bundle_refuses_a_non_empty_run_dir(tmp_path):
+    write_bundle(tmp_path / "r", {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    with pytest.raises(FileExistsError):
+        write_bundle(tmp_path / "r", {"status": "complete"}, {"speed.jsonl": [{"a": 2}]})
+    (tmp_path / "empty").mkdir()
+    write_bundle(tmp_path / "empty", {"status": "complete"}, {})  # an empty directory is fine
+
+
+def test_run_id_includes_the_pass_selection():
+    t = datetime(2026, 10, 13, 15, 30, tzinfo=UTC)
+    assert "-demo-speed-" in run_id(t, "Demo", b"x", "speed")
+    assert "-demo-" in run_id(t, "Demo", b"x") and "speed" not in run_id(t, "Demo", b"x")

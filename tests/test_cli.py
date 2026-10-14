@@ -201,3 +201,51 @@ def test_verify_does_not_fail_on_root_user_and_ordinary_text(tmp_path, monkeypat
     monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
     run = _planted_bundle(tmp_path, "the square root of 144 is 12")
     assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0
+
+
+def test_interrupt_message_claims_a_bundle_only_if_one_was_written(
+    tmp_path, monkeypatch, cfg_file, capsys
+):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def boom(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "execute_run", boom)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 130
+    err = capsys.readouterr().err
+    assert "no bundle was written" in err and "incomplete bundle was written" not in err
+
+    async def wrote(*a, **k):
+        e = KeyboardInterrupt()
+        e.bundle_written = True
+        raise e
+
+    monkeypatch.setattr(cli, "execute_run", wrote)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 130
+    assert "an incomplete bundle was written" in capsys.readouterr().err
+
+
+def test_real_interrupt_mid_run_writes_a_bundle_and_says_so(
+    tmp_path, monkeypatch, cfg_file, capsys
+):
+    import asyncio
+
+    def responder(messages):
+        raise asyncio.CancelledError
+
+    patch_client(monkeypatch, FakeOpenAI(responder=responder))
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path / "o")]) == 130
+    assert "an incomplete bundle was written" in capsys.readouterr().err
+    assert len(list((tmp_path / "o").iterdir())) == 1
+
+
+def test_existing_run_dir_is_a_clean_cli_error(tmp_path, monkeypatch, cfg_file, capsys):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def exists(*a, **k):
+        raise FileExistsError("refusing to write into an existing, non-empty run")
+
+    monkeypatch.setattr(cli, "execute_run", exists)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
+    assert "refusing to write" in capsys.readouterr().err

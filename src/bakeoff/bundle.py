@@ -19,9 +19,11 @@ def slug(label: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")[:40].strip("-")
 
 
-def run_id(started: datetime, label: str, salt: bytes) -> str:
+def run_id(started: datetime, label: str, salt: bytes, passes: str = "") -> str:
+    """`passes` (for example "speed") joins the label when only some passes run."""
     started = started.astimezone(UTC)
-    return f"{started:%Y%m%dT%H%M%SZ}-{slug(label)}-{sha256_hex(salt)[:8]}"
+    tag = slug(label) + (f"-{slug(passes)}" if passes else "")
+    return f"{started:%Y%m%dT%H%M%SZ}-{tag}-{sha256_hex(salt)[:8]}"
 
 
 def _bundle_hash(meta: dict) -> str:
@@ -43,19 +45,24 @@ def write_bundle(run_dir: Path, meta: dict, files: dict[str, list[dict]]) -> str
     for rel in files:
         if _bad_relpath(rel):
             raise ValueError(f"unsafe bundle file path: {rel!r}")
+    if run_dir.exists() and (not run_dir.is_dir() or any(run_dir.iterdir())):
+        raise FileExistsError(f"refusing to write into an existing, non-empty {run_dir.name}")
     run_dir.mkdir(parents=True, exist_ok=True)
     hashes: dict[str, str] = {}
     for rel, records in files.items():
         path = run_dir / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        text = "".join(json.dumps(r, sort_keys=True, ensure_ascii=False) + "\n" for r in records)
+        text = "".join(
+            json.dumps(r, sort_keys=True, ensure_ascii=False, allow_nan=False) + "\n"
+            for r in records
+        )
         path.write_bytes(text.encode("utf-8"))
         hashes[rel] = sha256_file(path)
     meta["files"] = hashes
     meta.pop("bundle_sha256", None)
     meta["bundle_sha256"] = _bundle_hash(meta)
     (run_dir / "bundle.json").write_bytes(
-        (json.dumps(meta, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+        (json.dumps(meta, indent=2, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
     )
     return meta["bundle_sha256"]
 
@@ -198,7 +205,11 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
                 findings.append(Finding(rel, 0, "unreadable", "symlink in bundle"))
         elif rel != "bundle.json" and rel not in listed:
             findings.append(Finding(rel, 0, "unlisted_file", "file is not listed in bundle.json"))
-    if meta.get("bundle_sha256") != _bundle_hash(meta):
+    try:
+        hash_ok = meta.get("bundle_sha256") == _bundle_hash(meta)
+    except ValueError:  # NaN or Infinity in a hand-edited bundle
+        hash_ok = False
+    if not hash_ok:
         findings.append(Finding("bundle.json", 0, "bundle_hash", "bundle hash does not match"))
     if meta.get("status") != "complete":
         findings.append(

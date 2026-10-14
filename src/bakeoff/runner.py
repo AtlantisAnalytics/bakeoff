@@ -1,8 +1,10 @@
 """The runner: preflight, the three passes, sampling, redaction and the hashed bundle."""
 
 import asyncio
+import dataclasses
 import ipaddress
 import json
+import os
 import re
 import sys
 from collections.abc import Callable
@@ -56,10 +58,15 @@ def _is_ip(host: str) -> bool:
     return True
 
 
-def _endpoint_terms(base_url: str) -> tuple[list[str], list[str]]:
-    """(always, bare): always-redacted strings, and bare hosts redacted only at token edges."""
+def _endpoint_terms(base_url: str) -> tuple[list[str], list[str], list[str]]:
+    """(always, anchored, bare).
+
+    `always` strings are redacted wherever they occur; `anchored` host:port forms need a clean
+    left edge (so "ollama:8000" survives host "llama"); `bare` hosts need both edges.
+    """
     api_base, root = normalize_base_url(base_url)
     always = [base_url, base_url.strip(), base_url.strip().rstrip("/"), api_base, root]
+    anchored: list[str] = []
     bare: list[str] = []
     try:
         parts = urlsplit(base_url if "//" in base_url else "//" + base_url)
@@ -69,19 +76,25 @@ def _endpoint_terms(base_url: str) -> tuple[list[str], list[str]]:
     if "@" in netloc:
         always.append(netloc)  # userinfo
     if host and port is not None:
-        always.append(f"{host}:{port}")
-        always.append(f"[{host}]:{port}")
+        anchored.append(f"{host}:{port}")
+        anchored.append(f"[{host}]:{port}")
     if host and (_is_ip(host) or "." in host):
         bare.append(host)
         if ":" in host:
             bare.append(f"[{host}]")
     key = lambda t: -len(t)  # noqa: E731
-    return sorted({t for t in always if t}, key=key), sorted({t for t in bare if t}, key=key)
+    return (
+        sorted({t for t in always if t}, key=key),
+        sorted({t for t in anchored if t}, key=key),
+        sorted({t for t in bare if t}, key=key),
+    )
 
 
-def make_redactor(base_url: str) -> Callable[[object], object]:
-    always, bare = _endpoint_terms(base_url)
+def make_redactor(base_url: str, secrets: tuple[str, ...] = ()) -> Callable[[object], object]:
+    always, anchored, bare = _endpoint_terms(base_url)
+    always = sorted({*always, *(s for s in secrets if s)}, key=lambda t: -len(t))
     alts = [re.escape(t) for t in always]
+    alts += [rf"(?<![\w.-]){re.escape(t)}" for t in anchored]
     alts += [rf"(?<![\w.-]){re.escape(t)}(?![\w.-])" for t in bare]
     pattern = re.compile("|".join(alts), re.I) if alts else None
 
@@ -131,6 +144,35 @@ def _load_suites(cfg: RunConfig, extra_suites: list[str]) -> tuple[list[Suite], 
     return suites, private_keys
 
 
+_PATHLIKE = re.compile(r"/Users/|/home/|[A-Za-z]:\\|^/", re.I)
+
+
+def public_name(value: str) -> str:
+    """A path-like identifier is cut to its basename; anything else is returned unchanged."""
+    if not _PATHLIKE.search(value):
+        return value
+    return re.split(r"[\\/]+", value.rstrip("/\\"))[-1] or "<path>"
+
+
+def _sanitize_cfg(cfg: RunConfig) -> RunConfig:
+    """Replace path-like model identifiers with basenames (one stderr warning per field)."""
+    changes: dict[str, dict[str, str]] = {"endpoint": {}, "model": {}}
+    for section, key in (("endpoint", "model"), ("model", "weights_file"), ("model", "label")):
+        value = getattr(getattr(cfg, section), key)
+        clean = public_name(value)
+        if clean != value:
+            changes[section][key] = clean
+            print(
+                f"warning: {section}.{key} looks like a path; the bundle keeps only {clean!r}",
+                file=sys.stderr,
+            )
+    return dataclasses.replace(
+        cfg,
+        endpoint=dataclasses.replace(cfg.endpoint, **changes["endpoint"]),
+        model=dataclasses.replace(cfg.model, **changes["model"]),
+    )
+
+
 REPORT_TIMEOUT_S = 10.0
 
 
@@ -152,6 +194,19 @@ async def _runtime_reported(client: EndpointClient, runtime: str) -> dict:
     }
 
 
+async def _fit_probe(client: EndpointClient, runtime: str, first: dict) -> tuple[dict, str | None]:
+    """Probe again right before the fit pass: Ollama only reports context for a loaded model."""
+    try:
+        again = await asyncio.wait_for(client.runtime_info(runtime), REPORT_TIMEOUT_S)
+    except Exception:  # noqa: BLE001 - fall back to the first probe
+        again = {}
+    if again.get("context_length"):
+        return again, "pre_fit"
+    if first.get("context_length"):
+        return first, "initial"
+    return first, None
+
+
 async def execute_run(
     cfg: RunConfig,
     client: EndpointClient,
@@ -167,7 +222,10 @@ async def execute_run(
     served = await preflight(client, cfg.endpoint.model)
     runtime_name = cfg.model.runtime
     info = await client.runtime_info(runtime_name)
-    env = capture_env(cfg, info, served, run=run, platform=platform)
+    key_env = cfg.endpoint.api_key_env
+    secrets = (os.environ.get(key_env, ""),) if key_env else ()
+    cfg = _sanitize_cfg(cfg)  # after preflight, which needs the real served name
+    env = capture_env(cfg, info, public_name(served), run=run, platform=platform)
     suites: list[Suite] = []
     private_keys: set[str] = set()
     if "quality" in wanted:
@@ -177,7 +235,10 @@ async def execute_run(
     started = now()
     started_at = _iso(started)
     pub = _config_for_bundle(cfg)
-    rid = run_id(started, cfg.model.label, canonical_json(public_config(cfg)) + started_at.encode())
+    salt = canonical_json(public_config(cfg)) + started_at.encode() + os.urandom(16)
+    rid = run_id(
+        started, cfg.model.label, salt, "-".join(sorted(wanted)) if wanted != set(PASSES) else ""
+    )
 
     sampler = Sampler(detect_platform(run, platform), run, interval_s=sample_interval_s)
     quality = QualityResult()
@@ -202,8 +263,9 @@ async def execute_run(
                 raise
         if "fit" in wanted:
             try:
+                fit_info, probe = await _fit_probe(client, runtime_name, info)
                 fit_out = await run_fit(
-                    client, cfg.fit, runtime_name, info.get("context_length"), sampler
+                    client, cfg.fit, runtime_name, fit_info.get("context_length"), sampler, probe
                 )
             except (AbortRun, asyncio.CancelledError, KeyboardInterrupt) as exc:
                 fit_out = getattr(exc, "partial", fit_out)
@@ -255,11 +317,12 @@ async def execute_run(
             "runtime_reported": reported,
         },
     }
-    redact = make_redactor(cfg.endpoint.base_url)
+    redact = make_redactor(cfg.endpoint.base_url, secrets)
     meta = redact(meta)  # type: ignore[assignment]
     files = {rel: redact(recs) for rel, recs in files.items()}  # type: ignore[misc]
     run_dir = Path(out_root) / rid
     write_bundle(run_dir, meta, files)
     if interrupted is not None:
+        interrupted.bundle_written = True  # type: ignore[attr-defined]
         raise interrupted
     return run_dir

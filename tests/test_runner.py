@@ -308,3 +308,144 @@ def test_dead_endpoint_does_not_stall_teardown(tmp_path, monkeypatch):
     path = go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
     meta = json.loads((path / "bundle.json").read_text())
     assert meta["memory"]["runtime_reported"]["size_vram"]["source"] == "not_captured"
+
+
+def test_redactor_left_boundary_for_host_port():
+    r = make_redactor("http://llama:8000/v1")  # scrub-ok
+    assert r("ollama:8000 and llama:8000.") == "ollama:8000 and <endpoint>."  # scrub-ok
+    assert r("x-llama:8000") == "x-llama:8000"  # scrub-ok
+
+
+def test_redactor_extra_secret_terms():
+    r = make_redactor(URL, ("sk-live-abc123",))
+    assert r("auth sk-live-abc123 failed") == "auth <endpoint> failed"
+
+
+def test_api_key_in_an_error_body_never_reaches_the_bundle(tmp_path, monkeypatch):
+    import dataclasses
+
+    monkeypatch.setenv("BAKEOFF_TEST_KEY", "sk-live-abc123")
+    cfg = make_cfg()
+    cfg = dataclasses.replace(
+        cfg, endpoint=dataclasses.replace(cfg.endpoint, api_key_env="BAKEOFF_TEST_KEY")
+    )
+    fake = FakeOpenAI(responder=lambda m: FakeReply(status=400, body="bad key sk-live-abc123"))
+    path = go(cfg, fake, tmp_path, run=fake_nvidia, platform="linux")
+    text = all_text(path)
+    assert "sk-live-abc123" not in text and "BAKEOFF_TEST_KEY" not in text
+    assert "bad key <endpoint>" in text
+
+
+def test_run_ids_are_unique_even_for_identical_runs(tmp_path):
+    from datetime import UTC, datetime
+
+    fixed = lambda: datetime(2026, 10, 13, 12, 0, tzinfo=UTC)  # noqa: E731
+    kw = {"only": {"speed"}, "now": fixed, "run": fake_nvidia, "platform": "linux"}
+    a = go(make_cfg(), FakeOpenAI(), tmp_path, **kw)
+    b = go(make_cfg(), FakeOpenAI(), tmp_path, **kw)
+    assert a != b and "-demo-model-speed-" in a.name
+
+
+def test_existing_run_dir_is_never_overwritten(tmp_path, monkeypatch):
+    import os
+
+    monkeypatch.setattr(os, "urandom", lambda n: b"\0" * n)  # force a colliding run id
+    from datetime import UTC, datetime
+
+    fixed = lambda: datetime(2026, 10, 13, 12, 0, tzinfo=UTC)  # noqa: E731
+    kw = {"only": {"speed"}, "now": fixed, "run": fake_nvidia, "platform": "linux"}
+    a = go(make_cfg(), FakeOpenAI(), tmp_path, **kw)
+    before = (a / "bundle.json").read_bytes()
+    with pytest.raises(FileExistsError):
+        go(make_cfg(), FakeOpenAI(), tmp_path, **kw)
+    assert (a / "bundle.json").read_bytes() == before
+
+
+def test_path_like_identifiers_are_cut_to_basenames(tmp_path, capsys):
+    import dataclasses
+
+    served = "/Users/alice/models/served.gguf"  # scrub-ok
+    cfg = make_cfg(model=served)
+    cfg = dataclasses.replace(
+        cfg,
+        model=dataclasses.replace(
+            cfg.model,
+            label="/home/alice/weights/Demo-Label",  # scrub-ok
+            weights_file="C:\\models\\demo-q4.gguf",
+        ),
+    )
+    path = go(cfg, FakeOpenAI(models=[served]), tmp_path, run=fake_nvidia, platform="linux")
+    text = all_text(path)
+    for bad in ("/Users/", "/home/", "C:\\\\", "C:\\"):
+        assert bad not in text
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["config"]["endpoint"]["model"] == "served.gguf"
+    assert meta["config"]["model"]["weights_file"] == "demo-q4.gguf"
+    assert meta["env"]["model"]["label"]["value"] == "Demo-Label"
+    assert meta["env"]["runtime"]["served_model"]["value"] == "served.gguf"
+    assert "-demo-label-" in path.name
+    err = capsys.readouterr().err
+    assert err.count("looks like a path") == 3 and "/Users/" not in err
+    assert verify_bundle(path, username="alice", denylist=None) == []  # scrub-ok
+
+
+def test_public_name_leaves_ordinary_values_alone():
+    from bakeoff.runner import public_name
+
+    for v in ("Granite-3.3-8B Q4_K_M", "ollama:granite3.3:8b", "org/model-name", "a.gguf"):
+        assert public_name(v) == v
+    assert public_name("/") == "<path>"
+    assert public_name("/opt/models/x.gguf") == "x.gguf"
+
+
+def test_fit_reprobes_the_runtime_and_records_which_probe(tmp_path):
+    import dataclasses
+
+    class Late(FakeOpenAI):
+        hits = 0
+
+        async def _handle(self, request):
+            if request.url.path == "/api/ps":
+                Late.hits += 1
+                models = []
+                if Late.hits > 1:  # the model is only "loaded" after the quality pass
+                    models = [{"name": "served-model-name", "context_length": 8192, "size_vram": 5}]
+                import httpx
+
+                return httpx.Response(200, json={"models": models})
+            return await super()._handle(request)
+
+    cfg = make_cfg()
+    cfg = dataclasses.replace(
+        cfg,
+        model=dataclasses.replace(cfg.model, runtime="ollama"),
+        fit=FitConfig(steps=[4096, 16384]),
+    )
+    path = go(cfg, Late(), tmp_path, run=fake_nvidia, platform="linux")
+    fit = json.loads((path / "bundle.json").read_text())["fit"]
+    assert fit["server_context"] == 8192 and fit["server_context_probe"] == "pre_fit"
+    assert fit["steps"]["16384"]["status"] == "skipped"
+
+
+def test_fit_probe_falls_back_to_the_first_probe(tmp_path):
+    import asyncio as aio
+
+    from bakeoff.runner import _fit_probe
+
+    class Stub:
+        def __init__(self, answers):
+            self.answers = list(answers)
+
+        async def runtime_info(self, runtime):
+            a = self.answers.pop(0)
+            if isinstance(a, Exception):
+                raise a
+            return a
+
+    first = {"context_length": 4096}
+    assert aio.run(_fit_probe(Stub([{"context_length": None}]), "x", first)) == (first, "initial")
+    assert aio.run(_fit_probe(Stub([RuntimeError("down")]), "x", first)) == (first, "initial")
+    assert aio.run(_fit_probe(Stub([{}]), "x", {"context_length": None})) == (
+        {"context_length": None},
+        None,
+    )
