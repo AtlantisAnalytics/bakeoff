@@ -27,6 +27,9 @@ def split_think(content: str) -> tuple[str, str]:
     """Split a leading <think> block off content: (answer, think_text)."""
     stripped = content.lstrip()
     if not stripped.startswith(THINK_OPEN):
+        if THINK_CLOSE in content and THINK_OPEN not in content.partition(THINK_CLOSE)[0]:
+            head, _, tail = content.partition(THINK_CLOSE)
+            return tail.strip(), head.strip()  # template put <think> in the prompt
         return content, ""
     rest = stripped[len(THINK_OPEN) :]
     head, sep, tail = rest.partition(THINK_CLOSE)
@@ -72,6 +75,12 @@ class _StreamOptionsRejected(Exception):
 
 
 class EndpointClient:
+    """Async client for one OpenAI-compatible endpoint.
+
+    `timeout_s` is applied per operation (connect, each read, write), as httpx does; it is not a
+    cap on the total duration of a streamed response.
+    """
+
     def __init__(
         self,
         base_url: str,
@@ -179,10 +188,22 @@ class EndpointClient:
                         obj = json.loads(data)
                     except ValueError:
                         continue
-                    if obj.get("usage"):
+                    if not isinstance(obj, dict):
+                        continue
+                    err = obj.get("error")
+                    if err:
+                        msg = err.get("message") if isinstance(err, dict) else err
+                        res.status = None
+                        res.error = str(msg if msg else err)[:ERROR_BODY_MAX]
+                        return res
+                    if isinstance(obj.get("usage"), dict) and obj["usage"]:
                         usage = obj["usage"]
                     for choice in obj.get("choices") or []:
-                        delta = choice.get("delta") or {}
+                        if not isinstance(choice, dict):
+                            continue
+                        delta = choice.get("delta")
+                        if not isinstance(delta, dict):
+                            delta = {}
                         c = delta.get("content") or ""
                         r = delta.get("reasoning_content") or delta.get("reasoning") or ""
                         if c or r:
@@ -190,9 +211,9 @@ class EndpointClient:
                             if res.t_first is None:
                                 res.t_first = now
                             res.t_last = now
+                            res.chunk_count += 1
                         if c:
                             raw_content.append(c)
-                            res.chunk_count += 1
                         if r:
                             reasoning.append(r)
                         if choice.get("finish_reason"):
@@ -200,12 +221,20 @@ class EndpointClient:
         except (_StreamOptionsRejected, _Retryable):
             raise
         except httpx.TimeoutException as e:
-            raise _Retryable(f"timeout: {type(e).__name__}", res.status) from e
+            raise _Retryable(f"timeout: {type(e).__name__}") from e
         except httpx.TransportError as e:
-            raise _Retryable(f"transport error: {type(e).__name__}: {e}", res.status) from e
+            raise _Retryable(f"transport error: {type(e).__name__}: {e}") from e
+        except httpx.HTTPError as e:
+            res.status = None
+            res.error = f"http error: {type(e).__name__}: {e}"[:ERROR_BODY_MAX]
+            return res
+        if res.t_first is None and not usage:
+            res.status = None
+            res.error = "empty stream"
+            return res
         content, think = split_think("".join(raw_content))
         res.content = content
-        res.reasoning = "".join(reasoning) + think
+        res.reasoning = "\n".join(p for p in ("".join(reasoning), think) if p)
         if usage:
             res.usage_source = "reported"
             res.prompt_tokens = usage.get("prompt_tokens")

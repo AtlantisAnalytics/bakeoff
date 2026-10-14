@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -44,7 +45,7 @@ def test_stream_timing_and_usage():
     _, (r,) = run(_chat(fake))
     assert r.content == "a b c" and r.prompt_tokens == 12 and r.usage_source == "reported"
     assert r.completion_tokens == 3 and r.finish_reason == "stop" and r.error is None
-    assert r.ttft_s > 0 and r.t_last >= r.t_first and r.chunk_count == 3
+    assert r.ttft_s >= 0.01 and r.t_last >= r.t_first and r.chunk_count == 3
     assert r.total_s >= r.ttft_s
     assert fake.requests[0]["stream"] is True
     assert fake.requests[0]["stream_options"] == {"include_usage": True}
@@ -94,6 +95,112 @@ def test_stream_options_rejected_fallback():
     assert "stream_options" not in fake.requests[1]
     assert len(fake.requests) == 3  # first call retried once, second call sent once
     assert "stream_options" not in fake.requests[2] and r2.error is None
+
+
+def test_estimated_tokens_count_reasoning_and_content_chunks():
+    fake = FakeOpenAI(
+        support_stream_options=False, responder=lambda m: FakeReply("a b", reasoning="r1 r2 r3")
+    )
+    _, (r,) = run(_chat(fake))
+    assert r.usage_source == "estimated" and r.chunk_count == 5 and r.completion_tokens == 5
+    assert r.content == "a b" and r.reasoning == "r1 r2 r3"
+
+
+def _role():
+    return {"choices": [{"delta": {"role": "assistant"}}]}
+
+
+def _content(t):
+    return {"choices": [{"delta": {"content": t}}]}
+
+
+def _fin():
+    return {"choices": [{"delta": {}, "finish_reason": "stop"}]}
+
+
+def _usage():
+    return {"choices": [], "usage": {"prompt_tokens": 1, "completion_tokens": 1}}
+
+
+def _sse(*objs):
+    return b"".join(b"data: " + json.dumps(o).encode() + b"\n\n" for o in objs)
+
+
+def test_empty_streams_are_errors_not_retried():
+    for reply in (
+        FakeReply(raw=b"data: [DONE]\n\n"),
+        FakeReply(raw=b""),
+        FakeReply(raw=b'{"choices": []}'),
+        FakeReply(raw=_sse(_role(), _fin()) + b"data: [DONE]\n\n"),
+        FakeReply(raw=_sse(_role())),
+    ):
+        fake = FakeOpenAI(responder=lambda m, reply=reply: reply)
+        _, (r,) = run(_chat(fake))
+        assert r.error == "empty stream" and r.status is None
+        assert len(fake.requests) == 1
+
+
+def test_in_stream_error_event():
+    ev = {"error": {"message": "boom " + "x" * 600, "type": "server_error"}}
+    fake = FakeOpenAI(responder=lambda m: FakeReply(chunks=[_content("a"), ev]))
+    _, (r,) = run(_chat(fake))
+    assert r.error.startswith("boom") and len(r.error) == 500 and len(fake.requests) == 1
+
+
+def test_ttft_skips_role_only_first_chunk():
+    fake = FakeOpenAI(
+        responder=lambda m: FakeReply(chunks=[_role(), _content("hi"), _fin()], chunk_delay_s=0.05)
+    )
+    _, (r,) = run(_chat(fake))
+    assert r.content == "hi" and r.ttft_s >= 0.095  # role chunk (delay 1) + content (delay 2)
+
+
+def test_t_last_ignores_delayed_usage_chunk():
+    fake = FakeOpenAI(
+        responder=lambda m: FakeReply(chunks=[_content("hi"), _fin(), _usage()], chunk_delay_s=0.03)
+    )
+    _, (r,) = run(_chat(fake))
+    assert r.t_last == r.t_first  # one content chunk; later chunks do not move t_last
+    assert r.usage_source == "reported"
+
+
+def test_raw_sse_variants_parse():
+    raw = (
+        b": ping\n\n"
+        b'data:{"choices":[{"delta":{"content":"he"}}]}\n\n'
+        b"\n\n"
+        b": ping\n"
+        b'data: {"choices":[{"delta":{"content":"llo"},"finish_reason":"stop"}]}\n\n'
+        b"data: not json\n\n"
+        b"data: [1, 2]\n\n"
+        b'data: {"choices":[null,{"delta":null}]}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    fake = FakeOpenAI(responder=lambda m: FakeReply(raw=raw))
+    _, (r,) = run(_chat(fake))
+    assert r.error is None and r.content == "hello" and r.finish_reason == "stop"
+
+
+def test_decoding_error_becomes_error():
+    def handler(request):
+        return httpx.Response(200, headers={"content-encoding": "gzip"}, content=b"not gzip at all")
+
+    async def go():
+        async with EndpointClient(
+            "http://h", "m", transport=httpx.MockTransport(handler), backoff_s=()
+        ) as c:
+            return await c.chat(MSGS, 4)
+
+    r = run(go())
+    assert r.error and r.status is None
+
+
+def test_dangling_close_tag_and_reasoning_join():
+    assert split_think("reasoning</think>answer") == ("answer", "reasoning")
+    assert split_think("a <think>b</think> c") == ("a <think>b</think> c", "")
+    fake = FakeOpenAI(responder=lambda m: FakeReply("<think>x</think>y", reasoning="r"))
+    _, (r,) = run(_chat(fake))
+    assert r.reasoning == "r\nx"
 
 
 def test_400_without_stream_options_is_not_fallback():

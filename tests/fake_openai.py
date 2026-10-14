@@ -22,6 +22,7 @@ class FakeReply:
     body: str | None = None  # error body for non-200 statuses
     chunk_delay_s: float = 0.0
     chunks: list[dict] | None = None  # raw chunk payloads, sent verbatim instead of content
+    raw: bytes | None = None  # raw response body, sent verbatim as the SSE stream
     fail_after_chunks: int | None = None  # break the stream after this many chunks
 
 
@@ -95,6 +96,9 @@ class FakeOpenAI:
         def chunk(delta: dict, finish=None) -> dict:
             return {"choices": [{"index": 0, "delta": delta, "finish_reason": finish}]}
 
+        if reply.raw is not None:
+            yield reply.raw
+            return
         sent = 0
         n_content = 0
         if reply.chunks is not None:
@@ -102,7 +106,7 @@ class FakeOpenAI:
         else:
             payloads = [chunk({"reasoning_content": w}) for w in _words(reply.reasoning)]
             words = _words(reply.content)
-            n_content = len(words)
+            n_content = len(words) + len(_words(reply.reasoning))
             payloads += [chunk({"content": w}) for w in words]
             payloads.append(chunk({}, reply.finish_reason))
         for p in payloads:
