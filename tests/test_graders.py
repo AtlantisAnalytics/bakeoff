@@ -30,6 +30,19 @@ CASES = [
     ("numeric", "3.14", "3", {"tolerance": 0.2}, True),
     ("numeric", "3.14", "3", {}, False),
     ("numeric", "x", "abc", {}, False),
+    ("numeric", "\u22125", "5", {}, False),
+    ("numeric", "\u22125", "-5", {}, True),
+    ("numeric", "\u20135", "-5", {}, True),
+    ("numeric", "+5", "5", {}, True),
+    ("numeric", "$\u22125", "-5", {}, True),
+    ("numeric", "3\u20135", "5", {}, True),
+    ("numeric", "1.5e3", "1500", {}, True),
+    ("numeric", "about 2E-2", 0.02, {}, True),
+    ("numeric", "1_000", "1000", {}, False),
+    ("numeric", "5", True, {}, False),
+    ("numeric", "5", "1_000", {}, False),
+    ("numeric", "5", None, {}, False),
+    ("numeric", "5", "5", {"tolerance": -1}, False),
     ("regex", "Answer: B", r"^Answer: [A-D]$", {}, True),
     ("regex", "answer: b", r"^Answer: [A-D]$", {}, False),
     ("regex", "answer: b", r"^Answer: [A-D]$", {"ignore_case": True}, True),
@@ -107,3 +120,56 @@ def test_reason_lists_first_three_errors():
 def test_unknown_grader():
     with pytest.raises(KeyError, match="nope"):
         grade("nope", "", None, {})
+
+
+def test_malformed_input_returns_grade_never_raises():
+    deep = "[" * 100000
+    cases = [
+        ("json_schema", deep, {"type": "array"}),
+        ("json_schema", "1e999", {"type": "number"}),
+        ("json_schema", "[Infinity]", {"type": "array"}),
+        ("json_schema", "{}", {"type": ["array", "null"]}),
+        ("json_schema", "{}", {"type": "object", "minProperties": 1}),
+        ("json_schema", "{}", "object"),
+        ("regex", "x", "("),
+        ("regex", "x", 5),
+        ("needle", "x", ""),
+        ("needle", "x", None),
+        ("grounding", "x", {"must_include": [], "must_not_include": []}),
+        ("grounding", "x", {"answerable": 1}),
+        ("grounding", "x", {"answerable": True, "must_include": [""]}),
+        ("grounding", "x", {"answerable": True, "must_not_include": [""]}),
+        ("grounding", "x", {"answerable": True, "must_include": "x"}),
+        ("grounding", "x", None),
+    ]
+    for name, out, exp in cases:
+        g = grade(name, out, exp, {})
+        assert isinstance(g, Grade) and g.passed is False, (name, exp)
+    g = grade("grounding", "x", {"answerable": True}, {"refusal": ""})
+    assert g.passed is False and g.reason.startswith("bad expected")
+    assert grade("regex", "x", "(", {}).reason.startswith("bad expected")
+    assert grade("json_schema", deep, {"type": "array"}, {}).reason.startswith("not valid JSON")
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"minItems": 1},
+        {"pattern": "x"},
+        {"const": 1},
+        {"anyOf": []},
+        {"minimum": 1},
+        {"additionalProperties": {"type": "string"}},
+        {"items": [{"type": "string"}]},
+        {"type": ["array", "null"]},
+        {"properties": {"a": {"minLength": 1}}},
+    ],
+)
+def test_unsupported_schema_keywords_fail_closed(schema):
+    errs = validate_schema({"a": "x"}, schema)
+    assert errs and "unsupported" in errs[0]
+    assert grade("json_schema", '{"a": "x"}', schema, {}).passed is False
+
+
+def test_additional_properties_true_ok():
+    assert not validate_schema({"a": 1}, {"type": "object", "additionalProperties": True})
