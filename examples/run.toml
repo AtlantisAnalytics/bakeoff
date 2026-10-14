@@ -1,0 +1,26 @@
+[endpoint]
+base_url = "http://localhost:8000/v1"   # scrub-ok; used for the run, never written to the bundle
+model = "served-model-name"
+api_key_env = "BAKEOFF_ENDPOINT_API_KEY" # optional; the env var's name, never the key itself
+timeout_s = 600
+
+[model]                                  # operator facts the harness can't discover
+label = "Example-14B-Instruct AWQ"
+weights = "hf:example-org/Example-14B-Instruct-AWQ@<revision>"
+weights_file = ""                        # e.g. the GGUF filename
+quant = "awq-int4"
+runtime = "vllm"                         # vllm | llamacpp | ollama | mlx | other
+envelope = "1x RTX 3090 Ti 24 GB"
+
+[quality]
+suites = ["general", "format", "structured", "grounding", "longctx"]
+private_suites = []                      # absolute paths outside the repo
+
+[speed]
+concurrency = [1, 4]
+repeats = 5
+warmup = 1
+
+[fit]
+steps = [4096, 8192, 16384, 32768, 65536, 131072]
+max_context = 0                          # optional operator cap; 0 = use what the server reports

@@ -1,6 +1,6 @@
 # bakeoff.si plan
 
-Status as of 2026-10-13: **M0 done**. The repo is seeded, and the holding page has been live at
+Status as of 2026-10-14: **M0 and M1 done**. The repo is seeded, and the holding page has been live at
 https://bakeoff.si since 2026-10-12. It was uploaded by hand; deploying from Git comes in M2. The repo
 stays **private until the first public Monday** (M5).
 
@@ -40,31 +40,15 @@ the site. The bot never pushes to `main` and has no merge path; the rulesets enf
   it was generated with an AI image tool. It holds no personal data. The site's re-encoded assets
   don't have it. Before M5, the owner decides whether to keep it.
 
-## Method (first draft, to refine in M1)
+## Method
 
-- **Quality vs speed.** Quality depends on model × quantization × runtime, not on the GPU, so it is
-  measured once per combination. Speed and fit are measured per hardware envelope.
-- **Quality suite:**
-  - task evals;
-  - exact-format instruction following ("Reply with exactly: …");
-  - JSON or structured-output accuracy;
-  - grounding: answer only from the provided context and never invent facts;
-  - a long-context needle test where the envelope allows it;
-  - a blind pairwise LLM judge against the incumbent.
-- **Speed and fit:**
-  - tokens/s at 1 and N concurrent requests;
-  - time to first token;
-  - peak memory;
-  - the largest context that fits;
-  - repeated runs, reporting the median and the spread.
-- **Environment capture** for every run: GPU, driver, runtime and version, quantization, power limit
-  and harness version. These are recorded in the bundle and hashed.
-- **Weights:**
-  - from allowlisted publishers and quantizers only;
-  - safetensors or GGUF;
-  - **never `trust_remote_code`**.
-- **Endpoints.** The harness talks to any OpenAI-compatible endpoint: vLLM, llama.cpp server,
-  Ollama or an MLX server.
+The method is specified in [docs/specs/2026-10-13-m1-harness-design.md](docs/specs/2026-10-13-m1-harness-design.md).
+In short:
+
+- Quality is measured once per model × quantization × runtime. Speed and fit are measured per hardware
+  envelope, with the median and spread over repeated runs.
+- Every run records its environment by allowlist, with provenance, in a hashed bundle. Weights come
+  from allowlisted publishers only, and `trust_remote_code` is never used.
 
 ## Hosting (decided)
 
@@ -82,7 +66,7 @@ the site. The bot never pushes to `main` and has no merge path; the rulesets enf
 | | Scope |
 |---|---|
 | **M0** ✅ | Repo seed: README, plan, licenses, the holding page in `site/`, the logo source and asset script |
-| **M1** | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
+| **M1** ✅ | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
 | **M2** | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
 | **M3** | Private side: scouting, the weekend schedule, the Monday standup and [Publish] opening a draft PR here |
 | **M4** | Two or three private dry-run weekends; review the report quality and the scrub |
@@ -97,11 +81,11 @@ Later:
 
 ## Repo admin to finish
 
-- [ ] Give the GitHub App installation access to this repo.
-- [ ] Rulesets, imported from the Athena repo's exports:
+- [x] Give the GitHub App installation access to this repo.
+- [x] Rulesets, imported from the Athena repo's exports:
   - `protect-main`: PR + 1 approval, no force push or deletion;
   - `bot-branches-only`: bots may create and update `athena/**` branches only.
-- [ ] Connect the `bakeoff` Worker to this repo in Workers Builds. **Check at the first Git deploy that
+- [x] Connect the `bakeoff` Worker to this repo in Workers Builds. **Check at the first Git deploy that
   the custom domains survive and workers.dev stays off.**
 
 ## Open questions

@@ -1,0 +1,11 @@
+track = "demo"
+name = "exact"
+version = 1
+split = "public"
+license = "CC0-1.0"
+grader = "exact"
+max_tokens = 16
+system = "Follow the instructions exactly."
+
+[source]
+upstream = "ours"

@@ -1,0 +1,15 @@
+track = "general"
+name = "ifeval"
+version = 1
+split = "public"
+license = "Apache-2.0"
+grader = "ifeval"
+max_tokens = 4096
+
+[source]
+url = "https://huggingface.co/datasets/google/IFEval/resolve/966cd89545d6b6acfd7638bc708b98261ca58e84/ifeval_input_data.jsonl"
+revision = "966cd89545d6b6acfd7638bc708b98261ca58e84"
+sha256 = "6a85310ca8ce15eff755aa08a3a4ff931c7e273e7515ebb3c492ea85fd8288f2"
+license_url = "https://huggingface.co/datasets/google/IFEval/blob/966cd89545d6b6acfd7638bc708b98261ca58e84/README.md"
+pool_size = 308
+dropped_scrub = 0

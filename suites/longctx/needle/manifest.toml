@@ -1,0 +1,13 @@
+track = "longctx"
+name = "needle"
+version = 1
+split = "public"
+license = "CC-BY-4.0"
+grader = "needle"
+max_tokens = 2048
+
+[generator]
+name = "needle"
+lines = [100, 250]
+depths = [0.1, 0.5, 0.9]
+seed = 7

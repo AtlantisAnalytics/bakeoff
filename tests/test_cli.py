@@ -1,0 +1,251 @@
+import json
+
+import pytest
+from fake_openai import FakeOpenAI
+
+from bakeoff import cli
+from bakeoff.client import EndpointClient
+
+CONFIG = """
+[endpoint]
+base_url = "http://lab-box-7.lan:11434/v1"  # scrub-ok
+model = "served-model-name"
+
+[model]
+label = "Demo"
+weights = "hf:demo/demo@rev"
+runtime = "other"
+
+[quality]
+suites = ["format/exact-reply"]
+
+[speed]
+concurrency = [1]
+repeats = 1
+warmup = 0
+
+[fit]
+steps = [4096]
+"""  # scrub-ok
+
+
+@pytest.fixture
+def cfg_file(tmp_path):
+    p = tmp_path / "run.toml"
+    p.write_text(CONFIG)
+    return p
+
+
+def patch_client(monkeypatch, fake):
+    monkeypatch.setattr(
+        cli,
+        "make_client",
+        lambda cfg: EndpointClient(
+            cfg.endpoint.base_url, cfg.endpoint.model, transport=fake.transport, backoff_s=(0, 0)
+        ),
+    )
+
+
+def test_cli_run_exit_codes(tmp_path, monkeypatch, cfg_file, capsys):
+    out = tmp_path / "out"
+    patch_client(monkeypatch, FakeOpenAI())
+    assert cli.main(["run", str(cfg_file), "--out", str(out), "--only", "speed"]) == 0
+    patch_client(monkeypatch, FakeOpenAI(fail_first=1000))
+    assert cli.main(["run", str(cfg_file), "--out", str(out)]) == 2
+    bad = tmp_path / "bad.toml"
+    bad.write_text("[endpoint]\n")
+    assert cli.main(["run", str(bad), "--out", str(out)]) == 1
+    patch_client(monkeypatch, FakeOpenAI(models=["nope"]))
+    assert cli.main(["run", str(cfg_file), "--out", str(out)]) == 1
+
+
+def test_cli_run_interrupt_is_130(tmp_path, monkeypatch, cfg_file):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def boom(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "execute_run", boom)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 130
+
+
+def test_cli_verify(tmp_path, monkeypatch, cfg_file, capsys):
+    patch_client(monkeypatch, FakeOpenAI())
+    out = tmp_path / "out"
+    assert cli.main(["run", str(cfg_file), "--out", str(out)]) == 0
+    run_dir = next(out.iterdir())
+    assert cli.main(["verify", str(run_dir)]) == 0
+    capsys.readouterr()
+    with (run_dir / "speed.jsonl").open("a") as f:
+        f.write("{}\n")
+    assert cli.main(["verify", str(run_dir)]) == 1
+    assert "hash_mismatch" in capsys.readouterr().out
+
+
+def test_cli_env_prints_json(capsys):
+    assert cli.main(["env"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert {"host", "gpus", "runtime", "model", "harness"} <= set(data)
+
+
+def test_cli_env_with_config(capsys, monkeypatch, cfg_file):
+    patch_client(monkeypatch, FakeOpenAI())
+    assert cli.main(["env", "--config", str(cfg_file)]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["runtime"]["served_model"]["value"] == "served-model-name"
+    assert "lab-box-7" not in json.dumps(data)
+
+
+def test_make_client_reads_key_from_env(monkeypatch, cfg_file):
+    from bakeoff.config import load_config
+
+    monkeypatch.setenv("MY_KEY", "sekret")
+    cfg = load_config(cfg_file, ["endpoint.api_key_env=MY_KEY"])
+    client = cli.make_client(cfg)
+    assert client._http.headers["authorization"] == "Bearer sekret"
+
+
+def test_cli_unexpected_error_is_one_line(tmp_path, monkeypatch, cfg_file, capsys):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def boom(*a, **k):
+        raise RuntimeError("kaput")
+
+    monkeypatch.setattr(cli, "execute_run", boom)
+    monkeypatch.delenv("BAKEOFF_DEBUG", raising=False)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
+    err = capsys.readouterr().err
+    assert "kaput" in err and "Traceback" not in err and len(err.strip().splitlines()) == 1
+    monkeypatch.setenv("BAKEOFF_DEBUG", "1")
+    with pytest.raises(RuntimeError):
+        cli.main(["run", str(cfg_file), "--out", str(tmp_path)])
+
+
+def test_cli_env_without_config_never_makes_client(monkeypatch, capsys):
+    def boom(cfg):
+        raise AssertionError("make_client must not be called")
+
+    monkeypatch.setattr(cli, "make_client", boom)
+    assert cli.main(["env"]) == 0
+
+
+def _planted_bundle(tmp_path, text):
+    from bakeoff.bundle import write_bundle
+
+    run = tmp_path / "planted"
+    write_bundle(run, {"status": "complete"}, {"speed.jsonl": [{"a": text}]})
+    return run
+
+
+@pytest.mark.parametrize(
+    "name", ["root", "ROOT", "ubuntu", "ec2-user", "nobody", "pi", "bob", "ab"]
+)
+def test_generic_and_short_usernames_are_skipped(monkeypatch, name):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: name)
+    assert cli.pick_username(False, lambda: "") == (None, None)
+
+
+def test_getuser_failure_skips_the_check(monkeypatch):
+    def boom():
+        raise KeyError("uid not found")
+
+    monkeypatch.setattr(cli.getpass, "getuser", boom)
+    assert cli.pick_username(False, lambda: "") == (None, None)
+
+
+def test_username_that_is_a_suite_word_is_skipped_with_notice(monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "natalia")
+    name, notice = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
+    assert name is None and "natalia" in notice and "public suites" in notice
+
+
+def test_distinctive_username_is_scanned(monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")
+    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None)
+    assert cli.pick_username(True) == (None, None)
+
+
+def test_real_suites_text_is_consulted(monkeypatch):
+    import re
+
+    text = cli._public_suite_text()
+    word = next(w for w in re.findall(r"[A-Za-z]{6,}", text))
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: word)
+    name, notice = cli.pick_username(False)
+    assert name is None and notice
+
+
+def test_verify_username_flag_and_notice(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")  # scrub-ok
+    run = _planted_bundle(tmp_path, "built by alice-dev")  # scrub-ok
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 1
+    assert "username" in capsys.readouterr().out
+    argv = ["verify", str(run), "--denylist", str(tmp_path / "none"), "--no-username"]
+    assert cli.main(argv) == 0
+
+
+def test_verify_notes_private_outputs(tmp_path, monkeypatch, capsys):
+    from bakeoff.bundle import write_bundle
+
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    run = tmp_path / "r"
+    write_bundle(run, {"status": "complete"}, {"private/x.y.jsonl": [{"a": 1}]})
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0
+    assert "private-suite outputs; do not share" in capsys.readouterr().err
+    clean = _planted_bundle(tmp_path, "fine")
+    cli.main(["verify", str(clean), "--denylist", str(tmp_path / "none")])
+    assert "private" not in capsys.readouterr().err
+
+
+def test_verify_does_not_fail_on_root_user_and_ordinary_text(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    run = _planted_bundle(tmp_path, "the square root of 144 is 12")
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0
+
+
+def test_interrupt_message_claims_a_bundle_only_if_one_was_written(
+    tmp_path, monkeypatch, cfg_file, capsys
+):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def boom(*a, **k):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "execute_run", boom)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 130
+    err = capsys.readouterr().err
+    assert "no bundle was written" in err and "incomplete bundle was written" not in err
+
+    async def wrote(*a, **k):
+        e = KeyboardInterrupt()
+        e.bundle_written = True
+        raise e
+
+    monkeypatch.setattr(cli, "execute_run", wrote)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 130
+    assert "an incomplete bundle was written" in capsys.readouterr().err
+
+
+def test_real_interrupt_mid_run_writes_a_bundle_and_says_so(
+    tmp_path, monkeypatch, cfg_file, capsys
+):
+    import asyncio
+
+    def responder(messages):
+        raise asyncio.CancelledError
+
+    patch_client(monkeypatch, FakeOpenAI(responder=responder))
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path / "o")]) == 130
+    assert "an incomplete bundle was written" in capsys.readouterr().err
+    assert len(list((tmp_path / "o").iterdir())) == 1
+
+
+def test_existing_run_dir_is_a_clean_cli_error(tmp_path, monkeypatch, cfg_file, capsys):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def exists(*a, **k):
+        raise FileExistsError("refusing to write into an existing, non-empty run")
+
+    monkeypatch.setattr(cli, "execute_run", exists)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
+    assert "refusing to write" in capsys.readouterr().err

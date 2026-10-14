@@ -1,0 +1,8 @@
+track = "format"
+name = "exact-reply"
+version = 1
+split = "public"
+license = "CC-BY-4.0"
+grader = "exact"
+max_tokens = 2048
+system = "Output exactly what the user requests. No extra words."
