@@ -243,13 +243,89 @@ def test_unparseable_reply_is_tie(bundles, tmp_path):
     assert "refuse" in recs[0]["reasons"][0]
 
 
-def test_call_error_is_tie_and_charged(bundles, tmp_path):
-    fake = FakeOpenAI(models=["judge-m"], responder=lambda m: FakeReply(status=500, body="no"))
+def _erroring(fake, bad_calls):
+    """Make the judge fake answer 429 on the given (1-based) call numbers."""
+    inner, n = fake.responder, {"n": 0}
+
+    def responder(messages):
+        n["n"] += 1
+        if n["n"] in bad_calls:
+            return FakeReply(status=429, body="rate limited")
+        return inner(messages)
+
+    fake.responder = responder
+    return fake
+
+
+def test_isolated_call_error_is_an_error_item_not_a_tie(bundles, tmp_path):
+    out = run(bundles, tmp_path, _erroring(judge_fake(), {3}))
+    meta = json.loads((out / "bundle.json").read_text())
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert meta["status"] == "complete" and meta["call_errors"] == 1
+    assert [r["result"] for r in recs].count("error") == 1
+    assert sum(meta["counts"].values()) == 19 and meta["counts"]["tie"] == 0
+    bad = next(r for r in recs if r["result"] == "error")
+    assert bad["reasons"] == ["call failed"] and bad["cost_usd"] > 0
+    assert "rate limited" not in json.dumps(recs)
+
+
+def test_429_burst_stops_incomplete_with_error_and_cli_exits_2(bundles, tmp_path, monkeypatch):
+    fake = FakeOpenAI(models=["judge-m"], responder=lambda m: FakeReply(status=429, body="slow"))
     out = run(bundles, tmp_path, fake)
     meta = json.loads((out / "bundle.json").read_text())
-    assert meta["counts"]["tie"] == 20 and meta["cost_usd"] > 0
+    assert meta["status"] == "incomplete" and meta["status_reason"] == "error"
+    assert meta["call_errors"] == 10 and len(fake.requests) == 10  # stopped at the 10th call
+    assert meta["counts"] == {"a": 0, "b": 0, "tie": 0} and meta["cost_usd"] > 0
     recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
-    assert recs[0]["first"] is None and recs[0]["reasons"] == ["call failed", "call failed"]
+    assert {r["result"] for r in recs} == {"error"}
+    assert sum(r["cost_usd"] for r in recs) == pytest.approx(meta["cost_usd"])
+    a, b = bundles
+    cfg = tmp_path / "j.toml"
+    cfg.write_text(JTOML)
+    monkeypatch.setenv("BAKEOFF_JUDGE_API_KEY", "k")
+    monkeypatch.setattr(
+        cli,
+        "make_judge_client",
+        lambda url, model, key: cli.EndpointClient(
+            url, model, transport=fake.transport, backoff_s=()
+        ),
+    )
+    argv = ["judge", str(a), str(b), "--max-usd", "100", "--judge-config", str(cfg)]
+    assert cli.main([*argv, "--out", str(tmp_path / "o2")]) == 2
+
+
+def test_error_bodies_with_the_api_key_are_never_stored(bundles, tmp_path):
+    key = "sk-test-SECRET-123"
+    fake = FakeOpenAI(
+        models=["judge-m"], responder=lambda m: FakeReply(status=401, body=f"bad key {key}")
+    )
+    a, b = bundles
+
+    async def inner():
+        async with EndpointClient(
+            URL, "judge-m", api_key=key, transport=fake.transport, backoff_s=()
+        ) as c:
+            return await run_judge(a, b, c, "judge-m", PRICES, 100.0, False, tmp_path)
+
+    out = asyncio.run(inner())
+    for f in out.rglob("*"):
+        if f.is_file():
+            assert key not in f.read_text()
+
+
+def test_refuses_incomplete_input_bundle(tmp_path):
+    a = make_bundle(tmp_path, "A", "Alpha Model", "alpha-served")
+    b = make_bundle(tmp_path, "B", "Beta Model", "beta-served")
+    from bakeoff.bundle import write_bundle
+
+    meta = json.loads((b / "bundle.json").read_text())
+    meta["status"], meta["status_reason"] = "incomplete", "interrupted"
+    files = {
+        rel: [json.loads(x) for x in (b / rel).read_text().splitlines()] for rel in meta["files"]
+    }
+    write_bundle(b, meta, files)  # re-hashed, so only the status marks it incomplete
+    with pytest.raises(JudgeError, match="not complete"):
+        run((a, b), tmp_path / "o", judge_fake())
 
 
 def test_skips_errored_items(tmp_path):
@@ -432,10 +508,11 @@ def test_cli_client_does_not_retry(bundles, tmp_path):
             return await run_judge(a, b, c, "judge-m", PRICES, 100.0, False, tmp_path)
 
     out = asyncio.run(inner())
-    assert len(fake.requests) == 40  # one request per call: the 503 was not retried
+    assert len(fake.requests) == 39  # one request per call: the 503 was not retried, and the
+    # failed item skipped its second order
     meta = json.loads((out / "bundle.json").read_text())
     recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
-    assert recs[0]["first"] is None and recs[0]["result"] == "tie"
+    assert recs[0]["first"] is None and recs[0]["result"] == "error"
     user = fake.requests[0]["messages"][-1]["content"]
     worst = per_call_worst_case(JUDGE_SYSTEM + "\n" + user, PRICES)
     assert recs[0]["cost_usd"] >= worst and meta["status"] == "complete"

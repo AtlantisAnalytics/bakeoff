@@ -28,6 +28,8 @@ FATAL_KINDS = frozenset(
     {"missing_file", "hash_mismatch", "unlisted_file", "bundle_hash", "unreadable"}
 )
 REASON_MAX = 300
+ERROR_RATE_MAX = 0.2
+ERROR_MIN_CALLS = 10
 WINNERS = ("1", "2", "tie")
 
 
@@ -99,6 +101,8 @@ def _load_side(path: Path, suite_key: str, expected_hash: str) -> tuple[str, dic
         shown = "; ".join(f"{f.file}: {f.kind}" for f in bad[:3])
         raise JudgeError(f"bundle failed verification ({shown})")
     meta = json.loads((path / "bundle.json").read_text(encoding="utf-8"))
+    if meta.get("status") != "complete":
+        raise JudgeError(f"a bundle is not complete (status {meta.get('status')!r}); not judging")
     entry = next((s for s in meta.get("suites", []) if s.get("key") == suite_key), None)
     if entry is None:
         raise JudgeError(f"a bundle has no {suite_key} suite")
@@ -177,11 +181,15 @@ async def run_judge(
     interrupted: BaseException | None = None
 
     errored = False
+    calls_made = 0
+    call_errors = 0
 
-    async def call(user: str, worst: float) -> tuple[str | None, str, float] | None:
-        nonlocal spent, errored
+    async def call(user: str, worst: float) -> tuple[str | None, str, float, bool] | None:
+        """(winner, reason, cost, is_call_error), or None when the cap forbids the call."""
+        nonlocal spent, errored, calls_made, call_errors
         if spent + worst > max_usd:
             return None
+        calls_made += 1
         try:
             r = await client.chat(
                 [{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": user}],
@@ -194,17 +202,20 @@ async def run_judge(
         except Exception:  # noqa: BLE001 - charge the worst case and stop; never leak the text
             spent += worst
             errored = True
-            return None, "call failed", worst
+            call_errors += 1
+            return None, "call failed", worst, True
+        if r.error is not None:  # a failed call: charge the worst case, never echo the body
+            call_errors += 1
+            spent += worst
+            return None, "call failed", worst, True
         if r.prompt_tokens is not None and r.completion_tokens is not None:
             cost = r.prompt_tokens * prices.in_per_mtok / 1e6
             cost += r.completion_tokens * prices.out_per_mtok / 1e6
         else:
             cost = worst
         spent += cost
-        if r.error is not None:
-            return None, "call failed", cost
         winner, why = parse_reply(r.content)
-        return winner, why, cost
+        return winner, why, cost, False
 
     try:
         for (iid, *_), users, worsts in zip(todo, plans, item_worsts, strict=True):
@@ -214,25 +225,29 @@ async def run_judge(
             outs = []
             for u, w in zip(users, worsts, strict=True):
                 got = await call(u, w)
-                if got is None or errored:
-                    if got is not None:
-                        outs.append(got)
+                if got is None:
                     break
                 outs.append(got)
-            if len(outs) == 2 and not errored:
-                (w1, why1, c1), (w2, why2, c2) = outs
-                res = combine(w1, w2)
-                counts[res] += 1
+                if got[3]:  # a failed call spoils the item; do not pay for the second order
+                    break
+            failed = any(o[3] for o in outs)
+            if (len(outs) == 2 or failed) and not errored:
+                res = "error" if failed else combine(outs[0][0], outs[1][0])
+                if not failed:
+                    counts[res] += 1
                 items.append(
                     {
                         "id": iid,
-                        "first": w1,
-                        "second": w2,
+                        "first": outs[0][0],
+                        "second": outs[1][0] if len(outs) > 1 else None,
                         "result": res,
-                        "reasons": [why1, why2],
-                        "cost_usd": c1 + c2,
+                        "reasons": [o[1] for o in outs],
+                        "cost_usd": sum(o[2] for o in outs),
                     }
                 )
+                if calls_made >= ERROR_MIN_CALLS and call_errors / calls_made > ERROR_RATE_MAX:
+                    status, reason = "incomplete", "error"
+                    break
                 continue
             if outs:  # stopped mid-item: keep its cost, count it nowhere
                 items.append(
@@ -265,6 +280,7 @@ async def run_judge(
         "estimate_usd": estimate,
         "cost_usd": spent,
         "counts": counts,
+        "call_errors": call_errors,
         "items_skipped": skipped,
         "win_rate_a": counts["a"] / decided if decided else None,
         "ci95": list(wilson(counts["a"], decided)) if decided else None,
