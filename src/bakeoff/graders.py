@@ -280,3 +280,6 @@ def _grounding(output: str, expected: Any, options: dict) -> Grade:
 @register("judge")
 def _judge(output: str, expected: Any, options: dict) -> Grade:
     return Grade(None, 0.0, "deferred to bakeoff judge")
+
+
+from bakeoff import ifeval  # noqa: E402,F401
