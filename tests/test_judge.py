@@ -19,6 +19,7 @@ from bakeoff.judge import (
     combine,
     estimate_usd,
     parse_reply,
+    per_call_worst_case,
     run_judge,
 )
 from bakeoff.runner import execute_run
@@ -125,7 +126,7 @@ def test_parse_reply():
 
 def test_estimate_formula():
     got = estimate_usd(["x" * 300], Prices(3.0, 15.0))
-    assert got == pytest.approx(2 * (100 * 3.0 + JUDGE_MAX_TOKENS * 15.0) / 1e6)
+    assert got == pytest.approx(2 * (150 * 3.0 + JUDGE_MAX_TOKENS * 15.0) / 1e6)
 
 
 def test_refuses_over_budget_before_any_call(bundles, tmp_path):
@@ -322,3 +323,119 @@ def test_cli_judge(bundles, tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "sk-secret-123" not in text + captured.out + captured.err
     assert cli.main(["judge", *base]) == 1  # exists
+
+
+def test_normal_run_stays_under_cap(bundles, tmp_path):
+    fake = judge_fake(prompt_tokens=1000, completion_tokens=400)
+    meta = json.loads((run(bundles, tmp_path, fake, max_usd=1.0) / "bundle.json").read_text())
+    assert meta["cost_usd"] <= 1.0 and meta["estimate_usd"] > 0
+
+
+def test_adversarial_usage_overshoots_by_at_most_one_calls_excess(bundles, tmp_path):
+    fake = judge_fake(prompt_tokens=200000, completion_tokens=400)  # ~10x+ the estimate
+    out = run(bundles, tmp_path, fake, max_usd=0.05, allow_partial=True)
+    meta = json.loads((out / "bundle.json").read_text())
+    assert meta["status"] == "incomplete" and meta["status_reason"] == "budget"
+    assert len(fake.requests) == 1
+    worst = per_call_worst_case(
+        JUDGE_SYSTEM + "\n" + fake.requests[0]["messages"][-1]["content"], PRICES
+    )
+    assert meta["cost_usd"] - 0.05 <= meta["cost_usd"] - worst  # one call's excess only
+    # the half-finished item is recorded, uncounted, with its actual cost
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert len(recs) == 1 and recs[0]["second"] is None and recs[0]["result"] is None
+    assert sum(meta["counts"].values()) == 0
+    assert sum(r["cost_usd"] for r in recs) == pytest.approx(meta["cost_usd"])
+
+
+def test_estimate_uses_utf8_bytes_over_two():
+    got = estimate_usd(["é" * 300], Prices(3.0, 15.0), calls_per_item=1)
+    assert got == pytest.approx((300 * 3.0 + JUDGE_MAX_TOKENS * 15.0) / 1e6)
+
+
+class RaisingClient:
+    def __init__(self, inner, on_call):
+        self.inner, self.on_call, self.n = inner, on_call, 0
+
+    async def chat(self, *a, **kw):
+        self.n += 1
+        if self.n == self.on_call:
+            raise RuntimeError("kaboom http://judge-host.example")  # scrub-ok
+        return await self.inner.chat(*a, **kw)
+
+
+def test_unexpected_exception_charges_worst_and_stops(bundles, tmp_path):
+    a, b = bundles
+    fake = judge_fake(prompt_tokens=10, completion_tokens=10)
+
+    async def inner():
+        async with EndpointClient(URL, "judge-m", transport=fake.transport, backoff_s=()) as c:
+            rc = RaisingClient(c, 3)
+            return await run_judge(a, b, rc, "judge-m", PRICES, 100.0, False, tmp_path)
+
+    out = asyncio.run(inner())
+    meta = json.loads((out / "bundle.json").read_text())
+    assert meta["status"] == "incomplete" and meta["status_reason"] == "error"
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert len(recs) == 2 and recs[1]["result"] is None and recs[1]["first"] is None
+    worst = (
+        per_call_worst_case(
+            JUDGE_SYSTEM + "\n" + fake.requests[2]["messages"][-1]["content"], PRICES
+        )
+        if len(fake.requests) > 2
+        else None
+    )
+    assert worst is None  # the 3rd call never reached the server
+    assert recs[1]["cost_usd"] > recs[0]["cost_usd"] / 2  # worst case, not zero
+    assert sum(r["cost_usd"] for r in recs) == pytest.approx(meta["cost_usd"])
+    assert (
+        "kaboom" not in json.dumps(recs)
+        and verify_bundle(out, "alice", None)[0].kind == "incomplete"
+    )
+
+
+def test_cli_exit_2_on_unexpected_error(bundles, tmp_path, monkeypatch):
+    a, b = bundles
+    cfg = tmp_path / "j.toml"
+    cfg.write_text(JTOML)
+    monkeypatch.setenv("BAKEOFF_JUDGE_API_KEY", "k")
+    fake = judge_fake()
+    monkeypatch.setattr(
+        cli,
+        "make_judge_client",
+        lambda url, model, key: _Ctx(
+            RaisingClient(cli.EndpointClient(url, model, transport=fake.transport), 3)
+        ),
+    )
+    argv = ["judge", str(a), str(b), "--max-usd", "100", "--judge-config", str(cfg)]
+    assert cli.main([*argv, "--out", str(tmp_path / "o")]) == 2
+
+
+class _Ctx:
+    def __init__(self, c):
+        self.c = c
+
+    async def __aenter__(self):
+        return self.c
+
+    async def __aexit__(self, *exc):
+        return None
+
+
+def test_cli_client_does_not_retry(bundles, tmp_path):
+    a, b = bundles
+    fake = judge_fake()
+    fake.fail_first = 1
+
+    async def inner():
+        async with cli.make_judge_client(URL, "judge-m", "k", transport=fake.transport) as c:
+            return await run_judge(a, b, c, "judge-m", PRICES, 100.0, False, tmp_path)
+
+    out = asyncio.run(inner())
+    assert len(fake.requests) == 40  # one request per call: the 503 was not retried
+    meta = json.loads((out / "bundle.json").read_text())
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert recs[0]["first"] is None and recs[0]["result"] == "tie"
+    user = fake.requests[0]["messages"][-1]["content"]
+    worst = per_call_worst_case(JUDGE_SYSTEM + "\n" + user, PRICES)
+    assert recs[0]["cost_usd"] >= worst and meta["status"] == "complete"

@@ -100,8 +100,9 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     return 1 if findings else 0
 
 
-def make_judge_client(base_url: str, model: str, api_key: str) -> EndpointClient:
-    return EndpointClient(base_url, model, api_key=api_key)
+def make_judge_client(base_url: str, model: str, api_key: str, transport=None) -> EndpointClient:
+    # no retries: each judge call is exactly one billed attempt, so the budget math holds
+    return EndpointClient(base_url, model, api_key=api_key, backoff_s=(), transport=transport)
 
 
 def _judge_settings(args: argparse.Namespace) -> dict:
