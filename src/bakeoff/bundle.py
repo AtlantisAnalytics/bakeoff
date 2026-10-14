@@ -79,7 +79,7 @@ _HOST_PORT = re.compile(
     r"(?i)\b(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|[a-z0-9-]+(?:\.[a-z0-9-]+)+):\d{2,5}\b"
 )
 _HOME_PATH = re.compile(
-    r"(?<![\w.\-/])(?:/Users/|/home/)[A-Za-z0-9._-]+"
+    r"(?<![\w.\-])(?:/Users/|/home/)[A-Za-z0-9._-]+"
     r"|(?<![A-Za-z0-9])(?i:[a-z]:\\Users\\)[A-Za-z0-9._-]+"
 )
 _PATTERNS = (
@@ -115,20 +115,27 @@ def _load_terms(denylist: Path | None) -> list[str]:
 
 
 def _strings(obj: object):
-    if isinstance(obj, str):
-        yield obj
-    elif isinstance(obj, dict):
-        for k, v in obj.items():
-            yield from _strings(k)
-            yield from _strings(v)
-    elif isinstance(obj, list):
-        for v in obj:
-            yield from _strings(v)
+    stack = [obj]
+    while stack:
+        cur = stack.pop()
+        if isinstance(cur, str):
+            yield cur
+        elif isinstance(cur, dict):
+            for k, v in cur.items():
+                stack.append(k)
+                stack.append(v)
+        elif isinstance(cur, list):
+            stack.extend(cur)
 
 
-def _walk(run_dir: Path):
+def _walk(run_dir: Path, errors: list[str] | None = None):
     """Yield (relpath, path, is_symlink) for every file and symlink, never following links."""
-    for root, dirs, names in os.walk(run_dir, followlinks=False):
+
+    def onerror(e: OSError) -> None:
+        if errors is not None:
+            errors.append(str(e.filename))
+
+    for root, dirs, names in os.walk(run_dir, followlinks=False, onerror=onerror):
         base = Path(root)
         for name in sorted(dirs + names):
             path = base / name
@@ -136,6 +143,15 @@ def _walk(run_dir: Path):
                 yield path.relative_to(run_dir).as_posix(), path, True
             elif name in names:
                 yield path.relative_to(run_dir).as_posix(), path, False
+
+
+def _has_symlink(run_dir: Path, rel: str) -> bool:
+    cur = run_dir
+    for part in PurePosixPath(rel).parts:
+        cur = cur / part
+        if cur.is_symlink():
+            return True
+    return False
 
 
 def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) -> list[Finding]:
@@ -147,7 +163,7 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
         return [Finding("bundle.json", 0, "missing_file", "bundle.json not found")]
     try:
         meta = json.loads(meta_path.read_bytes().decode("utf-8"))
-    except (ValueError, OSError) as e:
+    except (ValueError, OSError, RecursionError) as e:
         return [Finding("bundle.json", 0, "unreadable", f"cannot parse bundle.json: {e}")]
     if not isinstance(meta, dict):
         return [Finding("bundle.json", 0, "unreadable", "bundle.json is not an object")]
@@ -156,19 +172,22 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
     if not isinstance(listed, dict):
         findings.append(Finding("bundle.json", 0, "unreadable", "files is not an object"))
         listed = {}
-    links = {rel for rel, _, link in _walk(run_dir) if link}
+    walk_errors: list[str] = []
+    entries = list(_walk(run_dir, walk_errors))
+    for bad in walk_errors:
+        findings.append(Finding(bad, 0, "unreadable", "directory cannot be read"))
     for rel, expected in listed.items():
         if _bad_relpath(rel):
             findings.append(Finding(str(rel), 0, "unreadable", "unsafe path in files"))
             continue
         path = run_dir / rel
-        if rel in links or path.is_symlink():
-            findings.append(Finding(rel, 0, "unreadable", "listed file is a symlink"))
+        if _has_symlink(run_dir, rel):
+            findings.append(Finding(rel, 0, "unreadable", "listed path goes through a symlink"))
         elif not path.is_file():
             findings.append(Finding(rel, 0, "missing_file", "listed file is missing"))
         elif sha256_file(path) != expected:
             findings.append(Finding(rel, 0, "hash_mismatch", "file hash differs from bundle.json"))
-    for rel, _, link in _walk(run_dir):
+    for rel, _, link in entries:
         if link:
             if rel not in listed:
                 findings.append(Finding(rel, 0, "unreadable", "symlink in bundle"))
@@ -188,8 +207,8 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
             seen.add(f)
             findings.append(f)
 
-    for rel, path, link in _walk(run_dir):
-        if link:
+    for rel, path, link in entries:
+        if link or _has_symlink(run_dir, rel):
             continue
         try:
             data = path.read_bytes()
@@ -210,7 +229,8 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
                     continue
                 try:
                     obj = json.loads(line)
-                except ValueError:
+                except (ValueError, RecursionError):
+                    add(Finding(rel, no, "unreadable", "line is not valid JSON"))
                     continue
                 for st in _strings(obj):
                     for _, kind, match in scan_text(st, terms, username):
@@ -218,7 +238,7 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
         elif suffix == ".json":
             try:
                 obj = json.loads(text)
-            except ValueError:
+            except (ValueError, RecursionError):
                 add(Finding(rel, 0, "unreadable", "file is not valid JSON"))
                 continue
             for st in _strings(obj):

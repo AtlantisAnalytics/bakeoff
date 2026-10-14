@@ -124,6 +124,55 @@ def test_non_utf8_file(tmp_path):
     assert "unreadable" in _kinds(verify_bundle(tmp_path, None, None))
 
 
+def test_malformed_jsonl_line_unreadable(tmp_path):
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    (tmp_path / "speed.jsonl").write_text('{"a": 1}\n{oops\n', encoding="utf-8")
+    f = [x for x in verify_bundle(tmp_path, None, None) if x.kind == "unreadable"]
+    assert [(x.file, x.line) for x in f] == [("speed.jsonl", 2)]
+
+
+def test_symlinked_directory_in_key(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    (real / "x.jsonl").write_text("{}\n", encoding="utf-8")
+    run = tmp_path / "run"
+    write_bundle(run, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    (run / "linkdir").symlink_to(real, target_is_directory=True)
+    p = run / "bundle.json"
+    meta = json.loads(p.read_text(encoding="utf-8"))
+    meta["files"]["linkdir/x.jsonl"] = "0" * 64
+    p.write_text(json.dumps(meta), encoding="utf-8")
+    findings = verify_bundle(run, None, None)
+    assert "linkdir/x.jsonl" in {f.file for f in findings if f.kind == "unreadable"}
+    assert "hash_mismatch" not in _kinds(findings)
+
+
+def test_deeply_nested_json_unreadable(tmp_path):
+    deep = "[" * 100000 + "]" * 100000
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    (tmp_path / "speed.jsonl").write_text(deep + "\n", encoding="utf-8")
+    (tmp_path / "extra.json").write_text(deep, encoding="utf-8")
+    kinds = _kinds(verify_bundle(tmp_path, None, None))
+    assert "unreadable" in kinds
+    (tmp_path / "bundle.json").write_text(deep, encoding="utf-8")
+    assert _kinds(verify_bundle(tmp_path, None, None)) == {"unreadable"}
+
+
+def test_unreadable_subdirectory(tmp_path):
+    import os
+
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    sub = tmp_path / "locked"
+    sub.mkdir()
+    sub.chmod(0)
+    try:
+        if os.access(sub, os.R_OK):
+            pytest.skip("cannot make directory unreadable")
+        assert "unreadable" in _kinds(verify_bundle(tmp_path, None, None))
+    finally:
+        sub.chmod(0o700)
+
+
 def test_write_bundle_rejects_unsafe_paths(tmp_path):
     for bad in ("../x.jsonl", "/abs/x.jsonl", "a/../../x.jsonl"):
         with pytest.raises(ValueError):
@@ -163,6 +212,8 @@ def test_verify_unsafe_key_and_symlink(tmp_path):
         ("c:\\users\\alice", "home_path"),  # scrub-ok
         ('path="/home/alice/x"', "home_path"),  # scrub-ok
         ("a=/Users/alice", "home_path"),  # scrub-ok
+        ("file:///Users/alice/x", "home_path"),  # scrub-ok
+        ("file:///home/alice", "home_path"),  # scrub-ok
         ("alice_laptop", "username"),  # scrub-ok
     ],
 )
