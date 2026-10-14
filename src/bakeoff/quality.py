@@ -82,8 +82,11 @@ async def run_quality(
                 if r.error is not None:
                     passed, score, reason = False, 0.0, "error"
                 else:
-                    g = grade(suite.grader, r.content, item.expected, suite.grader_options)
-                    passed, score, reason = g.passed, g.score, g.reason
+                    try:
+                        g = grade(suite.grader, r.content, item.expected, suite.grader_options)
+                        passed, score, reason = g.passed, g.score, g.reason
+                    except Exception as e:  # noqa: BLE001 - one bad item must not kill the run
+                        passed, score, reason = False, 0.0, f"grader error: {type(e).__name__}"
                     if r.finish_reason == "length":
                         passed, score, reason = False, 0.0, "truncated"
                 recs.append(

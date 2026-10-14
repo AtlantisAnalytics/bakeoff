@@ -70,3 +70,45 @@ def test_public_config_strips_endpoint_secrets(tmp_path):
     pub = public_config(load_config(write(tmp_path)))
     assert "base_url" not in pub["endpoint"] and "api_key_env" not in pub["endpoint"]
     assert pub["endpoint"]["model"] == "served-model-name"
+
+
+@pytest.mark.parametrize(
+    ("override", "key"),
+    [
+        ("fit.steps=[]", "fit.steps"),
+        ("fit.steps=[0]", "fit.steps"),
+        ("fit.steps=[true]", "fit.steps"),
+        ("fit.steps=[1.5]", "fit.steps"),
+        ("speed.concurrency=[]", "speed.concurrency"),
+        ("speed.concurrency=[0]", "speed.concurrency"),
+        ("speed.concurrency=[true]", "speed.concurrency"),
+        ("speed.repeats=0", "speed.repeats"),
+        ("speed.repeats=true", "speed.repeats"),
+        ("speed.warmup=-1", "speed.warmup"),
+        ("fit.max_context=-5", "fit.max_context"),
+        ("endpoint.timeout_s=0", "endpoint.timeout_s"),
+        ("endpoint.timeout_s=-3", "endpoint.timeout_s"),
+        ("endpoint.timeout_s=nan", "endpoint.timeout_s"),
+        ("speed.repeats=lots", "speed.repeats"),
+    ],
+)
+def test_out_of_range_values_name_the_key(tmp_path, override, key):
+    with pytest.raises(ConfigError, match=key.replace(".", r"\.")):
+        load_config(write(tmp_path), [override])
+
+
+def test_valid_edge_values_are_accepted(tmp_path):
+    cfg = load_config(
+        write(tmp_path), ["speed.warmup=0", "fit.max_context=0", "speed.concurrency=[1]"]
+    )
+    assert cfg.speed.warmup == 0 and cfg.speed.concurrency == [1]
+
+
+def test_missing_config_file_raises(tmp_path):
+    with pytest.raises(ConfigError, match="not found"):
+        load_config(tmp_path / "nope.toml")
+
+
+def test_invalid_toml_raises(tmp_path):
+    with pytest.raises(ConfigError, match="invalid TOML"):
+        load_config(write(tmp_path, "[endpoint\nbase_url = "))

@@ -1,6 +1,7 @@
 """Loads and validates run.toml plus CLI overrides."""
 
 import dataclasses
+import math
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -147,7 +148,31 @@ def load_config(path: Path, overrides: list[str] = []) -> RunConfig:  # noqa: B0
             f"model.runtime {built['model'].runtime!r} is not allowed; use one of: "
             f"{', '.join(RUNTIMES)}"
         )
+    _check_ranges(built)
     return RunConfig(**built)
+
+
+def _is_int(v: Any) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _int_list(where: str, v: Any, minimum: int) -> None:
+    if not isinstance(v, list) or not v or not all(_is_int(x) and x >= minimum for x in v):
+        raise ConfigError(f"{where} must be a non-empty list of integers >= {minimum}")
+
+
+def _check_ranges(built: dict[str, Any]) -> None:
+    speed, fit, ep = built["speed"], built["fit"], built["endpoint"]
+    _int_list("fit.steps", fit.steps, 1)
+    _int_list("speed.concurrency", speed.concurrency, 1)
+    if not _is_int(speed.repeats) or speed.repeats < 1:
+        raise ConfigError("speed.repeats must be an integer >= 1")
+    if not _is_int(speed.warmup) or speed.warmup < 0:
+        raise ConfigError("speed.warmup must be an integer >= 0")
+    if not _is_int(fit.max_context) or fit.max_context < 0:
+        raise ConfigError("fit.max_context must be an integer >= 0")
+    if not math.isfinite(ep.timeout_s) or ep.timeout_s <= 0:
+        raise ConfigError("endpoint.timeout_s must be a number > 0")
 
 
 def public_config(cfg: RunConfig) -> dict:

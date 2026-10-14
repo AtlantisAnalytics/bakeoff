@@ -253,3 +253,35 @@ def test_system_not_duplicated(tmp_path):
     )
     msgs = load_suite(d).items[0].messages
     assert [m["content"] for m in msgs] == ["mine", "q"]
+
+
+def test_unknown_grader_raises_suite_error(tmp_path):
+    d = _copy(tmp_path)
+    m = d / "manifest.toml"
+    m.write_text(m.read_text().replace('grader = "exact"', 'grader = "nonsense"'))
+    with pytest.raises(SuiteError, match="unknown grader"):
+        load_suite(d)
+
+
+def test_ifeval_grader_is_registered_on_import():
+    root = suites_root()
+    assert load_suite(root / "general" / "ifeval").grader == "ifeval"
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('track = "demo"', 'track = "../x"'),
+        ('track = "demo"', 'track = "Demo"'),
+        ('track = "demo"', 'track = "a b"'),
+        ('name = "exact"', 'name = "-exact"'),
+        ('name = "exact"', 'name = "ex/act"'),
+        ('name = "exact"', 'name = "ex.act"'),
+    ],
+)
+def test_track_and_name_must_be_slugs(tmp_path, old, new):
+    d = _copy(tmp_path)
+    m = d / "manifest.toml"
+    m.write_text(m.read_text().replace(old, new))
+    with pytest.raises(SuiteError, match="track|name"):
+        load_suite(d)

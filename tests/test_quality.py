@@ -173,3 +173,19 @@ def test_records_have_no_prompt_text_and_progress():
     blob = json.dumps(res.records)
     assert "PROMPT-" not in blob
     assert seen == [("general/s", 1, 2), ("general/s", 2, 2)]
+
+
+def test_grader_crash_is_a_fail_not_a_dead_run(monkeypatch):
+    from bakeoff import graders
+
+    def boom(output, expected, options):
+        raise RuntimeError("secret detail")
+
+    monkeypatch.setitem(graders.GRADERS, "boom", boom)
+    fake = FakeOpenAI(responder=reply_for(lambda p: FakeReply("OK-42")))
+    res = run_q(fake, [make_suite(grader="boom", n=3)])
+    recs = res.records["general/s"]
+    assert len(recs) == 3
+    assert all(r["pass"] is False and r["score"] == 0.0 for r in recs)
+    assert all(r["reason"] == "grader error: RuntimeError" for r in recs)
+    assert res.suites[0]["accuracy"] == 0.0

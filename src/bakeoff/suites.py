@@ -1,16 +1,19 @@
 """Suite loading, hashing, resolution and lock checking."""
 
 import json
+import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import bakeoff
+from bakeoff.graders import GRADERS
 from bakeoff.hashing import canonical_json, sha256_hex
 from bakeoff.needle import needle_messages
 
 SPLITS = ("public", "private")
+_IDENT = re.compile(r"[a-z0-9][a-z0-9-]*")
 
 
 class SuiteError(Exception):
@@ -146,6 +149,11 @@ def load_suite(path: Path) -> Suite:
     track = _require_str(manifest, "track", mf)
     name = _require_str(manifest, "name", mf)
     grader = _require_str(manifest, "grader", mf)
+    for what, value in (("track", track), ("name", name)):
+        if not _IDENT.fullmatch(value):
+            raise SuiteError(f"{mf}: {what} must match [a-z0-9][a-z0-9-]*, got {value!r}")
+    if grader not in GRADERS:
+        raise SuiteError(f"{mf}: unknown grader {grader!r}; known: {', '.join(sorted(GRADERS))}")
     split = manifest.get("split")
     if split not in SPLITS:
         raise SuiteError(f"{mf}: split must be one of {SPLITS}, got {split!r}")
