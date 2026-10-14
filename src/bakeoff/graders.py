@@ -245,6 +245,19 @@ def _norm_eq(a: Any, b: Any) -> bool:
     return a is None and b is None
 
 
+def _check_values_shape(v: Any) -> None:
+    """Lists of dicts need identical key sets so greedy multiset matching is unambiguous."""
+    if isinstance(v, dict):
+        for x in v.values():
+            _check_values_shape(x)
+    elif isinstance(v, list):
+        shapes = {frozenset(x) for x in v if isinstance(x, dict)}
+        if len(shapes) > 1:
+            raise BadExpected("values list elements are dicts with differing keys")
+        for x in v:
+            _check_values_shape(x)
+
+
 @register("json_schema")
 def _json_schema(output: str, expected: Any, options: dict) -> Grade:
     """`expected` is a schema, or {"schema": {...}, "values": {...}} to also check field values."""
@@ -260,6 +273,12 @@ def _json_schema(output: str, expected: Any, options: dict) -> Grade:
     problems = schema_problems(expected)
     if problems:
         raise BadExpected("; ".join(problems[:3]))
+    if values:
+        props = expected.get("properties", {})
+        unknown = [k for k in values if k not in props]
+        if unknown:
+            raise BadExpected(f"values keys not in schema properties: {unknown}")
+        _check_values_shape(values)
     m = _FENCE_RE.match(output)
     text = m.group(1) if m else output
     try:
@@ -273,7 +292,8 @@ def _json_schema(output: str, expected: Any, options: dict) -> Grade:
         if not isinstance(value, dict) or key not in value:
             return _result(False, f"value mismatch: {key!r} missing")
         if not _norm_eq(value[key], want):
-            return _result(False, f"value mismatch: {key!r} got {value[key]!r}, want {want!r}")
+            msg = f"value mismatch: {key!r} got {value[key]!r}, want {want!r}"
+            return _result(False, msg[:200])
     return _result(True, "valid")
 
 

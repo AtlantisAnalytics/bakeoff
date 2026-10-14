@@ -12,12 +12,12 @@
     "1": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62"
   },
   "grounding/context-only": {
-    "1": "e58aa10c36f744d85be96f8f44573d93a28e5c87c754317473c2d42898ccc01c"
+    "1": "7fcdcedd96023e43b758afcb9128c397e9bcde3a7e118ff2a7236dfce8eac53d"
   },
   "longctx/needle": {
     "1": "154b8f65bec6bd6ff98e02ba0cc6d79958a3b3aab70fda5106d160440da201ce"
   },
   "structured/json": {
-    "1": "8ff41f598f3a92f25174c4ef2d5bfa82f326c45cf176d5195a7cc2776d2e3744"
+    "1": "ba098afdc7dc4913eabc3f3939a44aaeaaeef34687462c7fc191ed9505e2c653"
   }
 }

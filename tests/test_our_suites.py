@@ -79,6 +79,33 @@ def test_needle_and_open_ended_settings():
     assert all(i.expected is None for i in _suites()["general/open-ended"].items)
 
 
+def test_grounding_balance():
+    s = _suites()["grounding/context-only"]
+    items = raw_items(s)
+    assert sum(1 for r in items if r["expected"]["answerable"] is False) == 10
+    assert sum(1 for r in items if r["expected"]["answerable"] is True) == 20
+    for r in items:
+        e = r["expected"]
+        assert e["answerable"] is False or e["must_include"], r["id"]
+        for a in e["must_include"]:
+            for b in e["must_not_include"]:
+                assert a.lower() not in b.lower() and b.lower() not in a.lower(), r["id"]
+
+
+def test_must_not_include_rules():
+    s = _suites()["grounding/context-only"]
+    items = raw_items(s)
+    doc = items[0]["prompt"].split("Context:\n")[1].split("\n\nQuestion:")[0].lower()
+    banned = {"atlas", "borealis", "cobalt", "healthy", "degraded", "down"}
+    for r in items:
+        e = r["expected"]
+        for b in e["must_not_include"]:
+            if not e["answerable"]:
+                assert b.lower() not in doc, (r["id"], b)  # rule (a)
+            assert b.lower() not in banned, (r["id"], b)
+            assert len(b.split()) >= 2 or any(c.isdigit() for c in b), (r["id"], b)  # rule (b)
+
+
 def test_all_suite_text_scrub_clean():
     for p in suites_root().rglob("*"):
         if p.suffix in {".toml", ".jsonl", ".md"}:

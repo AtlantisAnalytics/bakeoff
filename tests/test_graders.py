@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from bakeoff.graders import Grade, grade, validate_schema
@@ -205,3 +207,24 @@ def test_json_schema_values_malformed_and_bare_schema_unchanged():
     assert "bad expected" in grade("json_schema", "{}", {"schema": {}, "values": []}, {}).reason
     assert "bad expected" in grade("json_schema", "{}", {"schema": {}, "extra": 1}, {}).reason
     assert grade("json_schema", '{"a": 1}', OBJ, {}).passed
+
+
+def test_json_values_key_must_be_in_schema():
+    exp = {"schema": {"type": "object", "properties": {"a": {}}}, "values": {"b": 1}}
+    assert "bad expected" in grade("json_schema", '{"a": 1}', exp, {}).reason
+
+
+def test_json_values_list_of_dicts_needs_same_keys():
+    schema = {"type": "object", "properties": {"t": {}}}
+    exp = {"schema": schema, "values": {"t": [{"a": 1}, {"b": 2}]}}
+    assert "bad expected" in grade("json_schema", '{"t": []}', exp, {}).reason
+    ok = {"schema": schema, "values": {"t": [{"a": 1}, {"a": 2}]}}
+    assert grade("json_schema", '{"t": [{"a": 2}, {"a": 1}]}', ok, {}).passed
+
+
+def test_json_values_reason_is_capped():
+    schema = {"type": "object", "properties": {"a": {}}}
+    r = grade(
+        "json_schema", json.dumps({"a": "x" * 1000}), {"schema": schema, "values": {"a": "y"}}, {}
+    )
+    assert not r.passed and len(r.reason) <= 200
