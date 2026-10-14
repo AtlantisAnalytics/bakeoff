@@ -6,11 +6,15 @@ for detection only because its output carries GPU UUIDs.
 """
 
 import csv
+import getpass
+import os
 import platform as _platform
 import re
+import socket
 import subprocess
 import sys
-from collections.abc import Callable
+import tomllib
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from bakeoff import __version__
@@ -18,6 +22,8 @@ from bakeoff.config import RunConfig
 
 Runner = Callable[[list[str]], str | None]
 Reader = Callable[[str], str | None]
+Cleaner = Callable[[object], str | None]
+_HOST_KEYS = ("os", "os_version", "cpu", "cpu_cores", "ram_bytes")
 
 NVIDIA_QUERY = (
     "--query-gpu=index,name,memory.total,driver_version,power.limit,memory.used,power.draw"
@@ -27,7 +33,7 @@ NVIDIA_QUERY_ARGV = ["nvidia-smi", NVIDIA_QUERY, "--format=csv,noheader,nounits"
 
 def default_run(argv: list[str]) -> str | None:
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=10)
+        proc = subprocess.run(argv, capture_output=True, text=True, errors="replace", timeout=10)
     except (OSError, subprocess.SubprocessError):
         return None
     return proc.stdout if proc.returncode == 0 else None
@@ -59,7 +65,21 @@ def _num(text: str, cast: Callable) -> object:
 def parse_nvidia_query(text: str) -> list[dict]:
     rows = []
     for rec in csv.reader(text.splitlines(), skipinitialspace=True):
-        if len(rec) != 7:
+        if not rec:
+            continue
+        if len(rec) != 7:  # malformed: keep the GPU, with every field not_captured
+            idx = rec[0].strip()
+            rows.append(
+                {
+                    "index": _num(idx, int),
+                    "name": None,
+                    "vram_mib": None,
+                    "driver": None,
+                    "power_limit_w": None,
+                    "mem_used_mib": None,
+                    "power_w": None,
+                }
+            )
             continue
         idx, name, vram, driver, limit, used, draw = (c.strip() for c in rec)
         rows.append(
@@ -101,8 +121,13 @@ def detect_platform(run: Runner, platform: str = sys.platform) -> str:
 
 
 def _os_release_name(text: str | None) -> str | None:
-    m = re.search(r'^PRETTY_NAME="?([^"\n]*)"?\s*$', text or "", re.M)
-    return m.group(1).strip() or None if m else None
+    m = re.search(r"^PRETTY_NAME=(.*)$", text or "", re.M)
+    if not m:
+        return None
+    value = m.group(1).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return value.strip() or None
 
 
 def _cpuinfo(text: str | None) -> tuple[str | None, int | None]:
@@ -121,12 +146,15 @@ def _int_or_none(text: str) -> int | None:
     return int(text) if text.strip().isdigit() else None
 
 
-def _linux_host(read: Reader) -> dict:
+def _linux_host(read: Reader, clean: Cleaner) -> dict:
     cpu, cores = _cpuinfo(read("/proc/cpuinfo"))
+    name = _os_release_name(read("/etc/os-release")) or _os_release_name(
+        read("/usr/lib/os-release")
+    )
     return {
         "os": field("Linux", "measured"),
-        "os_version": field(_os_release_name(read("/etc/os-release")), "measured"),
-        "cpu": field(cpu, "measured"),
+        "os_version": field(clean(name), "measured"),
+        "cpu": field(clean(cpu), "measured"),
         "cpu_cores": field(cores, "measured"),
         "ram_bytes": field(_meminfo_bytes(read("/proc/meminfo")), "measured"),
     }
@@ -140,24 +168,26 @@ def _mac_sysctl(run: Runner) -> tuple[str | None, int | None, int | None]:
     return lines[0] or None, _int_or_none(lines[1]), _int_or_none(lines[2])
 
 
-def _mac_host(run: Runner, sysctl: tuple[str | None, int | None, int | None]) -> dict:
+def _mac_host(
+    run: Runner, sysctl: tuple[str | None, int | None, int | None], clean: Cleaner
+) -> dict:
     version = (run(["sw_vers", "-productVersion"]) or "").strip() or None
     cpu, cores, mem = sysctl
     return {
         "os": field("macOS", "measured"),
-        "os_version": field(version, "measured"),
-        "cpu": field(cpu, "measured"),
+        "os_version": field(clean(version), "measured"),
+        "cpu": field(clean(cpu), "measured"),
         "cpu_cores": field(cores, "measured"),
         "ram_bytes": field(mem, "measured"),
     }
 
 
-def _nvidia_gpus(run: Runner) -> list[dict]:
+def _nvidia_gpus(run: Runner, clean: Cleaner) -> list[dict]:
     rows = parse_nvidia_query(run(NVIDIA_QUERY_ARGV) or "")
     cuda = parse_cuda_version(run(["nvidia-smi"]) or "")
     return [
         {
-            "name": field(r["name"], "measured"),
+            "name": field(clean(r["name"]), "measured"),
             "vram_mib": field(r["vram_mib"], "measured"),
             "driver": field(r["driver"], "measured"),
             "cuda": field(cuda, "measured"),
@@ -167,14 +197,64 @@ def _nvidia_gpus(run: Runner) -> list[dict]:
     ]
 
 
-def _git(run: Runner) -> tuple[str | None, bool | None]:
-    pkg = str(Path(__file__).resolve().parent)  # used to run git; never recorded
-    head = run(["git", "-C", pkg, "rev-parse", "HEAD"])
-    commit = (head or "").strip()
+def _is_bakeoff_root(root: Path) -> bool:
+    if not (root / ".git").exists():
+        return False
+    try:
+        data = tomllib.loads((root / "pyproject.toml").read_text())
+    except (OSError, ValueError):
+        return False
+    return data.get("project", {}).get("name") == "bakeoff"
+
+
+def _git(run: Runner, root: Path) -> tuple[str | None, bool | None]:
+    """Commit and dirty flag, only when `root` is itself the bakeoff checkout."""
+    if not _is_bakeoff_root(root):
+        return None, None
+    top = (run(["git", "-C", str(root), "rev-parse", "--show-toplevel"]) or "").strip()
+    try:
+        if not top or Path(top).resolve() != root.resolve():  # compared only, never recorded
+            return None, None
+    except OSError:
+        return None, None
+    commit = (run(["git", "-C", str(root), "rev-parse", "HEAD"]) or "").strip()
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         return None, None
-    status = run(["git", "-C", pkg, "status", "--porcelain"])
+    status = run(["git", "-C", str(root), "status", "--porcelain"])
     return commit, None if status is None else bool(status.strip())
+
+
+_IPV4 = re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+
+
+def default_identity() -> list[str]:
+    """Strings that identify this machine or user; used only to reject free text."""
+    terms = [os.environ.get("HOME", "")]
+    try:
+        terms.append(socket.gethostname())
+    except OSError:
+        pass
+    try:
+        terms.append(getpass.getuser())
+    except (OSError, KeyError, ImportError):
+        pass
+    return terms
+
+
+def make_cleaner(identity: Sequence[str]) -> Cleaner:
+    terms = [t.lower() for t in identity if t and len(t) >= 3]
+
+    def clean(value: object) -> str | None:
+        if value is None:
+            return None
+        text = _CONTROL.sub("", str(value)).strip()
+        low = text.lower()
+        if not text or _IPV4.search(text) or any(t in low for t in terms):
+            return None
+        return text[:100]
+
+    return clean
 
 
 def capture_env(
@@ -184,31 +264,40 @@ def capture_env(
     run: Runner = default_run,
     read: Reader = default_read,
     platform: str = sys.platform,
+    repo_root: Path | None = None,
+    identity: Sequence[str] | None = None,
 ) -> dict:
+    clean = make_cleaner(default_identity() if identity is None else identity)
+    root = repo_root if repo_root is not None else Path(__file__).resolve().parents[2]
     kind = detect_platform(run, platform)
     mac = platform == "darwin"
     sysctl = _mac_sysctl(run) if mac else (None, None, None)
-    host = _mac_host(run, sysctl) if mac else _linux_host(read)
+    if mac:
+        host = _mac_host(run, sysctl, clean)
+    elif platform.startswith("linux"):
+        host = _linux_host(read, clean)
+    else:
+        host = {k: field(None, "measured") for k in _HOST_KEYS}
     if kind == "nvidia":
-        gpus = _nvidia_gpus(run)
-    elif kind == "darwin":
+        gpus = _nvidia_gpus(run, clean)
+    elif kind == "darwin" and (sysctl[0] or "").startswith("Apple"):
         gpus = [
             {
-                "name": field(sysctl[0], "measured"),
+                "name": field(clean(sysctl[0]), "measured"),
                 "unified_memory_bytes": field(sysctl[2], "measured"),
             }
         ]
     else:
         gpus = []
     model = cfg.model if cfg else None
-    commit, dirty = _git(run)
+    commit, dirty = _git(run, root)
     return {
         "host": host,
         "gpus": gpus,
         "runtime": {
             "name": field(model.runtime if model else None, "operator"),
-            "version": field((runtime or {}).get("version"), "reported"),
-            "served_model": field(served_model, "reported"),
+            "version": field(clean((runtime or {}).get("version")), "reported"),
+            "served_model": field(clean(served_model), "reported"),
         },
         "model": {
             "label": field(model.label if model else None, "operator"),

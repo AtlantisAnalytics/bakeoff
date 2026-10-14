@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 from pathlib import Path
 
 from bakeoff import __version__
@@ -94,27 +95,43 @@ def check_shape(env):
             assert leaf["source"] == "not_captured", path
 
 
-def nvidia_run(query, git=True):
-    run_q = fake_run({})
+def make_repo(path, name="bakeoff"):
+    path.mkdir(parents=True, exist_ok=True)
+    (path / ".git").mkdir(exist_ok=True)
+    (path / "pyproject.toml").write_text(f'[project]\nname = "{name}"\n')
+    return path
+
+
+def git_answers(toplevel, dirty=True):
+    def git(argv):
+        if "--show-toplevel" in argv:
+            return f"{toplevel}\n"
+        if "rev-parse" in argv:
+            return "0123456789abcdef0123456789abcdef01234567\n"
+        if "status" in argv:
+            return " M src/x.py\n" if dirty else ""
+        return None
+
+    return git
+
+
+def nvidia_run(query, root=None, dirty=True):
+    calls = []
+    git = git_answers(root, dirty) if root is not None else None
 
     def run(argv):
-        run_q.calls.append(list(argv))
+        calls.append(list(argv))
         if argv == ["nvidia-smi", "-L"]:
             return "GPU 0: redacted\n"
         if argv == ["nvidia-smi"]:
             return fx("nvidia_smi_header.txt")
         if argv[0] == "nvidia-smi" and argv[1].startswith("--query-gpu="):
             return query
-        if argv[:1] == ["git"]:
-            if not git:
-                return None
-            if "rev-parse" in argv:
-                return "0123456789abcdef0123456789abcdef01234567\n"
-            if "status" in argv:
-                return " M src/x.py\n"
+        if argv[0] == "git" and git:
+            return git(argv)
         return None
 
-    run.calls = run_q.calls
+    run.calls = calls
     return run
 
 
@@ -123,10 +140,18 @@ def test_field_none_is_not_captured():
     assert field(0, "measured") == {"value": 0, "source": "measured"}
 
 
-def test_nvidia_host():
-    run = nvidia_run(fx("nvidia_query_1gpu.csv"))
+def test_nvidia_host(tmp_path):
+    repo = make_repo(tmp_path / "bakeoff")
+    run = nvidia_run(fx("nvidia_query_1gpu.csv"), root=repo)
     env = capture_env(
-        CFG, {"version": "0.9.1"}, "served", run=run, read=fake_read(LINUX_FILES), platform="linux"
+        CFG,
+        {"version": "0.9.1"},
+        "served",
+        run=run,
+        read=fake_read(LINUX_FILES),
+        platform="linux",
+        repo_root=repo,
+        identity=[],
     )
     check_shape(env)
     gpu = env["gpus"][0]
@@ -245,41 +270,184 @@ def test_operator_fields():
     assert env["host"]["os_version"]["source"] == "not_captured"
 
 
-def test_no_git_gives_not_captured():
-    run = nvidia_run(fx("nvidia_query_1gpu.csv"), git=False)
-    env = capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
+def _env_with_repo(repo, run, **kw):
+    return capture_env(
+        CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux",
+        repo_root=repo, identity=[], **kw,
+    )  # fmt: skip
+
+
+def test_no_git_gives_not_captured(tmp_path):
+    repo = make_repo(tmp_path / "bakeoff")
+    env = _env_with_repo(repo, nvidia_run(fx("nvidia_query_1gpu.csv")))  # git returns None
     assert env["harness"]["git_commit"]["source"] == "not_captured"
     assert env["harness"]["git_dirty"]["source"] == "not_captured"
 
 
-def test_clean_tree():
-    def run(argv):
-        if argv[:1] == ["git"]:
-            return "0123456789abcdef0123456789abcdef01234567\n" if "rev-parse" in argv else ""
-        return None
-
-    env = capture_env(CFG, None, None, run=run, read=fake_read({}), platform="linux")
+def test_clean_tree(tmp_path):
+    repo = make_repo(tmp_path / "bakeoff")
+    env = _env_with_repo(repo, nvidia_run("", root=repo, dirty=False))
     assert env["harness"]["git_dirty"] == {"value": False, "source": "measured"}
+    assert env["harness"]["git_commit"]["value"] == "0123456789abcdef0123456789abcdef01234567"
 
 
-def test_git_path_not_recorded():
-    run = nvidia_run(fx("nvidia_query_1gpu.csv"))
-    env = capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
+def test_git_not_captured_when_package_inside_unrelated_repo(tmp_path):
+    # a venv/site-packages inside someone's private project: .git but no bakeoff pyproject
+    other = tmp_path / "private-project"
+    (other / ".git").mkdir(parents=True)
+    (other / "pyproject.toml").write_text('[project]\nname = "someone-elses-app"\n')
+    env = _env_with_repo(other, nvidia_run("", root=other))
+    assert env["harness"]["git_commit"]["source"] == "not_captured"
+    assert env["harness"]["git_dirty"]["source"] == "not_captured"
+    bare = tmp_path / "no-git"
+    bare.mkdir()
+    (bare / "pyproject.toml").write_text('[project]\nname = "bakeoff"\n')
+    env = _env_with_repo(bare, nvidia_run("", root=bare))
+    assert env["harness"]["git_commit"]["source"] == "not_captured"
+
+
+def test_git_not_captured_when_bakeoff_tree_nested_in_unrelated_repo(tmp_path):
+    outer = tmp_path / "outer"
+    inner = make_repo(outer / "vendor" / "bakeoff")
+    inner_git = inner / ".git"
+    inner_git.rmdir()  # a plain copy: no repo of its own, the toplevel is the outer repo
+    (inner / ".git").write_text("gitdir: elsewhere\n")  # marker exists, toplevel disagrees
+    env = _env_with_repo(inner, nvidia_run("", root=outer))
+    assert env["harness"]["git_commit"]["source"] == "not_captured"
+    assert env["harness"]["git_dirty"]["source"] == "not_captured"
+
+
+def test_git_captured_for_worktree_style_git_file(tmp_path):
+    repo = make_repo(tmp_path / "wt")
+    (repo / ".git").rmdir()
+    (repo / ".git").write_text("gitdir: /somewhere/else\n")
+    env = _env_with_repo(repo, nvidia_run("", root=repo))
+    assert env["harness"]["git_commit"]["source"] == "measured"
+
+
+def test_git_path_not_recorded(tmp_path):
+    repo = make_repo(tmp_path / "zz-distinctive-checkout-dir" / "bakeoff")
+    run = nvidia_run(fx("nvidia_query_1gpu.csv"), root=repo)
+    env = _env_with_repo(repo, run)
     git_calls = [c for c in run.calls if c[0] == "git"]
-    assert git_calls and all(c[1] == "-C" for c in git_calls)
-    assert git_calls[0][2] not in json.dumps(env)
+    assert any(str(repo) in c for c in git_calls)  # the path really was used...
+    assert "zz-distinctive-checkout-dir" not in json.dumps(env)  # ...but never recorded
+    assert env["harness"]["git_commit"]["source"] == "measured"
 
 
-def test_only_allowlisted_commands_run():
-    run = nvidia_run(fx("nvidia_query_1gpu.csv"))
-    capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
+def test_only_allowlisted_commands_run(tmp_path):
+    repo = make_repo(tmp_path / "bakeoff")
+    run = nvidia_run(fx("nvidia_query_1gpu.csv"), root=repo)
+    _env_with_repo(repo, run)
+    git_tails = set()
     for argv in run.calls:
         assert argv[0] in {"nvidia-smi", "git"}
         if argv[0] == "nvidia-smi":
             assert len(argv) == 1 or argv[1] == "-L" or argv[1].startswith("--query-gpu=")
+        else:
+            assert argv[1] == "-C" and argv[2] == str(repo)
+            git_tails.add(tuple(argv[3:]))
+    assert git_tails == {
+        ("rev-parse", "--show-toplevel"),
+        ("rev-parse", "HEAD"),
+        ("status", "--porcelain"),
+    }
     mac = fake_run({("sw_vers",): "15.6.1\n", ("sysctl",): fx("sysctl_darwin.txt")})
-    capture_env(CFG, None, None, run=mac, read=fake_read({}), platform="darwin")
+    capture_env(CFG, None, None, run=mac, read=fake_read({}), platform="darwin", repo_root=repo)
     assert {c[0] for c in mac.calls} <= {"nvidia-smi", "sw_vers", "sysctl", "git"}
+
+
+def test_unknown_platform_is_not_linux():
+    env = capture_env(CFG, None, None, run=fake_run({}), read=fake_read(LINUX_FILES),
+                      platform="win32")  # fmt: skip
+    check_shape(env)
+    assert all(v["source"] == "not_captured" for v in env["host"].values())
+    assert set(env["host"]) == {"os", "os_version", "cpu", "cpu_cores", "ram_bytes"}
+    assert env["gpus"] == []
+
+
+def test_intel_mac_has_no_gpu_entry():
+    sysctl = "Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz\n16\n34359738368\n"
+    run = fake_run({("sw_vers",): "14.5\n", ("sysctl",): sysctl})
+    env = capture_env(CFG, None, None, run=run, read=fake_read({}), platform="darwin")
+    assert env["gpus"] == []
+    assert env["host"]["cpu"]["value"].startswith("Intel")
+
+
+def test_free_text_is_capped_and_stripped():
+    cpuinfo = "processor\t: 0\nmodel name\t: CPU\x1b[31m " + "x" * 300 + "\n"
+    env = capture_env(CFG, {"version": "v\x00" + "9" * 200}, "m\n" + "y" * 200,
+                      run=fake_run({}), read=fake_read({"/proc/cpuinfo": cpuinfo}),
+                      platform="linux", identity=[])  # fmt: skip
+    cpu = env["host"]["cpu"]["value"]
+    assert len(cpu) == 100 and "\x1b" not in cpu
+    assert len(env["runtime"]["version"]["value"]) == 100
+    assert "\x00" not in env["runtime"]["version"]["value"]
+    assert "\n" not in env["runtime"]["served_model"]["value"]
+
+
+def test_free_text_containing_identity_is_not_captured():
+    cpuinfo = "processor\t: 0\nmodel name\t: Xeon of lab-box-7\n"  # scrub-ok
+    osrel = 'PRETTY_NAME="Ubuntu for alice"\n'  # scrub-ok
+    env = capture_env(
+        CFG,
+        {"version": "build /home/alice/x"},  # scrub-ok
+        "serving at 192.0.2.7",  # scrub-ok
+        run=nvidia_run("0, GPU of lab-box-7, 100, 1.2, 10, 1, 1\n"),  # scrub-ok
+        read=fake_read({"/proc/cpuinfo": cpuinfo, "/etc/os-release": osrel}),
+        platform="linux",
+        identity=["lab-box-7", "alice", "/home/alice", "xy"],  # scrub-ok
+    )
+    check_shape(env)
+    assert env["host"]["cpu"]["source"] == "not_captured"
+    assert env["host"]["os_version"]["source"] == "not_captured"
+    assert env["gpus"][0]["name"]["source"] == "not_captured"
+    assert env["runtime"]["version"]["source"] == "not_captured"
+    assert env["runtime"]["served_model"]["source"] == "not_captured"
+    # a term shorter than 3 chars is ignored
+    ok = capture_env(CFG, None, "xy-model", run=fake_run({}), read=fake_read({}),
+                     platform="linux", identity=["xy"])  # fmt: skip
+    assert ok["runtime"]["served_model"]["value"] == "xy-model"
+
+
+def test_default_identity_uses_hostname_user_home(monkeypatch):
+    monkeypatch.setattr("bakeoff.env.socket.gethostname", lambda: "planted-host-9")
+    monkeypatch.setattr("bakeoff.env.getpass.getuser", lambda: "planted-user")
+    monkeypatch.setenv("HOME", "/srv/planted-home")
+    for text in ("planted-host-9 cpu", "PLANTED-USER cpu", "at /srv/planted-home/x"):
+        cpuinfo = f"processor\t: 0\nmodel name\t: {text}\n"
+        env = capture_env(CFG, None, None, run=fake_run({}),
+                          read=fake_read({"/proc/cpuinfo": cpuinfo}), platform="linux")  # fmt: skip
+        assert env["host"]["cpu"]["source"] == "not_captured", text
+
+
+def test_os_release_quotes_and_fallback():
+    single = "PRETTY_NAME='Debian GNU/Linux 12 (bookworm)'\n"
+    env = capture_env(CFG, None, None, run=fake_run({}),
+                      read=fake_read({"/usr/lib/os-release": single}), platform="linux",
+                      identity=[])  # fmt: skip
+    assert env["host"]["os_version"]["value"] == "Debian GNU/Linux 12 (bookworm)"
+
+
+def test_default_run_survives_non_utf8(tmp_path):
+    from bakeoff.env import default_run
+
+    script = tmp_path / "bad.py"
+    script.write_bytes(b"import sys; sys.stdout.buffer.write(b'ok\\xff\\xfe')\n")
+    out = default_run([sys.executable, str(script)])
+    assert out is not None and out.startswith("ok")
+
+
+def test_malformed_nvidia_row_is_kept_as_not_captured():
+    csv_text = '0, "NVIDIA, Quoted Name", 8192, 570.1, 100.00, 1, 2\n1, Broken Row, 8192\n'
+    rows = parse_nvidia_query(csv_text)
+    assert rows[0]["name"] == "NVIDIA, Quoted Name"
+    assert len(rows) == 2 and rows[1]["index"] == 1 and rows[1]["name"] is None
+    env = capture_env(CFG, None, None, run=nvidia_run(csv_text), read=fake_read({}),
+                      platform="linux", identity=[])  # fmt: skip
+    assert len(env["gpus"]) == 2
+    assert env["gpus"][1]["name"]["source"] == "not_captured"
+    assert env["gpus"][1]["vram_mib"]["source"] == "not_captured"
 
 
 def test_never_leaks_identity():
