@@ -52,7 +52,9 @@ def _record(shape: str, c: int, rnd: int, r: ChatResult, ignore_eos: bool) -> di
     }
 
 
-def _cell_summary(items: list[tuple[dict, ChatResult]], rounds: list[list[ChatResult]]) -> dict:
+def _cell_summary(
+    items: list[tuple[dict, ChatResult]], rounds: list[list[ChatResult]], ignore_eos: bool
+) -> dict:
     ok = [(rec, r) for rec, r in items if rec["error"] is None]
     ttft = [rec["ttft_s"] for rec, _ in ok if rec["ttft_s"] is not None and rec["ttft_s"] > 0]
     prefill = [
@@ -70,22 +72,28 @@ def _cell_summary(items: list[tuple[dict, ChatResult]], rounds: list[list[ChatRe
     ]
     aggregate = []
     for rnd in rounds:
-        good = [r for r in rnd if r.error is None and r.t_last is not None]
+        good = [
+            r
+            for r in rnd
+            if r.error is None and r.t_last is not None and r.completion_tokens is not None
+        ]
         if not good:
             continue
         span = max(r.t_last for r in good) - min(r.t_start for r in good)
         if span <= 0:
             continue
-        aggregate.append(sum(r.completion_tokens or 0 for r in good) / span)
+        aggregate.append(sum(r.completion_tokens for r in good) / span)
+    usage_source = None
+    if ok:
+        estimated = any(rec["usage_source"] == "estimated" for rec, _ in ok)
+        usage_source = "estimated" if estimated else "reported"
     return {
         "ttft_s": summarize(ttft),
         "prefill_tps": summarize(prefill),
         "decode_tps": summarize(decode),
         "aggregate_tps": summarize(aggregate),
-        "usage_source": (
-            "estimated" if any(rec["usage_source"] == "estimated" for rec, _ in ok) else "reported"
-        ),
-        "ignore_eos": bool(items and items[0][0]["ignore_eos"]),
+        "usage_source": usage_source,
+        "ignore_eos": ignore_eos,
     }
 
 
@@ -135,8 +143,8 @@ async def run_speed(
                         except AbortRun as exc:
                             tripped = exc
                 if tripped is not None:
-                    summary[key] = _cell_summary(items, rounds)
+                    summary[key] = _cell_summary(items, rounds, ignore_eos)
                     tripped.partial = (records, summary)
                     raise tripped
-            summary[key] = _cell_summary(items, rounds)
+            summary[key] = _cell_summary(items, rounds, ignore_eos)
     return records, summary
