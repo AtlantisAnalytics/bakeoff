@@ -1,0 +1,7 @@
+track = "general"
+name = "open-ended"
+version = 1
+split = "public"
+license = "CC-BY-4.0"
+grader = "judge"
+max_tokens = 2048

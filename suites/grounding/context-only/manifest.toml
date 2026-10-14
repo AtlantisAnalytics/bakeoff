@@ -1,0 +1,8 @@
+track = "grounding"
+name = "context-only"
+version = 1
+split = "public"
+license = "CC-BY-4.0"
+grader = "grounding"
+max_tokens = 1024
+system = "Answer only from the context. If the answer is not in the context, reply exactly: NOT IN CONTEXT"

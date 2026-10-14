@@ -1,0 +1,7 @@
+track = "structured"
+name = "json"
+version = 1
+split = "public"
+license = "CC-BY-4.0"
+grader = "json_schema"
+max_tokens = 1024

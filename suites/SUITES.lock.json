@@ -1,8 +1,23 @@
 {
+  "format/exact-reply": {
+    "1": "9e3a891b6a0f97544e960894af3dc4f3702a476f0579c919cfddf6da6737112f"
+  },
   "general/gsm8k": {
     "1": "e997f4778c4a066c811fb5cbb73f1214d48b93c03c8cd7564de8330c3a6601e3"
   },
   "general/ifeval": {
     "1": "f8e4fd3ff20bcc315d79ea0126d0fae6b627bd109515770d79f28000af9cfb74"
+  },
+  "general/open-ended": {
+    "1": "bac2055835fde4799786451aa04ae434ae32da362b33f27867f278ab543632ba"
+  },
+  "grounding/context-only": {
+    "1": "acc66837d82049261428f41cf66ba5f308d6583cb0b1ad71a6c7386fd18e3f41"
+  },
+  "longctx/needle": {
+    "1": "04cf890085603f7c4dbfcf9f22d073abfd2efd480df2d53eabafb2ae0d796036"
+  },
+  "structured/json": {
+    "1": "22071922858cd8c7f85defd9450640e97132a0c21978ca0c13411dc423cb296e"
   }
 }

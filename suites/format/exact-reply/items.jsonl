@@ -1,0 +1,20 @@
+{"id": "exact-01", "prompt": "Reply with exactly: Zebra-Quartz_42", "expected": "Zebra-Quartz_42", "reference": "Zebra-Quartz_42"}
+{"id": "exact-02", "prompt": "Reply with exactly: aBc-DeF", "expected": "aBc-DeF", "reference": "aBc-DeF"}
+{"id": "exact-03", "prompt": "Reply with exactly: Hello, World!", "expected": "Hello, World!", "reference": "Hello, World!"}
+{"id": "exact-04", "prompt": "Reply with exactly: 007", "expected": "007", "reference": "007"}
+{"id": "exact-05", "prompt": "Reply with exactly: x-ray-9", "expected": "x-ray-9", "reference": "x-ray-9"}
+{"id": "exact-06", "prompt": "Reply with exactly: ALL CAPS here", "expected": "ALL CAPS here", "reference": "ALL CAPS here"}
+{"id": "exact-07", "prompt": "Reply with exactly: MiXeD cAsE 123", "expected": "MiXeD cAsE 123", "reference": "MiXeD cAsE 123"}
+{"id": "exact-08", "prompt": "Reply with exactly: a;b;c", "expected": "a;b;c", "reference": "a;b;c"}
+{"id": "exact-09", "prompt": "Reply with exactly: [done]", "expected": "[done]", "reference": "[done]"}
+{"id": "exact-10", "prompt": "Reply with exactly: ref/2026/10-13", "expected": "ref/2026/10-13", "reference": "ref/2026/10-13"}
+{"id": "exact-11", "prompt": "Reply with exactly: it's fine", "expected": "it's fine", "reference": "it's fine"}
+{"id": "exact-12", "prompt": "Reply with exactly: 100%", "expected": "100%", "reference": "100%"}
+{"id": "exact-13", "prompt": "Reply with only the uppercase word YES", "expected": "YES", "reference": "YES"}
+{"id": "exact-14", "prompt": "Reply with only the lowercase word no", "expected": "no", "reference": "no"}
+{"id": "exact-15", "prompt": "What is 7 plus 5? Reply with only the number.", "expected": "12", "reference": "12"}
+{"id": "exact-16", "prompt": "Write the first three letters of the alphabet in uppercase, separated by hyphens. Reply with only that.", "expected": "A-B-C", "reference": "A-B-C"}
+{"id": "exact-17", "prompt": "Spell the word cat backwards in uppercase. Reply with only the result.", "expected": "TAC", "reference": "TAC"}
+{"id": "exact-18", "prompt": "Write the digits 1 to 5 separated by single spaces. Reply with only that.", "expected": "1 2 3 4 5", "reference": "1 2 3 4 5"}
+{"id": "exact-19", "prompt": "Reply with only the word TRUE if 10 is greater than 9, otherwise reply with only the word FALSE.", "expected": "TRUE", "reference": "TRUE"}
+{"id": "exact-20", "prompt": "Rewrite the date 2026-01-05 as DD/MM/YYYY. Reply with only the date.", "expected": "05/01/2026", "reference": "05/01/2026"}
