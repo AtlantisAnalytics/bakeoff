@@ -1,4 +1,4 @@
-"""Command line: run, env, verify."""
+"""Command line: run, env, verify, judge."""
 
 import argparse
 import asyncio
@@ -6,12 +6,14 @@ import getpass
 import json
 import os
 import sys
+import tomllib
 from pathlib import Path
 
 from bakeoff.bundle import verify_bundle
 from bakeoff.client import EndpointClient
 from bakeoff.config import ConfigError, RunConfig, load_config
 from bakeoff.env import capture_env
+from bakeoff.judge import JudgeError, Prices, run_judge
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
 from bakeoff.suites import SuiteError
 
@@ -98,6 +100,88 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     return 1 if findings else 0
 
 
+def make_judge_client(base_url: str, model: str, api_key: str) -> EndpointClient:
+    return EndpointClient(base_url, model, api_key=api_key)
+
+
+def _judge_settings(args: argparse.Namespace) -> dict:
+    table: dict = {}
+    if args.judge_config:
+        try:
+            raw = tomllib.loads(Path(args.judge_config).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            raise JudgeError(f"cannot read judge config: {type(e).__name__}") from e
+        table = raw.get("judge", {})
+        if not isinstance(table, dict):
+            raise JudgeError("[judge] must be a table")
+    pick = lambda flag, key: flag if flag is not None else table.get(key)  # noqa: E731
+    got = {
+        "base_url": pick(args.judge_base_url, "base_url"),
+        "model": pick(args.judge_model, "model"),
+        "price_in": pick(args.price_in, "price_in"),
+        "price_out": pick(args.price_out, "price_out"),
+    }
+    names = {
+        "base_url": "judge base URL (--judge-base-url)",
+        "model": "judge model (--judge-model)",
+        "price_in": "input price (--price-in)",
+        "price_out": "output price (--price-out)",
+    }
+    for k, v in got.items():
+        if v is None or v == "":
+            raise JudgeError(f"missing {names[k]}")
+    for k in ("price_in", "price_out"):
+        v = got[k]
+        if isinstance(v, bool) or not isinstance(v, int | float) or not v >= 0 or v == float("inf"):
+            raise JudgeError(f"{names[k]} must be a non-negative number")
+    if not isinstance(got["base_url"], str) or not isinstance(got["model"], str):
+        raise JudgeError("judge base URL and model must be strings")
+    if not args.max_usd >= 0 or args.max_usd == float("inf"):
+        raise JudgeError("--max-usd must be a non-negative number")
+    return got
+
+
+def _cmd_judge(args: argparse.Namespace) -> int:
+    try:
+        s = _judge_settings(args)
+        key = os.environ.get("BAKEOFF_JUDGE_API_KEY")
+        if not key:
+            raise JudgeError("BAKEOFF_JUDGE_API_KEY is not set")
+        prices = Prices(float(s["price_in"]), float(s["price_out"]))
+
+        async def go() -> Path:
+            async with make_judge_client(s["base_url"], s["model"], key) as client:
+                return await run_judge(
+                    Path(args.a),
+                    Path(args.b),
+                    client,
+                    s["model"],
+                    prices,
+                    args.max_usd,
+                    args.allow_partial,
+                    Path(args.out),
+                )
+
+        path = asyncio.run(go())
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        _err("interrupted; an incomplete judge bundle was written")
+        return 130
+    except (JudgeError, SuiteError) as e:
+        _err(str(e))
+        return 1
+    except Exception as e:  # noqa: BLE001 - one line, no traceback unless debugging
+        if os.environ.get("BAKEOFF_DEBUG") == "1":
+            raise
+        _err(f"unexpected {type(e).__name__}")
+        return 1
+    meta = json.loads((path / "bundle.json").read_text(encoding="utf-8"))
+    print(path)
+    if meta["status"] != "complete":
+        _err(f"judge incomplete: {meta['status_reason']}")
+        return 2
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="bakeoff")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -115,6 +199,18 @@ def _parser() -> argparse.ArgumentParser:
     v.add_argument("dir")
     v.add_argument("--denylist")
     v.set_defaults(fn=_cmd_verify)
+    j = sub.add_parser("judge", help="blind pairwise judge over two bundles")
+    j.add_argument("a")
+    j.add_argument("b")
+    j.add_argument("--judge-model")
+    j.add_argument("--max-usd", type=float, required=True)
+    j.add_argument("--judge-base-url")
+    j.add_argument("--price-in", type=float)
+    j.add_argument("--price-out", type=float)
+    j.add_argument("--judge-config")
+    j.add_argument("--allow-partial", action="store_true")
+    j.add_argument("--out", default="runs")
+    j.set_defaults(fn=_cmd_judge)
     return p
 
 
