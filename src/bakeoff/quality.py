@@ -1,5 +1,6 @@
 """Quality pass: run every suite item once at temperature 0 and grade the output."""
 
+import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -72,37 +73,41 @@ async def run_quality(
     """
     budget = ErrorBudget("quality")
     records: dict[str, list[dict]] = {}
-    for suite in suites:
-        recs = records.setdefault(suite.key, [])
-        total = len(suite.items)
-        for item in suite.items:
-            r = await client.chat(item.messages, suite.max_tokens, temperature=0.0, seed=0)
-            if r.error is not None:
-                passed, score, reason = False, 0.0, "error"
-            else:
-                g = grade(suite.grader, r.content, item.expected, suite.grader_options)
-                passed, score, reason = g.passed, g.score, g.reason
-                if r.finish_reason == "length":
-                    passed, score, reason = False, 0.0, "truncated"
-            recs.append(
-                {
-                    "id": item.id,
-                    "prompt_sha256": sha256_hex(canonical_json(item.messages)),
-                    "output": r.content,
-                    "reasoning_tokens": r.reasoning_tokens,
-                    "finish_reason": r.finish_reason,
-                    "latency_s": r.total_s,
-                    "pass": passed,
-                    "score": score,
-                    "reason": reason,
-                    "error": r.error,
-                }
-            )
-            try:
-                budget.record(r.error is None)
-            except AbortRun as exc:
-                exc.partial = _build(suites, records)
-                raise
-            if on_progress:
-                on_progress(suite.key, len(recs), total)
+    try:
+        for suite in suites:
+            recs = records.setdefault(suite.key, [])
+            total = len(suite.items)
+            for item in suite.items:
+                r = await client.chat(item.messages, suite.max_tokens, temperature=0.0, seed=0)
+                if r.error is not None:
+                    passed, score, reason = False, 0.0, "error"
+                else:
+                    g = grade(suite.grader, r.content, item.expected, suite.grader_options)
+                    passed, score, reason = g.passed, g.score, g.reason
+                    if r.finish_reason == "length":
+                        passed, score, reason = False, 0.0, "truncated"
+                recs.append(
+                    {
+                        "id": item.id,
+                        "prompt_sha256": sha256_hex(canonical_json(item.messages)),
+                        "output": r.content,
+                        "reasoning_tokens": r.reasoning_tokens,
+                        "finish_reason": r.finish_reason,
+                        "latency_s": r.total_s,
+                        "pass": passed,
+                        "score": score,
+                        "reason": reason,
+                        "error": r.error,
+                    }
+                )
+                try:
+                    budget.record(r.error is None)
+                except AbortRun as exc:
+                    exc.partial = _build(suites, records)
+                    raise
+                if on_progress:
+                    on_progress(suite.key, len(recs), total)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        exc.partial = _build(suites, records)  # type: ignore[attr-defined]
+        raise
     return _build(suites, records)

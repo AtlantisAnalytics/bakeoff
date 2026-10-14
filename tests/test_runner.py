@@ -204,4 +204,108 @@ def test_example_config_suites_resolve():
     from bakeoff.suites import resolve_suites
 
     cfg = load_config(Path(__file__).resolve().parents[1] / "examples" / "run.toml")
-    assert resolve_suites(cfg.quality.suites)
+    assert [s.key for s in resolve_suites(cfg.quality.suites)] == [
+        "format/exact-reply",
+        "general/gsm8k",
+        "general/ifeval",
+        "general/open-ended",
+        "grounding/context-only",
+        "longctx/needle",
+        "structured/json",
+    ]
+
+
+def test_redactor_keeps_undotted_hostnames_intact():
+    r = make_redactor("http://llama:8000/v1")  # scrub-ok
+    assert r("llama says hello; runtime ollama") == "llama says hello; runtime ollama"
+    assert r("see http://llama:8000 and llama:8000") == "see <endpoint> and <endpoint>"  # scrub-ok
+
+
+def test_redactor_bare_fqdn_at_token_boundaries():
+    r = make_redactor(URL)
+    assert r("host lab-box-7.lan down") == "host <endpoint> down"
+    assert r("xlab-box-7.lan and lab-box-7.lan.evil") == "xlab-box-7.lan and lab-box-7.lan.evil"
+
+
+def test_redactor_bare_ip_and_ipv6():
+    r = make_redactor("http://192.0.2.7:9000/v1")  # scrub-ok
+    assert r("connect to 192.0.2.7 failed") == "connect to <endpoint> failed"  # scrub-ok
+    assert r("192.0.2.77 and 1192.0.2.7") == "192.0.2.77 and 1192.0.2.7"  # scrub-ok
+    r6 = make_redactor("http://[2001:db8::7]:9000/v1")  # scrub-ok
+    assert r6("at 2001:db8::7 or [2001:db8::7]") == "at <endpoint> or <endpoint>"  # scrub-ok
+
+
+def _cancel_when(marker, after=0):
+    seen = {"n": 0}
+
+    def responder(messages):
+        text = "\n".join(str(m.get("content", "")) for m in messages)
+        if marker in text:
+            if seen["n"] >= after:
+                raise asyncio.CancelledError
+            seen["n"] += 1
+        from fake_openai import default_responder
+
+        return default_responder(messages)
+
+    return responder
+
+
+def test_interrupt_in_quality_keeps_partial_records(tmp_path):
+    fake = FakeOpenAI(responder=_cancel_when("access code", after=2))
+    with pytest.raises(asyncio.CancelledError):
+        go(make_cfg(), fake, tmp_path, run=fake_nvidia, platform="linux")
+    path = next(tmp_path.glob("*"))
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["status_reason"] == "interrupted"
+    assert "quality/format.exact-reply.jsonl" in meta["files"]
+    needle = (path / "quality/longctx.needle.jsonl").read_text().splitlines()
+    assert len(needle) == 2
+    assert meta["quality"]["suites"]
+    assert verify_bundle(path, username="alice", denylist=None)[0].kind == "incomplete"
+
+
+def test_interrupt_in_speed_keeps_partial_records(tmp_path):
+    fake = FakeOpenAI(responder=_cancel_when("Summarise the records above"))
+    with pytest.raises(asyncio.CancelledError):
+        go(make_cfg(), fake, tmp_path, run=fake_nvidia, platform="linux")
+    path = next(tmp_path.glob("*"))
+    meta = json.loads((path / "bundle.json").read_text())
+    assert "quality/format.exact-reply.jsonl" in meta["files"]
+    assert len((path / "speed.jsonl").read_text().splitlines()) == 1
+    assert "fit.jsonl" not in meta["files"]
+
+
+def test_interrupt_in_fit_keeps_partial_records(tmp_path):
+    fake = FakeOpenAI(responder=_cancel_when("access code", after=6 + 2 + 1))
+    with pytest.raises(asyncio.CancelledError):
+        go(make_cfg(), fake, tmp_path, run=fake_nvidia, platform="linux")
+    path = next(tmp_path.glob("*"))
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["fit"]["incomplete"] is True
+    assert "fit.jsonl" in meta["files"]
+
+
+def test_preflight_accepts_latest_in_config_when_server_lists_bare():
+    async def inner():
+        async with make_client(FakeOpenAI(models=["llama3.1"]), "x") as c:
+            return await preflight(c, "llama3.1:latest")
+
+    assert asyncio.run(inner()) == "llama3.1"
+
+
+def test_dead_endpoint_does_not_stall_teardown(tmp_path, monkeypatch):
+    import bakeoff.runner as runner
+
+    monkeypatch.setattr(runner, "REPORT_TIMEOUT_S", 0.05)
+
+    async def hang(self, runtime):
+        if getattr(self, "_started", False):
+            await asyncio.sleep(30)
+        self._started = True
+        return {"version": None, "context_length": None, "size_vram": None}
+
+    monkeypatch.setattr(EndpointClient, "runtime_info", hang)
+    path = go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["memory"]["runtime_reported"]["size_vram"]["source"] == "not_captured"

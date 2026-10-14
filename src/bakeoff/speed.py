@@ -122,29 +122,33 @@ async def run_speed(
             )
         )
 
-    for shape, messages in SHAPES.items():
-        for c in cfg.concurrency:
-            for _ in range(cfg.warmup):
-                await fire(messages, c)
-            items: list[tuple[dict, ChatResult]] = []
-            rounds: list[list[ChatResult]] = []
-            key = f"{shape}@{c}"
-            for rnd in range(cfg.repeats):
-                results = await fire(messages, c)
-                rounds.append(results)
-                tripped: AbortRun | None = None
-                for r in results:
-                    rec = _record(shape, c, rnd, r, ignore_eos)
-                    records.append(rec)
-                    items.append((rec, r))
-                    if tripped is None:
-                        try:
-                            budget.record(r.error is None)
-                        except AbortRun as exc:
-                            tripped = exc
-                if tripped is not None:
-                    summary[key] = _cell_summary(items, rounds, ignore_eos)
-                    tripped.partial = (records, summary)
-                    raise tripped
-            summary[key] = _cell_summary(items, rounds, ignore_eos)
+    try:
+        for shape, messages in SHAPES.items():
+            for c in cfg.concurrency:
+                for _ in range(cfg.warmup):
+                    await fire(messages, c)
+                items: list[tuple[dict, ChatResult]] = []
+                rounds: list[list[ChatResult]] = []
+                key = f"{shape}@{c}"
+                for rnd in range(cfg.repeats):
+                    results = await fire(messages, c)
+                    rounds.append(results)
+                    tripped: AbortRun | None = None
+                    for r in results:
+                        rec = _record(shape, c, rnd, r, ignore_eos)
+                        records.append(rec)
+                        items.append((rec, r))
+                        if tripped is None:
+                            try:
+                                budget.record(r.error is None)
+                            except AbortRun as exc:
+                                tripped = exc
+                    if tripped is not None:
+                        summary[key] = _cell_summary(items, rounds, ignore_eos)
+                        tripped.partial = (records, summary)
+                        raise tripped
+                summary[key] = _cell_summary(items, rounds, ignore_eos)
+    except (asyncio.CancelledError, KeyboardInterrupt) as exc:
+        exc.partial = (records, summary)  # type: ignore[attr-defined]
+        raise
     return records, summary

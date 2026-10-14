@@ -103,3 +103,27 @@ def test_make_client_reads_key_from_env(monkeypatch, cfg_file):
     cfg = load_config(cfg_file, ["endpoint.api_key_env=MY_KEY"])
     client = cli.make_client(cfg)
     assert client._http.headers["authorization"] == "Bearer sekret"
+
+
+def test_cli_unexpected_error_is_one_line(tmp_path, monkeypatch, cfg_file, capsys):
+    patch_client(monkeypatch, FakeOpenAI())
+
+    async def boom(*a, **k):
+        raise RuntimeError("kaput")
+
+    monkeypatch.setattr(cli, "execute_run", boom)
+    monkeypatch.delenv("BAKEOFF_DEBUG", raising=False)
+    assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
+    err = capsys.readouterr().err
+    assert "kaput" in err and "Traceback" not in err and len(err.strip().splitlines()) == 1
+    monkeypatch.setenv("BAKEOFF_DEBUG", "1")
+    with pytest.raises(RuntimeError):
+        cli.main(["run", str(cfg_file), "--out", str(tmp_path)])
+
+
+def test_cli_env_without_config_never_makes_client(monkeypatch, capsys):
+    def boom(cfg):
+        raise AssertionError("make_client must not be called")
+
+    monkeypatch.setattr(cli, "make_client", boom)
+    assert cli.main(["env"]) == 0

@@ -55,6 +55,11 @@ def _cmd_run(args: argparse.Namespace) -> int:
     except (PreflightError, SuiteError, ConfigError) as e:
         _err(str(e))
         return 1
+    except Exception as e:  # noqa: BLE001 - one line, no traceback unless debugging
+        if os.environ.get("BAKEOFF_DEBUG") == "1":
+            raise
+        _err(f"unexpected {type(e).__name__}: {e}")
+        return 1
     meta = json.loads((path / "bundle.json").read_text(encoding="utf-8"))
     print(path)
     if meta["status"] != "complete":

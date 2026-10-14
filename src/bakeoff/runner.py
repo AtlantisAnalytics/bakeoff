@@ -1,6 +1,7 @@
 """The runner: preflight, the three passes, sampling, redaction and the hashed bundle."""
 
 import asyncio
+import ipaddress
 import json
 import re
 import sys
@@ -23,7 +24,6 @@ from bakeoff.suites import Suite, check_lock, resolve_suites, suites_root
 
 PASSES = ("quality", "speed", "fit")
 REDACTED = "<endpoint>"
-MIN_HOST_LEN = 4
 MAX_LISTED_MODELS = 10
 
 
@@ -37,7 +37,7 @@ async def preflight(client: EndpointClient, model: str) -> str:
         served = await client.list_models()
     except Exception as e:  # noqa: BLE001 - any failure to list models is a preflight failure
         raise PreflightError(f"cannot list models at the endpoint: {type(e).__name__}: {e}") from e
-    for name in (model, f"{model}:latest"):
+    for name in (model, f"{model}:latest", model.removesuffix(":latest")):
         if name in served:
             return name
     shown = ", ".join(served[:MAX_LISTED_MODELS]) or "(none)"
@@ -48,26 +48,42 @@ async def preflight(client: EndpointClient, model: str) -> str:
     )
 
 
-def _endpoint_terms(base_url: str) -> list[str]:
+def _is_ip(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return True
+
+
+def _endpoint_terms(base_url: str) -> tuple[list[str], list[str]]:
+    """(always, bare): always-redacted strings, and bare hosts redacted only at token edges."""
     api_base, root = normalize_base_url(base_url)
-    terms = [base_url, base_url.strip(), base_url.strip().rstrip("/"), api_base, root]
+    always = [base_url, base_url.strip(), base_url.strip().rstrip("/"), api_base, root]
+    bare: list[str] = []
     try:
         parts = urlsplit(base_url if "//" in base_url else "//" + base_url)
         host, port, netloc = parts.hostname or "", parts.port, parts.netloc
     except ValueError:
         host, port, netloc = "", None, ""
-    if len(netloc) >= MIN_HOST_LEN:
-        terms.append(netloc)
+    if "@" in netloc:
+        always.append(netloc)  # userinfo
     if host and port is not None:
-        terms.append(f"{host}:{port}")
-    if len(host) >= MIN_HOST_LEN:
-        terms.append(host)
-    return sorted({t for t in terms if t}, key=len, reverse=True)
+        always.append(f"{host}:{port}")
+        always.append(f"[{host}]:{port}")
+    if host and (_is_ip(host) or "." in host):
+        bare.append(host)
+        if ":" in host:
+            bare.append(f"[{host}]")
+    key = lambda t: -len(t)  # noqa: E731
+    return sorted({t for t in always if t}, key=key), sorted({t for t in bare if t}, key=key)
 
 
 def make_redactor(base_url: str) -> Callable[[object], object]:
-    terms = _endpoint_terms(base_url)
-    pattern = re.compile("|".join(re.escape(t) for t in terms), re.I) if terms else None
+    always, bare = _endpoint_terms(base_url)
+    alts = [re.escape(t) for t in always]
+    alts += [rf"(?<![\w.-]){re.escape(t)}(?![\w.-])" for t in bare]
+    pattern = re.compile("|".join(alts), re.I) if alts else None
 
     def redact(obj: object) -> object:
         if isinstance(obj, str):
@@ -115,18 +131,24 @@ def _load_suites(cfg: RunConfig, extra_suites: list[str]) -> tuple[list[Suite], 
     return suites, private_keys
 
 
+REPORT_TIMEOUT_S = 10.0
+
+
 async def _runtime_reported(client: EndpointClient, runtime: str) -> dict:
-    size_vram = None
-    kv = None
-    try:
-        size_vram = (await client.runtime_info(runtime)).get("size_vram")
+    got: dict = {"size_vram": None, "kv": None}
+
+    async def probe() -> None:
+        got["size_vram"] = (await client.runtime_info(runtime)).get("size_vram")
         if runtime == "vllm":
-            kv = await client.kv_cache_usage()
+            got["kv"] = await client.kv_cache_usage()
+
+    try:
+        await asyncio.wait_for(probe(), REPORT_TIMEOUT_S)
     except Exception:  # noqa: BLE001 - memory facts are best effort
         pass
     return {
-        "size_vram": field(size_vram, "reported"),
-        "kv_cache_usage": field(kv, "reported"),
+        "size_vram": field(got["size_vram"], "reported"),
+        "kv_cache_usage": field(got["kv"], "reported"),
     }
 
 
@@ -169,22 +191,22 @@ async def execute_run(
             sampler.mark("quality")
             try:
                 quality = await run_quality(client, suites)
-            except AbortRun as exc:
-                quality = exc.partial
+            except (AbortRun, asyncio.CancelledError, KeyboardInterrupt) as exc:
+                quality = getattr(exc, "partial", quality)
                 raise
         if "speed" in wanted:
             try:
                 speed_out = await run_speed(client, cfg.speed, runtime_name, sampler)
-            except AbortRun as exc:
-                speed_out = getattr(exc, "partial", None)
+            except (AbortRun, asyncio.CancelledError, KeyboardInterrupt) as exc:
+                speed_out = getattr(exc, "partial", speed_out)
                 raise
         if "fit" in wanted:
             try:
                 fit_out = await run_fit(
                     client, cfg.fit, runtime_name, info.get("context_length"), sampler
                 )
-            except AbortRun as exc:
-                fit_out = getattr(exc, "partial", None)
+            except (AbortRun, asyncio.CancelledError, KeyboardInterrupt) as exc:
+                fit_out = getattr(exc, "partial", fit_out)
                 raise
     except AbortRun as exc:
         status, reason = "incomplete", exc.reason
