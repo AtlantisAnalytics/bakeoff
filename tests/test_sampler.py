@@ -218,3 +218,27 @@ def test_ragged_gpu_counts():
     p = s.peaks()["baseline"]
     assert p["mem_used_mib_per_gpu"] == [10, 20]
     assert p["mem_used_mib_total"] == 25
+
+
+def test_sample_straddling_a_mark_is_dropped_not_mislabelled():
+    holder = {}
+
+    def run(cmd):
+        holder["s"].mark("speed")  # the pass changes while the command runs
+        return "0, 1000, 100"
+
+    s = Sampler("nvidia", run)
+    holder["s"] = s
+    assert s.sample_once() is None
+    assert not s.captured
+    s._run = lambda cmd: "0, 2000, 200"
+    rec = s.sample_once()
+    assert rec["pass"] == "speed" and s.captured
+
+
+def test_label_and_time_are_snapshotted_before_the_read():
+    s = Sampler("nvidia", lambda cmd: (time.sleep(0.05), "0, 1000, 100")[1])
+    before = time.monotonic() - s._t0
+    rec = s.sample_once()
+    assert rec["pass"] == "baseline"
+    assert rec["t"] < before + 0.04

@@ -79,11 +79,15 @@ class Sampler:
 
     def sample_once(self) -> dict | None:
         try:
+            with self._lock:  # label and time belong to the moment the read starts
+                label, t = self._pass, time.monotonic() - self._t0
             reading = self._read()
             if reading is None:
                 return None
             with self._lock:
-                rec = {"t": time.monotonic() - self._t0, "pass": self._pass, **reading}
+                if self._pass != label:  # the pass changed mid-read: the label would be wrong
+                    return None
+                rec = {"t": t, "pass": label, **reading}
                 self._samples.append(rec)
             return rec
         except Exception:  # noqa: BLE001 - the sampler must never kill a run
