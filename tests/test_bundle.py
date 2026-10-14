@@ -60,17 +60,88 @@ def test_incomplete_flagged(tmp_path):
 
 
 def test_verify_scans_content_and_denylist(tmp_path):
+    run = tmp_path / "run"
     write_bundle(
-        tmp_path,
+        run,
         {"status": "complete"},
         {"speed.jsonl": [{"a": "see 10.1.2.3 and alice and lab-box-7"}]},  # scrub-ok
     )
-    deny = tmp_path.parent / (tmp_path.name + "-deny.txt")
+    deny_dir = tmp_path / "cfg"
+    deny_dir.mkdir()
+    deny = deny_dir / "denylist.txt"
     deny.write_text("# comment\n\nlab-box-7\n", encoding="utf-8")  # scrub-ok
-    kinds = _kinds(verify_bundle(tmp_path, username="alice", denylist=deny))  # scrub-ok
+    kinds = _kinds(verify_bundle(run, username="alice", denylist=deny))  # scrub-ok
     assert {"private_ip", "username", "denylist"} <= kinds
-    missing = tmp_path.parent / "nope.txt"
-    assert "denylist" not in _kinds(verify_bundle(tmp_path, None, missing))
+    # the same content has no denylist finding when the denylist path is absent
+    assert "denylist" not in _kinds(verify_bundle(run, None, deny_dir / "nope.txt"))
+
+
+def test_json_escaped_windows_path_flagged(tmp_path):
+    write_bundle(
+        tmp_path,
+        {"status": "complete"},
+        {"speed.jsonl": [{"o": "C:\\Users\\alice\\x"}]},  # scrub-ok
+    )
+    assert "home_path" in _kinds(verify_bundle(tmp_path, None, None))
+
+
+def test_decoded_denylist_and_unicode_escape(tmp_path):
+    write_bundle(
+        tmp_path,
+        {"status": "complete"},
+        {"speed.jsonl": [{"o": 'say "my\\host" é'}]},
+    )
+    deny = tmp_path / "d.txt"
+    deny.write_text("my\\host\n", encoding="utf-8")  # scrub-ok
+    assert "denylist" in _kinds(verify_bundle(tmp_path, None, deny))
+
+
+def test_non_json_files_scanned(tmp_path):
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    (tmp_path / "notes.TXT").write_text("ip 10.9.8.7\n", encoding="utf-8")  # scrub-ok
+    kinds = _kinds(verify_bundle(tmp_path, None, None))
+    assert {"unlisted_file", "private_ip"} <= kinds
+
+
+def test_corrupt_bundle_json(tmp_path):
+    (tmp_path / "bundle.json").write_text("{nope", encoding="utf-8")
+    assert _kinds(verify_bundle(tmp_path, None, None)) == {"unreadable"}
+
+
+def test_non_dict_meta(tmp_path):
+    (tmp_path / "bundle.json").write_text("[1]", encoding="utf-8")
+    assert _kinds(verify_bundle(tmp_path, None, None)) == {"unreadable"}
+
+
+def test_non_dict_files(tmp_path):
+    (tmp_path / "bundle.json").write_text('{"status": "complete", "files": []}', encoding="utf-8")
+    assert "unreadable" in _kinds(verify_bundle(tmp_path, None, None))
+
+
+def test_non_utf8_file(tmp_path):
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    (tmp_path / "blob.bin").write_bytes(b"\xff\xfe\x00")
+    assert "unreadable" in _kinds(verify_bundle(tmp_path, None, None))
+
+
+def test_write_bundle_rejects_unsafe_paths(tmp_path):
+    for bad in ("../x.jsonl", "/abs/x.jsonl", "a/../../x.jsonl"):
+        with pytest.raises(ValueError):
+            write_bundle(tmp_path / "r", {"status": "complete"}, {bad: [{}]})
+
+
+def test_verify_unsafe_key_and_symlink(tmp_path):
+    write_bundle(tmp_path, {"status": "complete"}, {"speed.jsonl": [{"a": 1}]})
+    p = tmp_path / "bundle.json"
+    meta = json.loads(p.read_text(encoding="utf-8"))
+    meta["files"]["../evil.jsonl"] = "0" * 64
+    p.write_text(json.dumps(meta), encoding="utf-8")
+    outside = tmp_path.parent / (tmp_path.name + "-out.txt")
+    outside.write_text("x", encoding="utf-8")
+    (tmp_path / "link.txt").symlink_to(outside)
+    findings = verify_bundle(tmp_path, None, None)
+    unreadable = {f.file for f in findings if f.kind == "unreadable"}
+    assert {"../evil.jsonl", "link.txt"} <= unreadable
 
 
 @pytest.mark.parametrize(
@@ -89,10 +160,14 @@ def test_verify_scans_content_and_denylist(tmp_path):
         ("/Users/alice/x", "home_path"),  # scrub-ok
         ("/home/alice", "home_path"),  # scrub-ok
         ("C:\\Users\\alice\\x", "home_path"),  # scrub-ok
+        ("c:\\users\\alice", "home_path"),  # scrub-ok
+        ('path="/home/alice/x"', "home_path"),  # scrub-ok
+        ("a=/Users/alice", "home_path"),  # scrub-ok
+        ("alice_laptop", "username"),  # scrub-ok
     ],
 )
 def test_scan_text_flags(text, kind):
-    assert kind in {k for _, k, _ in scan_text(text, [])}
+    assert kind in {k for _, k, _ in scan_text(text, [], username="alice")}  # scrub-ok
 
 
 @pytest.mark.parametrize(
@@ -107,10 +182,22 @@ def test_scan_text_flags(text, kind):
         "Answer:72",
         "ratio:12",
         "the /Users/ folder",
+        "https://example.com/home/page",
+        "see example.com/Users/page",
     ],
 )
 def test_scan_text_clean(text):
     assert scan_text(text, []) == []
+
+
+def test_line_numbers_split_on_newline_only():
+    hits = scan_text("a\x0cb\u2028c\nip 10.0.0.1", [])  # scrub-ok
+    assert [h[0] for h in hits] == [2]
+
+
+def test_underscore_is_separator():
+    hits = scan_text("lab-box-7_gpu", ["lab-box-7"])  # scrub-ok
+    assert [k for _, k, _ in hits] == ["denylist"]
 
 
 def test_line_numbers():

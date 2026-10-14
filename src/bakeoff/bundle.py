@@ -1,10 +1,11 @@
 """Bundle writing, verification and the scrub scan."""
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
 
@@ -22,8 +23,21 @@ def _bundle_hash(meta: dict) -> str:
     return sha256_hex(canonical_json({k: v for k, v in meta.items() if k != "bundle_sha256"}))
 
 
+def _bad_relpath(rel: object) -> bool:
+    if not isinstance(rel, str) or not rel:
+        return True
+    for cls in (PurePosixPath, PureWindowsPath):
+        p = cls(rel)
+        if p.is_absolute() or p.anchor or ".." in p.parts:
+            return True
+    return False
+
+
 def write_bundle(run_dir: Path, meta: dict, files: dict[str, list[dict]]) -> str:
     run_dir = Path(run_dir)
+    for rel in files:
+        if _bad_relpath(rel):
+            raise ValueError(f"unsafe bundle file path: {rel!r}")
     run_dir.mkdir(parents=True, exist_ok=True)
     hashes: dict[str, str] = {}
     for rel, records in files.items():
@@ -64,7 +78,10 @@ _PRIVATE_IPV6 = re.compile(r"(?<![0-9a-f:])(?:f[cd][0-9a-f]{2}|fe[89ab][0-9a-f])
 _HOST_PORT = re.compile(
     r"(?i)\b(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|[a-z0-9-]+(?:\.[a-z0-9-]+)+):\d{2,5}\b"
 )
-_HOME_PATH = re.compile(r"(?:/Users/|/home/|C:\\Users\\)[A-Za-z0-9._-]+")
+_HOME_PATH = re.compile(
+    r"(?<![\w.\-/])(?:/Users/|/home/)[A-Za-z0-9._-]+"
+    r"|(?<![A-Za-z0-9])(?i:[a-z]:\\Users\\)[A-Za-z0-9._-]+"
+)
 _PATTERNS = (
     ("private_ip", _PRIVATE_IPV4),
     ("private_ip", _PRIVATE_IPV6),
@@ -74,7 +91,7 @@ _PATTERNS = (
 
 
 def _word(term: str) -> re.Pattern[str]:
-    return re.compile(rf"(?<!\w){re.escape(term)}(?!\w)", re.I)
+    return re.compile(rf"(?<![A-Za-z0-9]){re.escape(term)}(?![A-Za-z0-9])", re.I)
 
 
 def scan_text(
@@ -84,7 +101,7 @@ def scan_text(
     if username and len(username) >= 3:
         word_checks.append(("username", _word(username)))
     hits: list[tuple[int, str, str]] = []
-    for no, line in enumerate(text.splitlines(), 1):
+    for no, line in enumerate(text.split("\n"), 1):
         for kind, pat in (*_PATTERNS, *word_checks):
             hits.extend((no, kind, m.group(0)) for m in pat.finditer(line))
     return hits
@@ -97,23 +114,65 @@ def _load_terms(denylist: Path | None) -> list[str]:
     return [s for s in (ln.strip() for ln in lines) if s and not s.startswith("#")]
 
 
+def _strings(obj: object):
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _strings(k)
+            yield from _strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _strings(v)
+
+
+def _walk(run_dir: Path):
+    """Yield (relpath, path, is_symlink) for every file and symlink, never following links."""
+    for root, dirs, names in os.walk(run_dir, followlinks=False):
+        base = Path(root)
+        for name in sorted(dirs + names):
+            path = base / name
+            if path.is_symlink():
+                yield path.relative_to(run_dir).as_posix(), path, True
+            elif name in names:
+                yield path.relative_to(run_dir).as_posix(), path, False
+
+
 def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) -> list[Finding]:
     run_dir = Path(run_dir)
-    findings: list[Finding] = []
     meta_path = run_dir / "bundle.json"
+    if meta_path.is_symlink():
+        return [Finding("bundle.json", 0, "unreadable", "bundle.json is a symlink")]
     if not meta_path.is_file():
         return [Finding("bundle.json", 0, "missing_file", "bundle.json not found")]
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    listed: dict[str, str] = meta.get("files", {})
+    try:
+        meta = json.loads(meta_path.read_bytes().decode("utf-8"))
+    except (ValueError, OSError) as e:
+        return [Finding("bundle.json", 0, "unreadable", f"cannot parse bundle.json: {e}")]
+    if not isinstance(meta, dict):
+        return [Finding("bundle.json", 0, "unreadable", "bundle.json is not an object")]
+    findings: list[Finding] = []
+    listed = meta.get("files", {})
+    if not isinstance(listed, dict):
+        findings.append(Finding("bundle.json", 0, "unreadable", "files is not an object"))
+        listed = {}
+    links = {rel for rel, _, link in _walk(run_dir) if link}
     for rel, expected in listed.items():
+        if _bad_relpath(rel):
+            findings.append(Finding(str(rel), 0, "unreadable", "unsafe path in files"))
+            continue
         path = run_dir / rel
-        if not path.is_file():
+        if rel in links or path.is_symlink():
+            findings.append(Finding(rel, 0, "unreadable", "listed file is a symlink"))
+        elif not path.is_file():
             findings.append(Finding(rel, 0, "missing_file", "listed file is missing"))
         elif sha256_file(path) != expected:
             findings.append(Finding(rel, 0, "hash_mismatch", "file hash differs from bundle.json"))
-    for path in sorted(run_dir.rglob("*")):
-        rel = path.relative_to(run_dir).as_posix()
-        if path.is_file() and rel != "bundle.json" and rel not in listed:
+    for rel, _, link in _walk(run_dir):
+        if link:
+            if rel not in listed:
+                findings.append(Finding(rel, 0, "unreadable", "symlink in bundle"))
+        elif rel != "bundle.json" and rel not in listed:
             findings.append(Finding(rel, 0, "unlisted_file", "file is not listed in bundle.json"))
     if meta.get("bundle_sha256") != _bundle_hash(meta):
         findings.append(Finding("bundle.json", 0, "bundle_hash", "bundle hash does not match"))
@@ -122,10 +181,47 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
             Finding("bundle.json", 0, "incomplete", f"status is {meta.get('status')!r}")
         )
     terms = _load_terms(denylist)
-    for path in sorted(run_dir.rglob("*")):
-        if path.is_file() and path.suffix in (".json", ".jsonl"):
-            text = path.read_text(encoding="utf-8")
-            rel = path.relative_to(run_dir).as_posix()
-            for no, kind, match in scan_text(text, terms, username):
-                findings.append(Finding(rel, no, kind, match))
+    seen: set[Finding] = set()
+
+    def add(f: Finding) -> None:
+        if f not in seen:
+            seen.add(f)
+            findings.append(f)
+
+    for rel, path, link in _walk(run_dir):
+        if link:
+            continue
+        try:
+            data = path.read_bytes()
+        except OSError as e:
+            add(Finding(rel, 0, "unreadable", f"cannot read file: {e}"))
+            continue
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            add(Finding(rel, 0, "unreadable", "file is not valid UTF-8"))
+            text = data.decode("utf-8", errors="replace")
+        for no, kind, match in scan_text(text, terms, username):
+            add(Finding(rel, no, kind, match))
+        suffix = path.suffix.lower()
+        if suffix == ".jsonl":
+            for no, line in enumerate(text.split("\n"), 1):
+                if not line.strip():
+                    continue
+                try:
+                    obj = json.loads(line)
+                except ValueError:
+                    continue
+                for st in _strings(obj):
+                    for _, kind, match in scan_text(st, terms, username):
+                        add(Finding(rel, no, kind, match))
+        elif suffix == ".json":
+            try:
+                obj = json.loads(text)
+            except ValueError:
+                add(Finding(rel, 0, "unreadable", "file is not valid JSON"))
+                continue
+            for st in _strings(obj):
+                for _, kind, match in scan_text(st, terms, username):
+                    add(Finding(rel, 0, kind, match))
     return findings
