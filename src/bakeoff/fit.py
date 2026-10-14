@@ -33,6 +33,8 @@ async def calibrate(client: EndpointClient) -> tuple[float, float] | None:
             return None
         counts.append(r.prompt_tokens)
     per_line = (counts[1] - counts[0]) / 150
+    if per_line <= 0:
+        return None
     return per_line, counts[0] - 50 * per_line
 
 
@@ -45,11 +47,11 @@ def _expected_failure(r: ChatResult) -> bool:
 
 
 def _summary(
-    limit: int | None,
     server_context: int | None,
     source: str,
     calibrated: bool,
     steps: dict[str, dict],
+    incomplete: bool,
 ) -> dict:
     passed = [int(s) for s, v in steps.items() if v["status"] == "pass"]
     return {
@@ -57,6 +59,7 @@ def _summary(
         "server_context": server_context,
         "limit_source": source,
         "truncation_check": "measured" if calibrated else "not_captured",
+        "incomplete": incomplete,
         "steps": steps,
     }
 
@@ -81,39 +84,48 @@ async def run_fit(
     records: list[dict] = []
     steps: dict[str, dict] = {}
 
-    def summary() -> dict:
-        return _summary(limit, server_context, source, cal is not None, steps)
+    def summary(incomplete: bool = False) -> dict:
+        return _summary(server_context, source, cal is not None, steps, incomplete)
 
+    ordered = sorted(cfg.steps)
     failed = False
-    for step in sorted(cfg.steps):
+    for idx, step in enumerate(ordered):
         key = str(step)
         if failed:
             steps[key] = {"status": "not_run", "kv_cache_usage": None}
             continue
         if limit is not None and step > limit:
-            steps[key] = {"status": "skipped", "reason": "above context limit"}
-            steps[key]["kv_cache_usage"] = None
+            steps[key] = {
+                "status": "skipped",
+                "reason": "above context limit",
+                "kv_cache_usage": None,
+            }
             continue
         lines = math.floor((step - intercept - HEADROOM) / per_line)
         if lines < 1:
-            steps[key] = {"status": "skipped", "reason": "step too small for the prompt overhead"}
-            steps[key]["kv_cache_usage"] = None
+            steps[key] = {
+                "status": "skipped",
+                "reason": "step too small for the prompt overhead",
+                "kv_cache_usage": None,
+            }
             continue
         if sampler is not None:
             sampler.mark(f"fit:{step}")
         expected = round(intercept + lines * per_line) if cal else None
         step_ok = True
+        step_error: str | None = None
+        tripped: AbortRun | None = None
         for depth in DEPTHS:
             messages, needle = needle_messages(lines, depth, seed=step)
             r = await client.chat(messages, MAX_TOKENS, temperature=0.0, seed=0)
             accepted = r.error is None
             within = None
-            if cal:
-                within = (
-                    accepted
-                    and r.prompt_tokens is not None
-                    and abs(r.prompt_tokens - expected) / expected <= TOLERANCE
-                )
+            if cal and accepted:
+                if r.prompt_tokens is None:
+                    if step_error is None:
+                        step_error = "usage missing"
+                else:
+                    within = abs(r.prompt_tokens - expected) / expected <= TOLERANCE
             retrieved = accepted and needle in r.content
             records.append(
                 {
@@ -129,14 +141,21 @@ async def run_fit(
                     "error": r.error,
                 }
             )
+            if not accepted and not _expected_failure(r) and step_error is None:
+                step_error = (r.error or "unknown error")[:200]
             if not (accepted and within is not False and retrieved):
                 step_ok = False
             try:
                 budget.record(accepted or _expected_failure(r))
             except AbortRun as exc:
-                steps[key] = {"status": "pass" if step_ok else "fail", "kv_cache_usage": None}
-                exc.partial = (records, summary())
-                raise
+                tripped = tripped or exc
+        if step_error is not None:
+            steps[key] = {"status": "error", "reason": step_error, "kv_cache_usage": None}
+            for later in ordered[idx + 1 :]:
+                steps[str(later)] = {"status": "not_run", "kv_cache_usage": None}
+            exc = tripped or AbortRun(f"fit: step {step} error: {step_error}")
+            exc.partial = (records, summary(True))
+            raise exc
         kv = await client.kv_cache_usage() if runtime == "vllm" else None
         steps[key] = {"status": "pass" if step_ok else "fail", "kv_cache_usage": kv}
         if not step_ok:

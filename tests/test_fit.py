@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from fake_openai import FakeOpenAI
+from fake_openai import FakeOpenAI, FakeReply
 
 from bakeoff.client import EndpointClient
 from bakeoff.config import FitConfig
@@ -31,8 +31,20 @@ def test_calibrate_is_linear():
             return await calibrate(c)
 
     per_line, intercept = asyncio.run(main())
-    assert 15 < per_line < 30
-    assert intercept == pytest.approx(0, abs=40)
+    assert per_line == pytest.approx(18.38)
+    assert intercept == pytest.approx(29.0)
+
+
+def test_degenerate_calibration_is_none():
+    def flat(messages):
+        return FakeReply(prompt_tokens=100)
+
+    async def main():
+        fake = FakeOpenAI(responder=flat)
+        async with EndpointClient("http://fake/v1", "m", transport=fake.transport) as c:
+            return await calibrate(c)
+
+    assert asyncio.run(main()) is None
 
 
 def test_passes_up_to_server_limit():
@@ -91,7 +103,8 @@ def test_unexpected_errors_abort_with_partial():
         go(Unhappy(), FitConfig(steps=[3000, 4096, 6000, 8192, 16384]))
     records, summary = ei.value.partial
     assert len(records) == 12
-    assert summary["steps"]["8192"]["status"] == "fail"
+    assert summary["steps"]["8192"]["status"] == "error"
+    assert summary["steps"]["16384"]["status"] == "not_run"
     assert summary["max_context_passed"] == 6000
 
 
@@ -141,3 +154,78 @@ def test_steps_sorted_and_marked_and_kv():
     assert s["steps"]["4096"]["kv_cache_usage"] == 0.25
     _, s2 = go(fake, FitConfig(steps=[4096]), runtime="ollama")
     assert s2["steps"]["4096"]["kv_cache_usage"] is None
+
+
+def _is_big(body):
+    return len(body["messages"][0]["content"]) > 40000  # the 16k step and above
+
+
+def test_503_at_step_is_error_and_aborts():
+    import httpx
+
+    class Flaky(FakeOpenAI):
+        def _chat(self, body):
+            if _is_big(body):
+                return httpx.Response(503, text="unavailable")
+            return super()._chat(body)
+
+    with pytest.raises(AbortRun) as ei:
+        go(Flaky(), FitConfig(steps=STEPS))
+    records, s = ei.value.partial
+    assert "step 16384 error" in ei.value.reason
+    assert s["incomplete"] is True
+    assert statuses(s) == {
+        "4096": "pass",
+        "8192": "pass",
+        "16384": "error",
+        "32768": "not_run",
+        "65536": "not_run",
+    }
+    assert s["steps"]["16384"]["reason"] == "unavailable"
+    assert s["max_context_passed"] == 8192
+    assert len([r for r in records if r["step"] == 16384]) == 3
+
+
+def test_connection_error_is_error_and_aborts():
+    import httpx
+
+    class Broken(FakeOpenAI):
+        async def _handle(self, request):
+            if request.url.path.endswith("/chat/completions"):
+                import json
+
+                if _is_big(json.loads(request.content)):
+                    raise httpx.ConnectError("refused")
+            return await super()._handle(request)
+
+    with pytest.raises(AbortRun) as ei:
+        go(Broken(), FitConfig(steps=STEPS))
+    _, s = ei.value.partial
+    assert s["steps"]["16384"]["status"] == "error"
+    assert "transport error" in s["steps"]["16384"]["reason"]
+    assert s["incomplete"] is True
+
+
+def test_context_400_stays_fail_without_abort():
+    _, s = go(FakeOpenAI(context_limit=9000), FitConfig(steps=STEPS))
+    assert s["steps"]["16384"]["status"] == "fail"
+    assert s["incomplete"] is False
+
+
+def test_usage_missing_after_calibration_is_error():
+    class Drops(FakeOpenAI):
+        def _chat(self, body):
+            if body["max_tokens"] == 1024:
+                body = {k: v for k, v in body.items() if k != "stream_options"}
+            return super()._chat(body)
+
+    with pytest.raises(AbortRun) as ei:
+        go(Drops(), FitConfig(steps=[4096, 8192]))
+    records, s = ei.value.partial
+    assert s["steps"]["4096"] == {
+        "status": "error",
+        "reason": "usage missing",
+        "kv_cache_usage": None,
+    }
+    assert s["steps"]["8192"]["status"] == "not_run"
+    assert all(r["within_5pct"] is None for r in records)
