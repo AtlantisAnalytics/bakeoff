@@ -4,7 +4,7 @@ version = 1
 split = "public"
 license = "CC-BY-4.0"
 grader = "needle"
-max_tokens = 64
+max_tokens = 1024
 
 [generator]
 name = "needle"

@@ -219,8 +219,44 @@ def _parse_float(s: str) -> float:
     return f
 
 
+def _norm_eq(a: Any, b: Any) -> bool:
+    """Value equality for `values`: strings casefolded and stripped, numbers numeric (bool is
+    never a number), dicts compared on the expected keys only, lists as multisets."""
+    if isinstance(a, str) and isinstance(b, str):
+        return a.strip().casefold() == b.strip().casefold()
+    if isinstance(a, bool) or isinstance(b, bool):
+        return isinstance(a, bool) and isinstance(b, bool) and a == b
+    if _is_number(a) and _is_number(b):
+        return a == b
+    if isinstance(a, dict) and isinstance(b, dict):
+        return all(k in a and _norm_eq(a[k], v) for k, v in b.items())
+    if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            return False
+        rest = list(b)
+        for x in a:
+            for i, y in enumerate(rest):
+                if _norm_eq(x, y):
+                    del rest[i]
+                    break
+            else:
+                return False
+        return True
+    return a is None and b is None
+
+
 @register("json_schema")
 def _json_schema(output: str, expected: Any, options: dict) -> Grade:
+    """`expected` is a schema, or {"schema": {...}, "values": {...}} to also check field values."""
+    values = None
+    if isinstance(expected, dict) and "schema" in expected:
+        extra = set(expected) - {"schema", "values"}
+        if extra:
+            raise BadExpected(f"unknown keys in expected: {sorted(extra)}")
+        values = expected.get("values", {})
+        if not isinstance(values, dict):
+            raise BadExpected("values must be an object")
+        expected = expected["schema"]
     problems = schema_problems(expected)
     if problems:
         raise BadExpected("; ".join(problems[:3]))
@@ -233,6 +269,11 @@ def _json_schema(output: str, expected: Any, options: dict) -> Grade:
     errors = validate_schema(value, expected)
     if errors:
         return _result(False, "; ".join(errors[:3]))
+    for key, want in (values or {}).items():
+        if not isinstance(value, dict) or key not in value:
+            return _result(False, f"value mismatch: {key!r} missing")
+        if not _norm_eq(value[key], want):
+            return _result(False, f"value mismatch: {key!r} got {value[key]!r}, want {want!r}")
     return _result(True, "valid")
 
 

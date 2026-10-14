@@ -173,3 +173,35 @@ def test_unsupported_schema_keywords_fail_closed(schema):
 
 def test_additional_properties_true_ok():
     assert not validate_schema({"a": 1}, {"type": "object", "additionalProperties": True})
+
+
+VALS = {
+    "schema": {
+        "type": "object",
+        "properties": {"s": {"type": "string"}, "n": {}, "t": {"type": "array"}, "o": {}},
+    },
+    "values": {"s": "Mixed", "n": 2, "t": ["a", "B"], "o": {"k": "v"}},
+}
+
+
+@pytest.mark.parametrize(
+    "out,ok,reason",
+    [
+        ('{"s": " mixed ", "n": 2.0, "t": ["b", "A"], "o": {"k": "V", "x": 1}}', True, "valid"),
+        ('{"s": "positive", "n": 2, "t": ["a", "b"], "o": {"k": "v"}}', False, "'s'"),
+        ('{"s": "mixed", "n": true, "t": ["a", "b"], "o": {"k": "v"}}', False, "'n'"),
+        ('{"s": "mixed", "n": 2, "t": ["a"], "o": {"k": "v"}}', False, "'t'"),
+        ('{"s": "mixed", "n": 2, "t": ["a", "a"], "o": {"k": "v"}}', False, "'t'"),
+        ('{"s": "mixed", "n": 2, "t": ["a", "b"], "o": {"k": "w"}}', False, "'o'"),
+        ('{"s": "mixed", "t": ["a", "b"], "o": {"k": "v"}}', False, "'n'"),
+    ],
+)
+def test_json_schema_values(out, ok, reason):
+    r = grade("json_schema", out, VALS, {})
+    assert r.passed is ok and reason in r.reason
+
+
+def test_json_schema_values_malformed_and_bare_schema_unchanged():
+    assert "bad expected" in grade("json_schema", "{}", {"schema": {}, "values": []}, {}).reason
+    assert "bad expected" in grade("json_schema", "{}", {"schema": {}, "extra": 1}, {}).reason
+    assert grade("json_schema", '{"a": 1}', OBJ, {}).passed

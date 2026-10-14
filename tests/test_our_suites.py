@@ -52,23 +52,31 @@ def test_wrong_outputs_fail():
     s = _suites()["grounding/context-only"]
     for raw in raw_items(s):
         e = raw["expected"]
-        assert not grade(s.grader, "I do not know", e, s.grader_options).passed
-        if not e["answerable"]:
-            assert not grade(s.grader, e["must_not_include"][0], e, s.grader_options).passed
+        assert not grade(s.grader, "I do not know", e, s.grader_options).passed, raw["id"]
+        for bad in e["must_not_include"]:
+            out = ("NOT IN CONTEXT " if not e["answerable"] else raw["reference"] + " ") + bad
+            assert not grade(s.grader, out, e, s.grader_options).passed, (raw["id"], bad)
 
 
-def test_grounding_balance():
+def test_explained_refusals_pass():
     s = _suites()["grounding/context-only"]
-    items = raw_items(s)
-    assert sum(1 for r in items if r["expected"]["answerable"] is False) == 10
-    assert sum(1 for r in items if r["expected"]["answerable"] is True) == 20
-    for r in items:
-        e = r["expected"]
-        assert e["must_not_include"]
-        assert e["answerable"] is False or e["must_include"]
-        for a in e["must_include"]:
-            for b in e["must_not_include"]:
-                assert a.lower() not in b.lower() and b.lower() not in a.lower(), r["id"]
+    for raw in raw_items(s):
+        if not raw["expected"]["answerable"]:
+            r = grade(s.grader, raw["reference_explained"], raw["expected"], s.grader_options)
+            assert r.passed, (raw["id"], r)
+
+
+def test_json_values_are_checked():
+    s = _suites()["structured/json"]
+    raw = next(r for r in raw_items(s) if r["id"] == "json-05")
+    assert not grade(s.grader, '{"sentiment": "positive"}', raw["expected"], {}).passed
+    for r in raw_items(s):
+        assert r["expected"]["values"], r["id"]
+
+
+def test_needle_and_open_ended_settings():
+    assert _suites()["longctx/needle"].max_tokens == 1024
+    assert all(i.expected is None for i in _suites()["general/open-ended"].items)
 
 
 def test_all_suite_text_scrub_clean():
