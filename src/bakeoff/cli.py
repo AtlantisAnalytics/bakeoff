@@ -108,7 +108,7 @@ def _public_suite_text() -> str:
     """Prompt and expected text of the shipped suites (username false-positive check)."""
     try:
         suites = resolve_suites([str(suites_root())])
-    except Exception:  # noqa: BLE001 - this is only a false-positive heuristic
+    except Exception:
         return ""
     parts: list[str] = []
     for s in suites:
