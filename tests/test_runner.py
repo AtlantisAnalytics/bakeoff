@@ -449,3 +449,15 @@ def test_fit_probe_falls_back_to_the_first_probe(tmp_path):
         {"context_length": None},
         None,
     )
+
+
+@pytest.mark.parametrize("key", ["ollama", "EMPTY", "none", "sk-no-key-required", "abc1234"])
+def test_redactor_ignores_short_and_placeholder_keys(key):
+    red = make_redactor("http://192.0.2.5:11434/v1", (key,))  # scrub-ok
+    text = "runtime ollama EMPTY none abc1234"
+    assert red(text) == text
+
+
+def test_redactor_still_redacts_real_key():
+    red = make_redactor("http://192.0.2.5:11434/v1", ("sk-real-key-123",))  # scrub-ok
+    assert red("auth sk-real-key-123 ok") == "auth <endpoint> ok"

@@ -140,6 +140,21 @@ def _strings(obj: object):
             stack.extend(cur)
 
 
+def _strings_tagged(obj: object):
+    """Yield (string, is_output): is_output marks string values whose dict key is 'output'."""
+    stack: list[tuple[object, bool]] = [(obj, False)]
+    while stack:
+        cur, tag = stack.pop()
+        if isinstance(cur, str):
+            yield cur, tag
+        elif isinstance(cur, dict):
+            for k, v in cur.items():
+                stack.append((k, False))
+                stack.append((v, k == "output"))
+        elif isinstance(cur, list):
+            stack.extend((v, tag) for v in cur)
+
+
 def _walk(run_dir: Path, errors: list[str] | None = None):
     """Yield (relpath, path, is_symlink) for every file and symlink, never following links."""
 
@@ -166,7 +181,12 @@ def _has_symlink(run_dir: Path, rel: str) -> bool:
     return False
 
 
-def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) -> list[Finding]:
+def verify_bundle(
+    run_dir: Path,
+    username: str | None,
+    denylist: Path | None,
+    username_skip_output: bool = False,
+) -> list[Finding]:
     run_dir = Path(run_dir)
     meta_path = run_dir / "bundle.json"
     if meta_path.is_symlink():
@@ -236,9 +256,12 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
         except UnicodeDecodeError:
             add(Finding(rel, 0, "unreadable", "file is not valid UTF-8"))
             text = data.decode("utf-8", errors="replace")
-        for no, kind, match in scan_text(text, terms, username):
-            add(Finding(rel, no, kind, match))
         suffix = path.suffix.lower()
+        skip_out = username_skip_output and suffix == ".jsonl"
+        # In skip mode the raw JSONL text still holds the model output, so the username is
+        # checked per string below instead.
+        for no, kind, match in scan_text(text, terms, None if skip_out else username):
+            add(Finding(rel, no, kind, match))
         if suffix == ".jsonl":
             for no, line in enumerate(text.split("\n"), 1):
                 if not line.strip():
@@ -248,8 +271,9 @@ def verify_bundle(run_dir: Path, username: str | None, denylist: Path | None) ->
                 except (ValueError, RecursionError):
                     add(Finding(rel, no, "unreadable", "line is not valid JSON"))
                     continue
-                for st in _strings(obj):
-                    for _, kind, match in scan_text(st, terms, username):
+                for st, is_out in _strings_tagged(obj):
+                    uname = None if (skip_out and is_out) else username
+                    for _, kind, match in scan_text(st, terms, uname):
                         add(Finding(rel, no, kind, match))
         elif suffix == ".json":
             try:

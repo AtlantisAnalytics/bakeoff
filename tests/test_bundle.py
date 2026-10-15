@@ -295,3 +295,16 @@ def test_run_id_includes_the_pass_selection():
     t = datetime(2026, 10, 13, 15, 30, tzinfo=UTC)
     assert "-demo-speed-" in run_id(t, "Demo", b"x", "speed")
     assert "-demo-" in run_id(t, "Demo", b"x") and "speed" not in run_id(t, "Demo", b"x")
+
+
+def test_username_skip_scopes_to_output(tmp_path):
+    write_bundle(
+        tmp_path,
+        {"status": "complete", "config": {"model": {"label": "alice-tuned"}}},  # scrub-ok
+        {"quality/x.y.jsonl": [{"output": "alice went home"}]},  # scrub-ok
+    )
+    # a file is reported once by the raw-text pass and once by the per-string pass; count files
+    skip = verify_bundle(tmp_path, "alice", None, username_skip_output=True)
+    assert {f.file for f in skip if f.kind == "username"} == {"bundle.json"}
+    full = verify_bundle(tmp_path, "alice", None, username_skip_output=False)
+    assert {f.file for f in full if f.kind == "username"} == {"bundle.json", "quality/x.y.jsonl"}

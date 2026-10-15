@@ -108,7 +108,7 @@ def _public_suite_text() -> str:
     """Prompt and expected text of the shipped suites (username false-positive check)."""
     try:
         suites = resolve_suites([str(suites_root())])
-    except (SuiteError, OSError):
+    except Exception:  # noqa: BLE001 - this is only a false-positive heuristic
         return ""
     parts: list[str] = []
     for s in suites:
@@ -120,33 +120,41 @@ def _public_suite_text() -> str:
 
 def pick_username(
     no_username: bool, public_text=_public_suite_text
-) -> tuple[str | None, str | None]:
-    """(username to scan for, one-line notice). None means the username check is skipped."""
+) -> tuple[str | None, str | None, bool]:
+    """(username to scan for, one-line notice, skip_output).
+
+    A None name means the username check is skipped. skip_output means the name is an ordinary
+    word in the public suites, so model `output` fields are exempt from the scan.
+    """
     if no_username:
-        return None, None
+        return None, None, False
     try:
         name = getpass.getuser()
     except (OSError, KeyError, ImportError):  # e.g. a container with an arbitrary UID
-        return None, None
+        return None, None, False
     if not name or name.lower() in GENERIC_USERNAMES or len(name) <= 3:
-        return None, None
+        return None, None, False
     if re.search(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", public_text(), re.I):
-        return None, (
-            f"notice: skipping the username check: {name!r} is an ordinary word in the "
-            "public suites; use --denylist for stronger protection"
+        return (
+            name,
+            (
+                f"notice: {name!r} is an ordinary word in the public suites, so the username "
+                "check skips model output fields; use --denylist for stronger protection"
+            ),
+            True,
         )
-    return name, None
+    return name, None, False
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
     denylist = Path(args.denylist) if args.denylist else DEFAULT_DENYLIST.expanduser()
-    username, notice = pick_username(args.no_username)
+    username, notice, skip_output = pick_username(args.no_username)
     if notice:
         print(notice, file=sys.stderr)
     run_dir = Path(args.dir)
     if (run_dir / "private").exists():
         print("notice: contains private-suite outputs; do not share", file=sys.stderr)
-    findings = verify_bundle(run_dir, username, denylist)
+    findings = verify_bundle(run_dir, username, denylist, username_skip_output=skip_output)
     for f in findings:
         print(f"{f.file}:{f.line} {f.kind} {f.detail}")
     return 1 if findings else 0

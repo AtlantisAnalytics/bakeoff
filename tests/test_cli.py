@@ -142,7 +142,7 @@ def _planted_bundle(tmp_path, text):
 )
 def test_generic_and_short_usernames_are_skipped(monkeypatch, name):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: name)
-    assert cli.pick_username(False, lambda: "") == (None, None)
+    assert cli.pick_username(False, lambda: "") == (None, None, False)
 
 
 def test_getuser_failure_skips_the_check(monkeypatch):
@@ -150,19 +150,20 @@ def test_getuser_failure_skips_the_check(monkeypatch):
         raise KeyError("uid not found")
 
     monkeypatch.setattr(cli.getpass, "getuser", boom)
-    assert cli.pick_username(False, lambda: "") == (None, None)
+    assert cli.pick_username(False, lambda: "") == (None, None, False)
 
 
-def test_username_that_is_a_suite_word_is_skipped_with_notice(monkeypatch):
+def test_pick_username_returns_skip_output(monkeypatch):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: "natalia")
-    name, notice = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
-    assert name is None and "natalia" in notice and "public suites" in notice
+    name, notice, skip = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
+    assert name == "natalia" and skip is True
+    assert "natalia" in notice and "public suites" in notice
 
 
 def test_distinctive_username_is_scanned(monkeypatch):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")
-    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None)
-    assert cli.pick_username(True) == (None, None)
+    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None, False)
+    assert cli.pick_username(True) == (None, None, False)
 
 
 def test_real_suites_text_is_consulted(monkeypatch):
@@ -171,8 +172,8 @@ def test_real_suites_text_is_consulted(monkeypatch):
     text = cli._public_suite_text()
     word = next(w for w in re.findall(r"[A-Za-z]{6,}", text))
     monkeypatch.setattr(cli.getpass, "getuser", lambda: word)
-    name, notice = cli.pick_username(False)
-    assert name is None and notice
+    name, notice, skip = cli.pick_username(False)
+    assert name == word and notice and skip is True
 
 
 def test_verify_username_flag_and_notice(tmp_path, monkeypatch, capsys):
@@ -249,3 +250,11 @@ def test_existing_run_dir_is_a_clean_cli_error(tmp_path, monkeypatch, cfg_file, 
     monkeypatch.setattr(cli, "execute_run", exists)
     assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
     assert "refusing to write" in capsys.readouterr().err
+
+
+def test_public_suite_text_survives_any_error(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(cli, "resolve_suites", boom)
+    assert cli._public_suite_text() == ""
