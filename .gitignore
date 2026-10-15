@@ -10,6 +10,6 @@ node_modules/
 .env.*
 !.env.example
 # raw run output stays local until it has been scrubbed into results/
-runs/
+/runs/
 # agent workspace notes
 .superpowers/
