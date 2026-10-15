@@ -1,6 +1,9 @@
+import dataclasses
+
 import pytest
 from weekfix import make_bundle
 
+from bakeoff.resample import paired_diff_ci, verdict_seed
 from bakeoff.runview import load_run
 from bakeoff.verdicts import RULES_V1, TierResult, Verdict, VerdictError, assess_tier
 from bakeoff.weekcfg import Override
@@ -85,31 +88,40 @@ def test_clear_win_replace(tmp_path):
     }
 
 
-# (case id, candidate kwargs, pick kwargs, final verdict, reason, diff is None)
+# (case id, candidate kwargs, pick kwargs, final verdict, reasons, diff is None)
+H = {GSM: "f" * 64}
 CASES = [
-    ("small_edge", {"grades": {GSM: g(62)}}, {}, "watch", "ci_includes_zero", False),
-    ("worse", {"grades": {GSM: g(55)}}, {}, "hold", "not_better", False),
-    ("equal", {"grades": {GSM: g(60)}}, {}, "hold", "not_better", False),
-    ("slower", {"decode": 20.0}, {}, "watch", "slower_than_ratio", False),
-    ("speed_at_ratio", {"decode": 32.0}, {}, "replace", None, False),
-    ("less_context", {"max_context": 16384}, {}, "watch", "less_context", False),
-    ("context_cap", {"max_context": 32768}, {"max_context": 65536}, "replace", None, False),
+    ("small_edge", {"grades": {GSM: g(62)}}, {}, "watch", ["ci_includes_zero"], False),
+    ("worse", {"grades": {GSM: g(55)}}, {}, "hold", ["not_better"], False),
+    ("equal", {"grades": {GSM: g(60)}}, {}, "hold", ["not_better"], False),
+    ("slower", {"decode": 20.0}, {}, "watch", ["slower_than_ratio"], False),
+    ("speed_at_ratio", {"decode": 32.0}, {}, "replace", [], False),
+    ("less_context", {"max_context": 16384}, {}, "watch", ["less_context"], False),
+    ("slower_and_less_context", {"decode": 20.0, "max_context": 16384}, {}, "watch",
+     ["slower_than_ratio", "less_context"], False),
+    ("context_cap", {"max_context": 32768}, {"max_context": 65536}, "replace", [], False),
     ("context_short_of_cap", {"max_context": 24576}, {"max_context": 65536}, "watch",
-     "less_context", False),
-    ("suite_hash", {"suite_hashes": {GSM: "f" * 64}}, {}, "watch", "suite_hash_mismatch", True),
+     ["less_context"], False),
+    ("edge_and_slower", {"grades": {GSM: g(62)}, "decode": 20.0}, {}, "watch",
+     ["ci_includes_zero", "slower_than_ratio"], False),
+    ("worse_and_less_context", {"grades": {GSM: g(55)}, "max_context": 16384}, {}, "hold",
+     ["not_better", "less_context"], False),
+    ("suite_hash", {"suite_hashes": H}, {}, "watch", ["suite_hash_mismatch"], True),
+    ("suite_hash_and_slower", {"suite_hashes": H, "decode": 20.0}, {}, "watch",
+     ["suite_hash_mismatch", "slower_than_ratio"], True),
     ("suite_set", {}, {"grades": {GSM: g(60), "general/mmlu": g(5, 10)}}, "watch",
-     "suite_set_mismatch", True),
-    ("item_ids", {"grades": {GSM: g(90, 99)}}, {}, "watch", "item_ids_mismatch", True),
-    ("judge_suite_ignored", {"judge": ("general/open-ended",)}, {}, "replace", None, False),
-    ("worse_and_mismatched", {"grades": {GSM: g(10)}, "suite_hashes": {GSM: "f" * 64}}, {},
-     "watch", "suite_hash_mismatch", True),
+     ["suite_set_mismatch"], True),
+    ("item_ids", {"grades": {GSM: g(90, 99)}}, {}, "watch", ["item_ids_mismatch"], True),
+    ("judge_suite_ignored", {"judge": ("general/open-ended",)}, {}, "replace", [], False),
+    ("worse_and_mismatched", {"grades": {GSM: g(10)}, "suite_hashes": H}, {}, "watch",
+     ["suite_hash_mismatch"], True),
 ]  # fmt: skip
 
 
 @pytest.mark.parametrize(
-    "cand_kw,pick_kw,final,reason,diff_none", [c[1:] for c in CASES], ids=[c[0] for c in CASES]
+    "cand_kw,pick_kw,final,reasons,diff_none", [c[1:] for c in CASES], ids=[c[0] for c in CASES]
 )
-def test_single_candidate_table(tmp_path, cand_kw, pick_kw, final, reason, diff_none):
+def test_single_candidate_table(tmp_path, cand_kw, pick_kw, final, reasons, diff_none):
     pk = {"grades": {GSM: g(60)}, "decode": 40.0, **pick_kw}
     ck = {"grades": {GSM: g(90)}, "decode": 40.0, **cand_kw}
     p = run(tmp_path, "run-p", "Pick", **pk)
@@ -117,7 +129,7 @@ def test_single_candidate_table(tmp_path, cand_kw, pick_kw, final, reason, diff_
     res = assess([p, c], {"general": pick("general", "Pick")})
     v = res.verdicts["run-c"]["general"]
     assert v.computed == v.final == final
-    assert v.reasons == ([] if reason is None else [reason])
+    assert v.reasons == reasons
     assert v.new_pick is (final == "replace")
     if diff_none:
         assert v.diff is None and v.diff_ci95 is None
@@ -125,6 +137,74 @@ def test_single_candidate_table(tmp_path, cand_kw, pick_kw, final, reason, diff_
         assert isinstance(v.diff, float) and len(v.diff_ci95) == 2
     expected_pick = "run-c" if final == "replace" else "run-p"
     assert res.picks_after["general"]["run_id"] == expected_pick
+
+
+def _ci_for(cand, comparator, seed_cand_sha, seed_pick_sha):
+    ids = sorted(cand.items[GSM])
+    pairs = [([cand.items[GSM][i] for i in ids], [comparator.items[GSM][i] for i in ids])]
+    seed = verdict_seed(WEEK, TIER, "general", seed_cand_sha, seed_pick_sha)
+    return list(paired_diff_ci(pairs, RULES["resamples"], RULES["ci"], seed)[1:])
+
+
+# Interleaved results so the bootstrap distribution is wide and every seed gives its own CI.
+MIXED_P = [i % 3 == 0 for i in range(300)]
+MIXED_C = [i % 2 == 0 for i in range(300)]
+
+
+def test_seed_pinned_remeasured(tmp_path):
+    p = run(tmp_path, "run-p", "Pick", {GSM: MIXED_P})
+    c = run(tmp_path, "run-c", "Cand", {GSM: MIXED_C})
+    before = {"general": pick("general", "Pick")}
+    v = assess([p, c], before).verdicts["run-c"]["general"]
+    assert v.diff_ci95 == _ci_for(c, p, c.bundle_sha256, p.bundle_sha256)
+    swapped = _ci_for(c, p, p.bundle_sha256, c.bundle_sha256)
+    stale_pick = _ci_for(c, p, c.bundle_sha256, before["general"]["bundle_sha256"])
+    assert v.diff_ci95 != swapped
+    assert v.diff_ci95 != stale_pick
+
+
+def test_seed_pinned_initial_pick(tmp_path):
+    a = run(tmp_path, "run-a", "A", {GSM: MIXED_P})
+    b = run(tmp_path, "run-b", "B", {GSM: MIXED_C})
+    res = assess([a, b], {})
+    assert res.verdicts["run-b"]["general"].final == "initial_pick"
+    v = res.verdicts["run-a"]["general"]
+    assert v.diff_ci95 == _ci_for(a, b, a.bundle_sha256, b.bundle_sha256)
+    assert v.diff_ci95 != _ci_for(a, b, b.bundle_sha256, a.bundle_sha256)
+
+
+def test_replace_against_initial_pick_fails_closed(tmp_path):
+    # A bundle whose track score disagrees with its item records: run-a claims the top score but
+    # run-b's items beat it clearly. Publishing that would name two picks, so it is refused.
+    a = dataclasses.replace(run(tmp_path, "run-a", "A", {GSM: g(60)}), tracks={"general": 0.99})
+    b = run(tmp_path, "run-b", "B", {GSM: g(90)})
+    with pytest.raises(VerdictError, match="initial pick"):
+        assess([a, b], {})
+
+
+def test_missing_suite_hash_is_mismatch(tmp_path):
+    def drop_hash(r):
+        suites = {k: {kk: vv for kk, vv in s.items() if kk != "hash"} for k, s in r.suites.items()}
+        return dataclasses.replace(r, suites=suites)
+
+    p = drop_hash(run(tmp_path, "run-p", "Pick", {GSM: g(60)}))
+    c = drop_hash(run(tmp_path, "run-c", "Cand", {GSM: g(90)}))
+    v = assess([p, c], {"general": pick("general", "Pick")}).verdicts["run-c"]["general"]
+    assert (v.final, v.reasons, v.diff) == ("watch", ["suite_hash_mismatch"], None)
+
+
+@pytest.mark.parametrize("override", [False, True], ids=["computed", "overridden"])
+def test_rerun_of_pick_never_replaces_it(tmp_path, override):
+    p1 = run(tmp_path, "run-p1", "Pick", {GSM: g(60)})
+    p2 = run(tmp_path, "run-p2", "Pick", {GSM: g(90) if not override else g(60)})
+    before = {"general": pick("general", "Pick", since="2026-09-07")}
+    ovs = [Override(TIER, "general", "run-p2", "replace", "Re-run.")] if override else []
+    res = assess([p1, p2], before, ovs)
+    v = res.verdicts["run-p2"]["general"]
+    assert v.final == "replace"
+    assert (v.new_pick, v.outranked_by) == (False, None)
+    after = res.picks_after["general"]
+    assert (after["run_id"], after["since_week"]) == ("run-p1", "2026-09-07")
 
 
 def test_pick_not_remeasured(tmp_path):

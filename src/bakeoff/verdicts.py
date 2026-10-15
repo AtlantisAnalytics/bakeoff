@@ -11,10 +11,17 @@ Contract (see the spec, "Verdict rules (rules v1)"):
   and every candidate is ``watch`` with ``pick_not_remeasured``.
 * Not comparable (rule 3): differing suite sets, suite hashes or item ids give ``watch`` with
   ``diff`` and ``diff_ci95`` null (rule 6 lists not_comparable under watch, even for a worse run).
-* Reasons record what decided the verdict: ``ci_includes_zero`` / ``not_better`` for the score,
-  and ``slower_than_ratio`` / ``less_context`` only when the CI's lower bound is above 0.
+* Reasons record every failing guard, in this order: the comparability codes (or
+  ``ci_includes_zero`` / ``not_better`` for the score), then ``slower_than_ratio``, then
+  ``less_context``. The speed and context guards are checked against the control for every pair,
+  but only change the verdict when the CI's lower bound is above 0. A missing or non-string suite
+  hash counts as ``suite_hash_mismatch``.
 * No current pick (rule 7): the best eligible run is ``initial_pick``; the others are compared
-  against it. Overrides there are refused, so the initial pick is always computed.
+  against it. Overrides there are refused, so the initial pick is always computed. A computed
+  ``replace`` against the initial pick (only possible if a bundle's track score disagrees with its
+  item records) raises ``VerdictError`` rather than publishing two picks.
+* Re-runs of the pick: an eligible run with the pick's model_key that is not the control is still
+  assessed, but never becomes the new pick (it is not a challenger), so ``since_week`` holds.
 * Ranking (rules 7 and 8): higher track score, then higher short@1 decode, then lower run_id
   (Python ``str`` order, which equals UTF-8 byte order).
 * Every output is built in sorted order, so results never depend on input order.
@@ -105,8 +112,11 @@ def _comparability(cand: RunView, ctrl: RunView, track: str) -> tuple[list[str],
         reasons.append("suite_set_mismatch")
     pset = set(pk)
     common = [k for k in ck if k in pset]
-    if any(cand.suites[k].get("hash") != ctrl.suites[k].get("hash") for k in common):
-        reasons.append("suite_hash_mismatch")
+    for k in common:
+        ch, ph = cand.suites[k].get("hash"), ctrl.suites[k].get("hash")
+        if not isinstance(ch, str) or not isinstance(ph, str) or ch != ph:
+            reasons.append("suite_hash_mismatch")
+            break
     if any(set(cand.items[k]) != set(ctrl.items[k]) for k in common):
         reasons.append("item_ids_mismatch")
     return reasons, ck
@@ -115,9 +125,14 @@ def _comparability(cand: RunView, ctrl: RunView, track: str) -> tuple[list[str],
 def _compare(
     week: str, tier: str, track: str, cand: RunView, ctrl: RunView, rules: dict
 ) -> Verdict:
-    reasons, keys = _comparability(cand, ctrl, track)
-    if reasons:
-        return Verdict(computed="watch", final="watch", reasons=reasons)
+    mismatch, keys = _comparability(cand, ctrl, track)
+    guards: list[str] = []
+    if cand.short_decode < rules["speed_ratio"] * ctrl.short_decode:
+        guards.append("slower_than_ratio")
+    if cand.max_context < min(ctrl.max_context, rules["context_cap"]):
+        guards.append("less_context")
+    if mismatch:
+        return Verdict(computed="watch", final="watch", reasons=mismatch + guards)
     pairs = []
     for k in keys:
         ids = sorted(cand.items[k])
@@ -125,16 +140,14 @@ def _compare(
     seed = verdict_seed(week, tier, track, cand.bundle_sha256, ctrl.bundle_sha256)
     diff, lo, hi = paired_diff_ci(pairs, rules["resamples"], rules["ci"], seed)
     if lo > 0:
-        if cand.short_decode < rules["speed_ratio"] * ctrl.short_decode:
-            reasons.append("slower_than_ratio")
-        if cand.max_context < min(ctrl.max_context, rules["context_cap"]):
-            reasons.append("less_context")
-        verdict = "watch" if reasons else "replace"
+        verdict, score = ("watch" if guards else "replace"), []
     elif diff > 0:
-        verdict, reasons = "watch", ["ci_includes_zero"]
+        verdict, score = "watch", ["ci_includes_zero"]
     else:
-        verdict, reasons = "hold", ["not_better"]
-    return Verdict(computed=verdict, final=verdict, diff=diff, diff_ci95=[lo, hi], reasons=reasons)
+        verdict, score = "hold", ["not_better"]
+    return Verdict(
+        computed=verdict, final=verdict, diff=diff, diff_ci95=[lo, hi], reasons=score + guards
+    )
 
 
 def _new_pick(tier: str, track: str, run: RunView, week: str) -> dict:
@@ -225,15 +238,19 @@ def assess_tier(
         scored = [r for r in eligible if _has_score(r, t)]
         if t not in picks:
             pick_status[t] = "none"
-            if not scored:
-                continue
-            first = _best(scored, t)
+            first = _best(scored, t)  # t came from a scored eligible run, so scored is non-empty
             verdicts[first.run_id][t] = Verdict(
                 computed="initial_pick", final="initial_pick", new_pick=True
             )
             for r in scored:
                 if r is not first:
-                    verdicts[r.run_id][t] = _compare(week, tier, t, r, first, rules)
+                    v = _compare(week, tier, t, r, first, rules)
+                    if v.computed == "replace":
+                        raise VerdictError(
+                            f"{r.run_id} computes replace against the initial pick {first.run_id}"
+                            f" in {tier} / {t}: track score disagrees with item records"
+                        )
+                    verdicts[r.run_id][t] = v
             picks_after[t] = _new_pick(tier, t, first, week)
             continue
 
@@ -253,7 +270,12 @@ def assess_tier(
                 v.final, v.override_reason = o.verdict, o.reason
             verdicts[r.run_id][t] = v
 
-        winners = [r for r in scored if r is not ctrl and verdicts[r.run_id][t].final == "replace"]
+        pick_key = (picks[t]["weights"], picks[t]["quant"], picks[t]["runtime"])
+        winners = [
+            r
+            for r in scored
+            if model_key(r) != pick_key and verdicts[r.run_id][t].final == "replace"
+        ]
         if winners:
             best = _best(winners, t)
             for r in winners:
