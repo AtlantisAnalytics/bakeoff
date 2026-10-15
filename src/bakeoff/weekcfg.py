@@ -184,12 +184,13 @@ def _run(i: int, t: dict[str, Any], base: Path, tiers: dict[str, Tier]) -> RunEn
     if tier not in tiers:
         raise WeekInputError(f"{where}.tier {tier!r} is not in tiers.toml")
     lic = _text(f"{where}.license", t["license"]).strip()
-    if lic != "other" and not _LICENSE.fullmatch(lic):
+    other = lic.lower() == "other"
+    if not other and not _LICENSE.fullmatch(lic):
         raise WeekInputError(f"{where}.license must be an SPDX id or 'other', got {lic!r}")
     license_url = None
     if "license_url" in t:
         license_url = _https(f"{where}.license_url", t["license_url"])
-    if lic == "other" and license_url is None:
+    if other and license_url is None:
         raise WeekInputError(f"{where}.license_url is required when license is 'other'")
     source_url = _https(f"{where}.source_url", t["source_url"])
     return RunEntry(bundle, tier, lic, source_url, license_url)

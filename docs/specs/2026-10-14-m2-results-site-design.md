@@ -265,7 +265,9 @@ results/
 - A breaking change goes to `/api/v2/`, and v1 stays frozen with its last data.
 
 **Corrections.**
-- A correction raises `revision` and appends to `corrections`, and the week is regenerated.
+- A correction raises `revision` and appends to `corrections`, and the week is regenerated. Its
+  `published_at` must be later than the previous revision's.
+- Published bundles are immutable: a re-grade is a new run with a new `run_id`.
 - Git keeps the earlier revision.
 - `picks.json` is recomputed. If a correction would change a pick that a later week already
   depends on, `publish` refuses, and the fix has to be a new week.

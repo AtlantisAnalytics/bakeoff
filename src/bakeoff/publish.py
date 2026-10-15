@@ -31,6 +31,8 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
   that later weeks were assessed against). An existing week is re-published only with
   ``[correction]``; that raises ``revision``, keeps the original ``published_at``, appends to
   ``corrections`` and is refused when a later week exists and the week's ``picks_after`` changes.
+  A correction's ``published_at`` must be later than the previous revision's (the original, or
+  the last correction). Only run ``bundle_format`` ``m1`` and ``m2`` are accepted.
 * The username scan of the staged ``week.toml`` and ``week.json`` does not honour
   ``username_skip_output`` (it fails closed); pass ``username=None`` (``--no-username``) instead.
 * ``picks_before`` is the ``picks_after`` of the latest published week before this one. A tier
@@ -52,6 +54,7 @@ from bakeoff.weekcfg import RunEntry, WeekInputError, load_tiers, load_week
 
 RULES = RULES_V1
 STATUSES = ("complete", "incomplete")
+RUN_FORMATS = ("m1", "m2")
 JUDGE_FORMAT = "judge-m1"
 
 _WEEK_DIR = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -286,6 +289,13 @@ def publish(
             f"week {inp.week} is earlier than published later week(s) {later}; "
             "publish a new week instead"
         )
+    if prev is not None:
+        last = [prev["published_at"], *(c["published_at"] for c in prev["corrections"])][-1]
+        if inp.published_at <= last:
+            raise PublishError(
+                f"a correction's published_at must be later than the previous revision's "
+                f"({last}), got {inp.published_at}"
+            )
     if prev is not None and prev["rules"] != RULES:
         raise PublishError(
             f"week {inp.week} was published under other rules ({prev['rules']}); "
@@ -311,6 +321,11 @@ def publish(
             view = load_run(entry.bundle)
         except RunViewError as e:
             raise PublishError(f"run {entry.bundle.name}: {e}") from e
+        if view.bundle_format not in RUN_FORMATS:
+            raise PublishError(
+                f"run {entry.bundle.name}: bundle_format must be one of {list(RUN_FORMATS)}, "
+                f"got {view.bundle_format!r}"
+            )
         _no_private(entry.bundle, view)
         rid = _segment(view.run_id, "run_id")
         if entry.bundle.name != rid:  # overrides name runs by directory name

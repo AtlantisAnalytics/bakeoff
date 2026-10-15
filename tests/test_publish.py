@@ -16,6 +16,7 @@ W1 = "2026-10-19"
 W2 = "2026-10-26"
 AT1 = "2026-10-19T07:00:00Z"
 AT2 = "2026-10-26T07:00:00Z"
+ATC = "2026-10-20T08:00:00Z"  # a correction of week 1
 ENV24 = "1× RTX 3090 Ti 24 GB"
 ENV12 = "1× RTX 3060 12 GB"
 GSM = "general/gsm8k"
@@ -61,8 +62,10 @@ def sha(path):
     return json.loads((path / "bundle.json").read_text(encoding="utf-8"))["bundle_sha256"]
 
 
-def week_toml(root, runs, *, week=W1, at=AT1, judges=(), correction=None, name=None, raw=None):
-    """runs: list of (bundle path or raw string, tier)."""
+def week_toml(root, runs, *, week=W1, at=None, judges=(), correction=None, name=None, raw=None):
+    """runs: list of (bundle path or raw string, tier). A correction defaults to a later time."""
+    if at is None:
+        at = AT1 if correction is None else ATC
     lines = [f'week = "{week}"', f'published_at = "{at}"', ""]
     for path, tier in runs:
         rel = path if isinstance(path, str) else path.relative_to(root).as_posix()
@@ -408,7 +411,7 @@ def test_correction_raises_revision(root):
 
 def test_correction_may_change_runs_without_later_week(root):
     a, b = week1(root)
-    run(week_toml(root, [(b, "24gb")], at=AT1, correction="Dropped a run."), root)
+    run(week_toml(root, [(b, "24gb")], correction="Dropped a run."), root)
     doc = doc_of(root)
     assert doc["picks_after"]["24gb"]["general"]["run_id"] == b.name
     assert not (root / "results" / W1 / "runs" / a.name).exists()
@@ -622,3 +625,42 @@ def test_refuses_override_not_consumed_by_any_tier(root, monkeypatch):
 
     monkeypatch.setattr(pub, "load_week", with_stray_override)
     refused(root, week_toml(root, [(a, "24gb")]), "override.*12gb.*not applied")
+
+
+# --- bundle format and correction timestamps ----------------------------------------------------
+
+
+def test_refuses_unknown_run_bundle_format(root):
+    a = bundle(root, "base", 6)
+    b = bundle(root, "future", 4, fmt="m3")
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")]), f"run {b.name}.*bundle_format")
+
+
+def test_accepts_m1_bundle(root):
+    a = bundle(root, "base", 6, fmt="m1")
+    run(week_toml(root, [(a, "24gb")]), root)
+    assert doc_of(root)["revision"] == 1
+
+
+@pytest.mark.parametrize("at", [AT1, "2026-10-19T06:59:59Z"])
+def test_correction_must_be_later_than_the_original(root, at):
+    a, b = week1(root)
+    before = tree(root / "results")
+    with pytest.raises(PublishError, match="published_at.*later"):
+        run(week_toml(root, [(a, "24gb"), (b, "24gb")], at=at, correction="Re-graded."), root)
+    assert tree(root / "results") == before
+
+
+def test_correction_must_be_later_than_the_last_correction(root):
+    a, b = week1(root)
+    run(week_toml(root, [(a, "24gb"), (b, "24gb")], correction="First."), root)
+    before = tree(root / "results")
+    for at in (ATC, "2026-10-19T08:00:00Z"):
+        with pytest.raises(PublishError, match=f"published_at.*later.*{ATC}"):
+            run(week_toml(root, [(a, "24gb"), (b, "24gb")], at=at, correction="Again."), root)
+    assert tree(root / "results") == before
+    run(
+        week_toml(root, [(a, "24gb"), (b, "24gb")], at="2026-10-21T08:00:00Z", correction="Ok."),
+        root,
+    )
+    assert doc_of(root)["revision"] == 3

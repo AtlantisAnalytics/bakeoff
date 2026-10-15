@@ -29,7 +29,7 @@ Each memory tier gets a weekly verdict for each candidate: **replace / hold / wa
 | `site/` | The static site served at bakeoff.si, a Cloudflare Worker with static assets (`wrangler.jsonc`) |
 | `tiers.toml` | The memory tiers: id, display name and the hardware envelope that maps to each |
 | `site.toml` | Site settings: the launch gate, base URL, repo URL and the sign-up form |
-| `site_src/` | Hand-written pages (`method.html`, `privacy.html`) and the stylesheet, copied into `site/` |
+| `site_src/` | Sources of the hand-written method and privacy pages, wrapped in the site layout into `site/`; `style.css` lives in `site/` |
 | `results/` | Published results, licensed CC BY 4.0 |
 | `brand/` | Source logo and `make_assets.py`, which regenerates the site's logo, icons and preview image |
 
@@ -73,6 +73,11 @@ byte with the published one. It prints `identical` (exit 0) or the fields that d
 corrected week the earlier revisions' inputs are only in git history, so the previous revision's
 bookkeeping (`revision`, the original `published_at` and the earlier corrections) is taken from the
 published file; everything else, including the latest correction entry, is re-derived.
+
+**Published bundles are immutable.** A `run_id` keeps the same `bundle_sha256` in every week it
+appears in. To re-grade a run (say, after a grader fix), produce a new run with a new `run_id` and
+publish that; a correction can swap it in. A correction's `published_at` must be later than the
+previous revision's.
 
 **Private suites.** Bundles with private-suite results (a `private/` folder, or any suite with
 `split = "private"`) are refused until a public form for them is decided. Private outputs are never

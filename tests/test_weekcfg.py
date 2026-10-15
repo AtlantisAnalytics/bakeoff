@@ -87,6 +87,8 @@ def test_minimal_week(tmp_path, tiers):
         (GOOD.replace("https://huggingface.co/x/y", "javascript:alert(1)"), "source_url"),
         (GOOD.replace("https://huggingface.co/x/y", "http://example.com"), "source_url"),
         (GOOD.replace('"Apache-2.0"', '"other"'), "license_url"),
+        (GOOD.replace('"Apache-2.0"', '"Other"'), "license_url"),
+        (GOOD.replace('"Apache-2.0"', '"OTHER"'), "license_url"),
         (GOOD.replace('"Apache-2.0"', '"other"\nlicense_url = "http://x.org"'), "license_url"),
         (GOOD.replace('"Apache-2.0"', '""'), "license"),
         (GOOD.replace('reason = "Known tokenizer bug."', 'reason = "  "'), "reason"),
