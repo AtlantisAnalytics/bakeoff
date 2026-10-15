@@ -606,6 +606,29 @@ def test_refuses_run_with_private_split_even_without_private_files(root, monkeyp
     refused(root, week_toml(root, [(a, "24gb")]), f"run {a.name}.*private")
 
 
+def test_refuses_run_whose_bundle_lists_an_unstarted_private_suite(root, monkeypatch):
+    """A run that stopped before its private suite started has no quality summary and no
+    private/ folder for it, but bundle.json's top-level suites still name it, with its hash."""
+    a = bundle(root, "base", 6)
+    real = pub._verify
+
+    def listed_private(path, what, *args):
+        meta = real(path, what, *args)
+        if what == "run":
+            meta = {
+                **meta,
+                "suites": [*meta.get("suites", []), {"key": "general/holdout", "split": "private"}],
+            }
+        return meta
+
+    monkeypatch.setattr(pub, "_verify", listed_private)
+    refused(
+        root,
+        week_toml(root, [(a, "24gb")]),
+        rf"run {a.name}.*private suite\(s\) \['general/holdout'\]",
+    )
+
+
 # --- overrides ----------------------------------------------------------------------------------
 
 
