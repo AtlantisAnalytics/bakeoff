@@ -2,6 +2,8 @@ import hashlib
 import math
 import random
 
+import pytest
+
 from bakeoff.resample import SplitMix64, paired_diff_ci, verdict_seed
 
 GOLDEN_LO = 0.05
@@ -10,13 +12,18 @@ GOLDEN_HI = 0.16
 
 def test_splitmix64_reference_vector():
     rng = SplitMix64(1234567)
-    got = [rng.next() for _ in range(5)]
+    got = [rng.next() for _ in range(10)]
     assert got == [
         6457827717110365317,
         3203168211198807973,
         9817491932198370423,
         4593380528125082431,
         16408922859458223821,
+        7804594928223864054,
+        10895525637215051397,
+        5078158048327840177,
+        8075865375900838704,
+        15101793978218222876,
     ]
 
 
@@ -73,3 +80,24 @@ def test_multi_suite_mean():
     s2 = ([True] * 5 + [False] * 5, [True] * 5 + [False] * 5)
     diff, _, _ = paired_diff_ci([s1, s2], 100, 0.95, 1)
     assert math.isclose(diff, 0.1)
+
+
+def test_multi_suite_golden_unequal_n():
+    # Cross-checked against an independent C port (splitmix64 + same loop order).
+    s1 = ([(i * 7) % 5 < 3 for i in range(37)], [(i * 3) % 4 < 2 for i in range(37)])
+    s2 = ([(i * 5) % 7 < 4 for i in range(101)], [(i * 11) % 6 < 3 for i in range(101)])
+    assert paired_diff_ci([s1, s2], 5000, 0.95, 2024) == (
+        0.093658014450093668,
+        -0.039603960396039604,
+        0.23013112122023013,
+    )
+
+
+def test_invalid_inputs():
+    ok = ([True], [False])
+    with pytest.raises(ValueError):
+        paired_diff_ci([], 10, 0.95, 1)
+    with pytest.raises(ValueError):
+        paired_diff_ci([([], [])], 10, 0.95, 1)
+    with pytest.raises(ValueError):
+        paired_diff_ci([ok], 0, 0.95, 1)
