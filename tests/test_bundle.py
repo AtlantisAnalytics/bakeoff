@@ -24,7 +24,7 @@ def test_run_id_format():
 def test_round_trip_verifies_with_unicode(tmp_path):
     write_bundle(
         tmp_path,
-        {"status": "complete", "bundle_format": "m1"},
+        {"status": "complete", "bundle_format": "m2"},
         {"quality/general.x.jsonl": [{"output": "naïve 🍰"}]},
     )
     assert verify_bundle(tmp_path, username=None, denylist=None) == []
@@ -295,3 +295,35 @@ def test_run_id_includes_the_pass_selection():
     t = datetime(2026, 10, 13, 15, 30, tzinfo=UTC)
     assert "-demo-speed-" in run_id(t, "Demo", b"x", "speed")
     assert "-demo-" in run_id(t, "Demo", b"x") and "speed" not in run_id(t, "Demo", b"x")
+
+
+def test_username_skip_scopes_to_output(tmp_path):
+    write_bundle(
+        tmp_path,
+        {"status": "complete", "config": {"model": {"label": "alice-tuned"}}},  # scrub-ok
+        {"quality/x.y.jsonl": [{"output": "alice went home"}]},  # scrub-ok
+    )
+    # a file is reported once by the raw-text pass and once by the per-string pass; count files
+    skip = verify_bundle(tmp_path, "alice", None, username_skip_output=True)
+    assert {f.file for f in skip if f.kind == "username"} == {"bundle.json"}
+    full = verify_bundle(tmp_path, "alice", None, username_skip_output=False)
+    assert {f.file for f in full if f.kind == "username"} == {"bundle.json", "quality/x.y.jsonl"}
+
+
+def test_username_skip_keeps_other_patterns_in_output(tmp_path):
+    deny = tmp_path / "deny.txt"
+    deny.write_text("lab-box-7\n", encoding="utf-8")  # scrub-ok
+    run = tmp_path / "run"
+    write_bundle(
+        run,
+        {"status": "complete"},
+        {
+            "quality/x.y.jsonl": [
+                {"output": "see /Users/x/notes and alice"},  # scrub-ok
+                {"output": "host lab-box-7 here"},  # scrub-ok
+            ]
+        },
+    )
+    kinds = _kinds(verify_bundle(run, "alice", deny, username_skip_output=True))  # scrub-ok
+    assert "home_path" in kinds and "denylist" in kinds
+    assert "username" not in kinds

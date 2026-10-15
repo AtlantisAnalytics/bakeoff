@@ -161,9 +161,11 @@ def test_malformed_input_returns_grade_never_raises():
         {"const": 1},
         {"anyOf": []},
         {"minimum": 1},
-        {"additionalProperties": {"type": "string"}},
+        {"additionalProperties": "string"},
+        {"additionalProperties": {"minimum": 1}},
         {"items": [{"type": "string"}]},
-        {"type": ["array", "null"]},
+        {"type": ["array", "bogus"]},
+        {"type": []},
         {"properties": {"a": {"minLength": 1}}},
     ],
 )
@@ -228,3 +230,82 @@ def test_json_values_reason_is_capped():
         "json_schema", json.dumps({"a": "x" * 1000}), {"schema": schema, "values": {"a": "y"}}, {}
     )
     assert not r.passed and len(r.reason) <= 200
+
+
+_OBJ = {"type": "object", "required": ["a"]}
+_TWO_FENCES = '```json\n{"a":1}\n```\nand\n```json\n{"a":2}\n```'
+
+
+@pytest.mark.parametrize(
+    "output, strict, extractable",
+    [
+        ('<json>{"a":1}</json>', False, True),
+        ('Sure:\n```json\n{"a":1}\n```\nDone', False, True),
+        ('Here: {"a": 1} ok', False, True),
+        (_TWO_FENCES, False, False),
+        ('{"a":1}', True, True),
+        ('{"b":1}', False, False),
+        ('<json>{"b":1}</json>', False, False),
+        ('Here: {"s": "}{", "a": 1} ok', False, True),
+    ],
+)
+def test_extractable(output, strict, extractable):
+    g = grade("json_schema", output, _OBJ, {})
+    assert g.passed is strict and g.extractable is extractable
+
+
+def test_extractable_checks_values():
+    exp = {"schema": {**_OBJ, "properties": {"a": {"type": "integer"}}}, "values": {"a": 2}}
+    g = grade("json_schema", '<json>{"a":1}</json>', exp, {})
+    assert g.passed is False and g.extractable is False
+    assert grade("json_schema", '<json>{"a":2}</json>', exp, {}).extractable is True
+
+
+def test_other_graders_extractable_none():
+    assert grade("exact", "x", "x", {}).extractable is None
+
+
+@pytest.mark.parametrize(
+    "output, schema", [("5", {"type": "integer"}), ('"hi"', {"type": "string"})]
+)
+def test_strict_scalar_pass_is_extractable(output, schema):
+    g = grade("json_schema", output, schema, {})
+    assert g.passed is True and g.extractable is True
+
+
+def test_bad_expected_json_schema_extractable_false():
+    g = grade("json_schema", "{}", {"type": "bogus"}, {})
+    assert g.passed is False and g.extractable is False
+
+
+def test_type_list_accepts_any_listed_type():
+    schema = {"type": ["number", "null"]}
+    assert not validate_schema(1.5, schema)
+    assert not validate_schema(None, schema)
+    errs = validate_schema("x", schema)
+    assert errs and "number/null" in errs[0]
+
+
+def test_additional_properties_schema_validates_map_values():
+    schema = {
+        "type": "object",
+        "properties": {"k": {"type": "string"}},
+        "additionalProperties": {"type": "integer"},
+    }
+    assert not validate_schema({"k": "s", "a": 1, "b": 2}, schema)
+    errs = validate_schema({"k": "s", "a": "no"}, schema)
+    assert errs == ["$.a: expected integer, got str"]
+
+
+def test_annotation_keywords_accepted_and_ignored():
+    schema = {
+        "$schema": "x",
+        "$id": "y",
+        "title": "t",
+        "description": "d",
+        "type": "object",
+        "properties": {"a": {"description": "d", "type": "integer"}},
+    }
+    assert not validate_schema({"a": 1}, schema)
+    assert validate_schema({"a": "no"}, schema)
+    assert "unsupported" in validate_schema({}, {"title": "t", "minItems": 1})[0]

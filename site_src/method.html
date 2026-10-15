@@ -1,0 +1,71 @@
+<h1 class="title">Method</h1>
+<p>Every week we test new open-weight models on ordinary consumer hardware and publish what we
+measured, the rules that turned it into verdicts, and the raw data. Anyone can re-run a week.</p>
+
+<h2>Tiers</h2>
+<p>A tier is a hardware envelope: a GPU memory size, or a unified-memory machine. Models are only
+compared with other models in the same tier. Today's tiers are 12&nbsp;GB, 24&nbsp;GB and
+36&nbsp;GB unified. Each tier has a current <em>pick</em> per quality track.</p>
+
+<h2>Rules v1</h2>
+<p>Each run is assessed separately for every track it has scores in.</p>
+<ol>
+  <li><strong>Eligibility.</strong> A run must complete, pass bundle verification, reach at least
+    16K tokens of usable context, and decode at least 10 tokens/s (median, short prompt, one
+    request at a time). Anything else is listed under "Tested, doesn't fit" with the reasons.</li>
+  <li><strong>The pick is re-measured.</strong> The current pick is run again the same week, on the
+    same machine, so every comparison is like for like. Without that control run, a candidate can
+    be at most <em>watch</em>.</li>
+  <li><strong>Comparable.</strong> The candidate and the pick must use the same suites at the same
+    versions, and items are paired by id. Otherwise the pair is not comparable (at most
+    <em>watch</em>).</li>
+  <li><strong>Score and confidence.</strong> A track score is the mean of its suites' accuracies.
+    The difference is candidate minus pick, with a 95% confidence interval from 10,000 paired
+    bootstrap resamples. The random generator is seeded from the week, tier, track and both bundle
+    hashes, so anyone gets the same interval.</li>
+  <li><strong>Verdict.</strong> <em>Replace</em> needs the interval's lower bound above 0, decode
+    speed of at least 0.8&times; the pick's, and usable context at least as large as the pick's
+    (capped at 32K). <em>Watch</em> means the candidate looks better but the interval includes 0,
+    or it is clearly better but fails the speed or context check, or it is not comparable.
+    Everything else is <em>hold</em>.</li>
+  <li><strong>New picks.</strong> With no pick yet, the best eligible run becomes the initial pick.
+    If several runs replace the pick, the highest score wins (ties go to faster decode, then to the
+    lower run id) and the others are shown as outranked.</li>
+  <li><strong>Overrides.</strong> The owner can override a verdict. The page then shows what the
+    rules computed, what the owner decided and why.</li>
+</ol>
+<p>Judge-model comparisons for open-ended answers are shown for information only. They never
+change a verdict.</p>
+
+<h2>Suites</h2>
+<p>Quality tracks are scored on public test suites plus our own. Each suite is pinned by a content
+hash, and a week records the hash it used.</p>
+<ul class="flat">
+  <li><strong>General:</strong> a GSM8K slice (MIT), an IFEval slice (Apache-2.0) and open-ended
+    prompts (CC BY 4.0; judge-scored, information only).</li>
+  <li><strong>Format:</strong> exact-reply instructions (CC BY 4.0).</li>
+  <li><strong>Grounding:</strong> answering from the supplied context only (CC BY 4.0).</li>
+  <li><strong>Long context:</strong> a needle-in-a-haystack test (CC BY 4.0).</li>
+  <li><strong>Structured output:</strong> JSON tasks (CC BY 4.0), scored two ways. <em>Strict</em>
+    means the whole answer is valid JSON that matches the schema. <em>Extractable</em> means the
+    JSON can be pulled out of surrounding text. Older bundles did not record extractable, and show
+    "not measured".</li>
+</ul>
+<p>Third-party slices keep their authors' licenses and are attributed in the repository.</p>
+
+<h2>Reproduce a week</h2>
+<p>The repository and the raw data become public at launch. Everything is in the repository. Each week's input, the raw bundles for every run, and the
+week's results sit together under <code>results/&lt;week&gt;/</code>.</p>
+<pre><code>git clone https://github.com/AtlantisAnalytics/bakeoff
+cd bakeoff
+uv sync
+uv run bakeoff rederive &lt;week&gt;
+uv run bakeoff site --check</code></pre>
+<p><code>bakeoff rederive</code> re-publishes the week from its stored input and bundles in a
+temporary directory, with the earlier weeks' picks, applies the rules above and compares the
+result byte for byte with the published <code>week.json</code>. It prints
+<code>identical</code> or the fields that differ. For a corrected week, the bookkeeping of earlier
+revisions comes from the published file, because their inputs are kept in the git history.
+<code>bakeoff site --check</code> confirms the pages were generated from those results. The JSON
+for any week is at <code>/api/v1/weeks/&lt;week&gt;.json</code> and is described by a JSON Schema at
+<code>/api/v1/schema/week.v1.json</code>.</p>

@@ -1,4 +1,4 @@
-"""Command line: run, env, verify, judge."""
+"""Command line: run, env, verify, judge, publish, site, rederive."""
 
 import argparse
 import asyncio
@@ -15,8 +15,12 @@ from bakeoff.client import EndpointClient
 from bakeoff.config import ConfigError, RunConfig, load_config
 from bakeoff.env import capture_env
 from bakeoff.judge import JudgeError, Prices, run_judge
+from bakeoff.publish import PublishError, publish, week_docs, write_picks
+from bakeoff.rederive import RederiveError, rederive
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
 from bakeoff.suites import SuiteError, resolve_suites, suites_root
+from bakeoff.web.build import check_site, render_site, write_preview, write_site
+from bakeoff.weekcfg import WeekInputError
 
 DEFAULT_DENYLIST = Path("~/.config/bakeoff/denylist")
 
@@ -108,7 +112,7 @@ def _public_suite_text() -> str:
     """Prompt and expected text of the shipped suites (username false-positive check)."""
     try:
         suites = resolve_suites([str(suites_root())])
-    except (SuiteError, OSError):
+    except Exception:
         return ""
     parts: list[str] = []
     for s in suites:
@@ -120,33 +124,41 @@ def _public_suite_text() -> str:
 
 def pick_username(
     no_username: bool, public_text=_public_suite_text
-) -> tuple[str | None, str | None]:
-    """(username to scan for, one-line notice). None means the username check is skipped."""
+) -> tuple[str | None, str | None, bool]:
+    """(username to scan for, one-line notice, skip_output).
+
+    A None name means the username check is skipped. skip_output means the name is an ordinary
+    word in the public suites, so model `output` fields are exempt from the scan.
+    """
     if no_username:
-        return None, None
+        return None, None, False
     try:
         name = getpass.getuser()
     except (OSError, KeyError, ImportError):  # e.g. a container with an arbitrary UID
-        return None, None
+        return None, None, False
     if not name or name.lower() in GENERIC_USERNAMES or len(name) <= 3:
-        return None, None
+        return None, None, False
     if re.search(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", public_text(), re.I):
-        return None, (
-            f"notice: skipping the username check: {name!r} is an ordinary word in the "
-            "public suites; use --denylist for stronger protection"
+        return (
+            name,
+            (
+                f"notice: {name!r} is an ordinary word in the public suites, so the username "
+                "check skips model output fields; use --denylist for stronger protection"
+            ),
+            True,
         )
-    return name, None
+    return name, None, False
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
     denylist = Path(args.denylist) if args.denylist else DEFAULT_DENYLIST.expanduser()
-    username, notice = pick_username(args.no_username)
+    username, notice, skip_output = pick_username(args.no_username)
     if notice:
         print(notice, file=sys.stderr)
     run_dir = Path(args.dir)
     if (run_dir / "private").exists():
         print("notice: contains private-suite outputs; do not share", file=sys.stderr)
-    findings = verify_bundle(run_dir, username, denylist)
+    findings = verify_bundle(run_dir, username, denylist, username_skip_output=skip_output)
     for f in findings:
         print(f"{f.file}:{f.line} {f.kind} {f.detail}")
     return 1 if findings else 0
@@ -235,6 +247,76 @@ def _cmd_judge(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_publish(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    if args.denylist:
+        denylist = Path(args.denylist)
+    else:
+        default = DEFAULT_DENYLIST.expanduser()
+        denylist = default if default.is_file() else None
+    username, notice, skip_output = pick_username(args.no_username)
+    if notice:
+        print(notice, file=sys.stderr)
+    try:
+        out = publish(
+            Path(args.week_toml),
+            root,
+            username=username,
+            denylist=denylist,
+            username_skip_output=skip_output,
+        )
+        print(f"published week {out.name}")
+        write_site(render_site(root), root / "site")
+    except (PublishError, WeekInputError, OSError, ValueError) as e:
+        _err(str(e))
+        return 1
+    return 0
+
+
+def _cmd_site(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    try:
+        if args.check:
+            problems = check_site(root)
+            for line in problems:
+                print(line)
+            if problems:
+                _err("site/ is out of date; run `bakeoff site`")
+            return 1 if problems else 0
+        if args.preview:
+            out = Path(args.preview)
+            if out.resolve().is_relative_to((root / "site").resolve()):
+                _err("--preview must not be site/ or a path inside it")
+                return 2
+            write_preview(root, out)
+            return 0
+        if week_docs(root) or (root / "results" / "picks.json").exists():
+            write_picks(root)
+        write_site(render_site(root), root / "site")
+    except (PublishError, WeekInputError, OSError, ValueError) as e:
+        _err(str(e))
+        return 1
+    return 0
+
+
+def _cmd_rederive(args: argparse.Namespace) -> int:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.week):
+        _err(f"week must be YYYY-MM-DD, got {args.week!r}")
+        return 2
+    try:
+        problems = rederive(Path(args.root), args.week)
+    except (RederiveError, OSError) as e:
+        _err(str(e))
+        return 1
+    if not problems:
+        print("identical")
+        return 0
+    print(f"differs: results/{args.week}/week.json does not match its re-derivation")
+    for line in problems:
+        print(f"  {line}")
+    return 1
+
+
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="bakeoff")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -267,6 +349,24 @@ def _parser() -> argparse.ArgumentParser:
     j.add_argument("--allow-partial", action="store_true")
     j.add_argument("--out", default="runs")
     j.set_defaults(fn=_cmd_judge)
+    b = sub.add_parser("publish", help="publish one week and regenerate site/")
+    b.add_argument("week_toml")
+    b.add_argument("--root", default=".")
+    b.add_argument("--denylist")
+    b.add_argument(
+        "--no-username", action="store_true", help="do not scan for the current username"
+    )
+    b.set_defaults(fn=_cmd_publish)
+    st = sub.add_parser("site", help="regenerate site/ from results/ and site.toml")
+    st.add_argument("--root", default=".")
+    mode = st.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="exit 1 if site/ is out of date")
+    mode.add_argument("--preview", metavar="DIR", help="build a launched site into DIR")
+    st.set_defaults(fn=_cmd_site)
+    rd = sub.add_parser("rederive", help="re-publish a published week and compare its week.json")
+    rd.add_argument("week", help="the week, YYYY-MM-DD")
+    rd.add_argument("--root", default=".")
+    rd.set_defaults(fn=_cmd_rederive)
     return p
 
 

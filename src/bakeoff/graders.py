@@ -21,6 +21,7 @@ class Grade:
     passed: bool | None
     score: float
     reason: str
+    extractable: bool | None = None
 
 
 class BadExpected(Exception):
@@ -46,7 +47,7 @@ def grade(grader: str, output: str, expected: Any, options: dict) -> Grade:
     try:
         return fn(output, expected, options)
     except BadExpected as e:
-        return Grade(False, 0.0, f"bad expected: {e}")
+        return Grade(False, 0.0, f"bad expected: {e}", False if grader == "json_schema" else None)
 
 
 def _result(ok: bool, reason: str) -> Grade:
@@ -136,7 +137,23 @@ _TYPE_CHECKS: dict[str, Callable[[Any], bool]] = {
     "array": lambda v: isinstance(v, list),
     "null": lambda v: v is None,
 }
-_KEYWORDS = {"type", "properties", "required", "enum", "items", "additionalProperties"}
+_ANNOTATIONS = {"$schema", "$id", "title", "description"}  # accepted, never enforced
+_KEYWORDS = {
+    "type",
+    "properties",
+    "required",
+    "enum",
+    "items",
+    "additionalProperties",
+} | _ANNOTATIONS
+
+
+def _type_names(t: Any) -> list[str] | None:
+    """The type names of a `type` keyword (a name or a non-empty list of names), or None."""
+    names = t if isinstance(t, list) else [t]
+    if not names or not all(isinstance(n, str) and n in _TYPE_CHECKS for n in names):
+        return None
+    return names
 
 
 def _enum_eq(a: Any, b: Any) -> bool:
@@ -151,7 +168,7 @@ def schema_problems(schema: Any, path: str = "$") -> list[str]:
         return [f"{path}: schema must be an object"]
     out = [f"{path}: unsupported keyword {k!r}" for k in schema if k not in _KEYWORDS]
     t = schema.get("type")
-    if "type" in schema and (not isinstance(t, str) or t not in _TYPE_CHECKS):
+    if "type" in schema and _type_names(t) is None:
         out.append(f"{path}: unsupported type {t!r}")
     if "properties" in schema:
         props = schema["properties"]
@@ -171,15 +188,21 @@ def schema_problems(schema: Any, path: str = "$") -> list[str]:
             out.extend(schema_problems(schema["items"], f"{path}[]"))
         else:
             out.append(f"{path}: unsupported 'items' (must be an object)")
-    if "additionalProperties" in schema and not isinstance(schema["additionalProperties"], bool):
-        out.append(f"{path}: unsupported 'additionalProperties' (must be a bool)")
+    if "additionalProperties" in schema:
+        ap = schema["additionalProperties"]
+        if isinstance(ap, dict):
+            out.extend(schema_problems(ap, f"{path}.*"))
+        elif not isinstance(ap, bool):
+            out.append(f"{path}: unsupported 'additionalProperties' (must be a bool or schema)")
     return out
 
 
 def _validate(value: Any, schema: dict, path: str) -> list[str]:
     errors: list[str] = []
-    if "type" in schema and not _TYPE_CHECKS[schema["type"]](value):
-        return [f"{path}: expected {schema['type']}, got {type(value).__name__}"]
+    if "type" in schema:
+        names = _type_names(schema["type"]) or []
+        if not any(_TYPE_CHECKS[n](value) for n in names):
+            return [f"{path}: expected {'/'.join(names)}, got {type(value).__name__}"]
     if "enum" in schema and not any(_enum_eq(value, e) for e in schema["enum"]):
         errors.append(f"{path}: {value!r} not in enum {schema['enum']!r}")
     if isinstance(value, dict):
@@ -190,10 +213,14 @@ def _validate(value: Any, schema: dict, path: str) -> list[str]:
         for key, sub in props.items():
             if key in value:
                 errors.extend(_validate(value[key], sub, f"{path}.{key}"))
-        if schema.get("additionalProperties") is False:
-            for key in value:
-                if key not in props:
-                    errors.append(f"{path}: additional property {key!r} not allowed")
+        extra = schema.get("additionalProperties")
+        for key in value:
+            if key in props:
+                continue
+            if extra is False:
+                errors.append(f"{path}: additional property {key!r} not allowed")
+            elif isinstance(extra, dict):
+                errors.extend(_validate(value[key], extra, f"{path}.{key}"))
     if isinstance(value, list) and "items" in schema:
         for i, item in enumerate(value):
             errors.extend(_validate(item, schema["items"], f"{path}[{i}]"))
@@ -258,6 +285,73 @@ def _check_values_shape(v: Any) -> None:
             _check_values_shape(x)
 
 
+def _check_json(text: str, schema: dict, values: dict | None) -> tuple[bool, str]:
+    """Parse `text` as strict JSON, then check the schema and `values`. Returns (ok, reason)."""
+    try:
+        value = json.loads(text, parse_constant=_reject_constant, parse_float=_parse_float)
+    except (ValueError, RecursionError) as e:
+        return False, f"not valid JSON: {type(e).__name__}: {str(e)[:100]}"
+    errors = validate_schema(value, schema)
+    if errors:
+        return False, "; ".join(errors[:3])
+    for key, want in (values or {}).items():
+        if not isinstance(value, dict) or key not in value:
+            return False, f"value mismatch: {key!r} missing"
+        if not _norm_eq(value[key], want):
+            return False, f"value mismatch: {key!r} got {value[key]!r}, want {want!r}"[:200]
+    return True, "valid"
+
+
+_ANY_FENCE_RE = re.compile(r"```(?:json)?[ \t]*\n?(.*?)\n?[ \t]*```", re.DOTALL | re.IGNORECASE)
+_TAG_RE = re.compile(r"<json>(.*?)</json>", re.DOTALL | re.IGNORECASE)
+
+
+def _balanced_span(text: str) -> str | None:
+    """The span from the first '{' or '[' to its matching close, ignoring brackets in strings."""
+    starts = [i for i in (text.find("{"), text.find("[")) if i != -1]
+    if not starts:
+        return None
+    start = min(starts)
+    depth = 0
+    in_str = esc = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+        elif c == '"':
+            in_str = True
+        elif c in "{[":
+            depth += 1
+        elif c in "}]":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def _candidates(output: str):
+    fences = _ANY_FENCE_RE.findall(output)
+    if len(fences) == 1:
+        yield fences[0]
+    tags = _TAG_RE.findall(output)
+    if len(tags) == 1:
+        yield tags[0]
+    # Several fences or tags make the answer ambiguous, so the bare-span fallback is skipped too.
+    span = _balanced_span(output) if len(fences) < 2 and len(tags) < 2 else None
+    if span is not None:
+        yield span
+
+
+def _extractable(output: str, schema: dict, values: dict | None) -> bool:
+    """Lenient score: does any candidate span in the output parse and pass the same checks?"""
+    return any(_check_json(c, schema, values)[0] for c in _candidates(output))
+
+
 @register("json_schema")
 def _json_schema(output: str, expected: Any, options: dict) -> Grade:
     """`expected` is a schema, or {"schema": {...}, "values": {...}} to also check field values."""
@@ -280,21 +374,8 @@ def _json_schema(output: str, expected: Any, options: dict) -> Grade:
             raise BadExpected(f"values keys not in schema properties: {unknown}")
         _check_values_shape(values)
     m = _FENCE_RE.match(output)
-    text = m.group(1) if m else output
-    try:
-        value = json.loads(text, parse_constant=_reject_constant, parse_float=_parse_float)
-    except (ValueError, RecursionError) as e:
-        return _result(False, f"not valid JSON: {type(e).__name__}: {str(e)[:100]}")
-    errors = validate_schema(value, expected)
-    if errors:
-        return _result(False, "; ".join(errors[:3]))
-    for key, want in (values or {}).items():
-        if not isinstance(value, dict) or key not in value:
-            return _result(False, f"value mismatch: {key!r} missing")
-        if not _norm_eq(value[key], want):
-            msg = f"value mismatch: {key!r} got {value[key]!r}, want {want!r}"
-            return _result(False, msg[:200])
-    return _result(True, "valid")
+    ok, reason = _check_json(m.group(1) if m else output, expected, values)
+    return Grade(ok, 1.0 if ok else 0.0, reason, ok or _extractable(output, expected, values))
 
 
 @register("needle")

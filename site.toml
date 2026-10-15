@@ -1,0 +1,7 @@
+launched = false
+base_url = "https://bakeoff.si"
+repo_url = "https://github.com/AtlantisAnalytics/bakeoff"
+
+[newsletter]
+action = ""            # the form's POST URL from the newsletter service; empty hides the form
+email_field = "email"  # the input's name, as the service expects it

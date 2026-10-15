@@ -1,0 +1,14 @@
+[[tier]]
+id = "12gb"
+name = "12 GB"
+envelope = "1× RTX 3060 12 GB"
+
+[[tier]]
+id = "24gb"
+name = "24 GB"
+envelope = "1× RTX 3090 Ti 24 GB"
+
+[[tier]]
+id = "36gb-unified"
+name = "36 GB unified"
+envelope = "Apple M4 Max 36 GB unified"

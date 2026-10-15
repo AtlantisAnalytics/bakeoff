@@ -2,6 +2,7 @@ import json
 
 import pytest
 from fake_openai import FakeOpenAI
+from weekfix import make_bundle
 
 from bakeoff import cli
 from bakeoff.client import EndpointClient
@@ -142,7 +143,7 @@ def _planted_bundle(tmp_path, text):
 )
 def test_generic_and_short_usernames_are_skipped(monkeypatch, name):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: name)
-    assert cli.pick_username(False, lambda: "") == (None, None)
+    assert cli.pick_username(False, lambda: "") == (None, None, False)
 
 
 def test_getuser_failure_skips_the_check(monkeypatch):
@@ -150,19 +151,20 @@ def test_getuser_failure_skips_the_check(monkeypatch):
         raise KeyError("uid not found")
 
     monkeypatch.setattr(cli.getpass, "getuser", boom)
-    assert cli.pick_username(False, lambda: "") == (None, None)
+    assert cli.pick_username(False, lambda: "") == (None, None, False)
 
 
-def test_username_that_is_a_suite_word_is_skipped_with_notice(monkeypatch):
+def test_pick_username_returns_skip_output(monkeypatch):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: "natalia")
-    name, notice = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
-    assert name is None and "natalia" in notice and "public suites" in notice
+    name, notice, skip = cli.pick_username(False, lambda: "Natalia sold clips to 48 of her friends")
+    assert name == "natalia" and skip is True
+    assert "natalia" in notice and "public suites" in notice
 
 
 def test_distinctive_username_is_scanned(monkeypatch):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: "alice-dev")
-    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None)
-    assert cli.pick_username(True) == (None, None)
+    assert cli.pick_username(False, lambda: "square root of Natalia") == ("alice-dev", None, False)
+    assert cli.pick_username(True) == (None, None, False)
 
 
 def test_real_suites_text_is_consulted(monkeypatch):
@@ -171,8 +173,8 @@ def test_real_suites_text_is_consulted(monkeypatch):
     text = cli._public_suite_text()
     word = next(w for w in re.findall(r"[A-Za-z]{6,}", text))
     monkeypatch.setattr(cli.getpass, "getuser", lambda: word)
-    name, notice = cli.pick_username(False)
-    assert name is None and notice
+    name, notice, skip = cli.pick_username(False)
+    assert name == word and notice and skip is True
 
 
 def test_verify_username_flag_and_notice(tmp_path, monkeypatch, capsys):
@@ -249,3 +251,92 @@ def test_existing_run_dir_is_a_clean_cli_error(tmp_path, monkeypatch, cfg_file, 
     monkeypatch.setattr(cli, "execute_run", exists)
     assert cli.main(["run", str(cfg_file), "--out", str(tmp_path)]) == 1
     assert "refusing to write" in capsys.readouterr().err
+
+
+def test_public_suite_text_survives_any_error(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(cli, "resolve_suites", boom)
+    assert cli._public_suite_text() == ""
+
+
+# --- publish and site ---------------------------------------------------------------------
+
+
+def _site_root(tmp_path, launched=False):
+    import shutil
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[1]
+    r = tmp_path / "root"
+    r.mkdir()
+    for name in ("tiers.toml", "site.toml"):
+        shutil.copy(repo / name, r / name)
+    shutil.copytree(repo / "site_src", r / "site_src")
+    shutil.copytree(repo / "site", r / "site")
+    if launched:
+        t = (r / "site.toml").read_text(encoding="utf-8")
+        (r / "site.toml").write_text(t.replace("launched = false", "launched = true"))
+    return r
+
+
+def test_cli_site_write_check_preview(tmp_path, capsys):
+    r = _site_root(tmp_path)
+    assert cli.main(["site", "--root", str(r)]) == 0
+    assert cli.main(["site", "--root", str(r), "--check"]) == 0
+    (r / "site" / "index.html").write_text("edited", encoding="utf-8")
+    assert cli.main(["site", "--root", str(r), "--check"]) == 1
+    assert "changed: index.html" in capsys.readouterr().out
+    prev = tmp_path / "prev"
+    assert cli.main(["site", "--root", str(r), "--preview", str(prev)]) == 0
+    assert (prev / "feed.xml").is_file() and (prev / "api/v1/picks.json").is_file()
+    for asset in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
+        assert (prev / asset).is_file()
+    assert cli.main(["site", "--root", str(r), "--preview", str(r / "site")]) == 2
+    assert cli.main(["site", "--root", str(r), "--preview", str(r / "site" / "sub")]) == 2
+    assert not (r / "site" / "sub").exists()
+
+
+def test_cli_site_bad_source_is_one_line(tmp_path, capsys):
+    r = _site_root(tmp_path)
+    (r / "site_src" / "method.html").write_bytes(b"\xff\xfe bad")
+    assert cli.main(["site", "--root", str(r)]) == 1
+    assert capsys.readouterr().err.startswith("error:")
+
+
+def test_cli_site_usage_errors(tmp_path):
+    with pytest.raises(SystemExit) as e:
+        cli.main(["site", "--check", "--preview", str(tmp_path)])
+    assert e.value.code == 2
+
+
+def test_cli_publish_end_to_end(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "DEFAULT_DENYLIST", tmp_path / "no-such-denylist")
+    r = _site_root(tmp_path, launched=True)
+    g = [True] * 6 + [False] * 4
+    b = make_bundle(
+        r / "runs",
+        label="m",
+        weights="m",
+        envelope="1× RTX 3090 Ti 24 GB",
+        grades={"general/gsm8k": g},
+    )
+    toml = r / "w.toml"
+    toml.write_text(
+        'week = "2026-10-19"\npublished_at = "2026-10-19T07:00:00Z"\n\n[[run]]\n'
+        f'bundle = "{b.relative_to(r).as_posix()}"\ntier = "24gb"\nlicense = "Apache-2.0"\n'
+        'source_url = "https://example.org/m"\n',
+        encoding="utf-8",
+    )
+    assert cli.main(["publish", str(toml), "--root", str(r), "--no-username"]) == 0
+    assert (r / "site" / "weeks" / "2026-10-19" / "index.html").is_file()
+    assert cli.main(["site", "--root", str(r), "--check"]) == 0
+    # a second publish of the same week is refused with exit 1
+    assert cli.main(["publish", str(toml), "--root", str(r), "--no-username"]) == 1
+    assert "already published" in capsys.readouterr().err
+    # an explicit missing denylist is an error, not silently ignored
+    assert (
+        cli.main(["publish", str(toml), "--root", str(r), "--denylist", str(tmp_path / "nope")])
+        == 1
+    )

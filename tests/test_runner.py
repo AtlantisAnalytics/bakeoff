@@ -65,7 +65,7 @@ def all_text(path):
 def test_end_to_end_bundle_verifies(tmp_path):
     path = go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
     meta = json.loads((path / "bundle.json").read_text())
-    assert meta["status"] == "complete" and meta["bundle_format"] == "m1"
+    assert meta["status"] == "complete" and meta["bundle_format"] == "m2"
     assert verify_bundle(path, username="alice", denylist=None) == []
     assert meta["memory"]["peaks"]["value"]
     assert meta["memory"]["platform"]["value"] == "nvidia"
@@ -449,3 +449,15 @@ def test_fit_probe_falls_back_to_the_first_probe(tmp_path):
         {"context_length": None},
         None,
     )
+
+
+@pytest.mark.parametrize("key", ["ollama", "EMPTY", "none", "sk-no-key-required", "abc1234"])
+def test_redactor_ignores_short_and_placeholder_keys(key):
+    red = make_redactor("http://192.0.2.5:11434/v1", (key,))  # scrub-ok
+    text = "runtime ollama EMPTY none abc1234"
+    assert red(text) == text
+
+
+def test_redactor_still_redacts_real_key():
+    red = make_redactor("http://192.0.2.5:11434/v1", ("sk-real-key-123",))  # scrub-ok
+    assert red("auth sk-real-key-123 ok") == "auth <endpoint> ok"

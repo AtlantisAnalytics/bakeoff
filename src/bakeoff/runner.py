@@ -90,9 +90,13 @@ def _endpoint_terms(base_url: str) -> tuple[list[str], list[str], list[str]]:
     )
 
 
+_PLACEHOLDER_KEYS = frozenset({"ollama", "empty", "none", "sk-no-key-required"})
+
+
 def make_redactor(base_url: str, secrets: tuple[str, ...] = ()) -> Callable[[object], object]:
     always, anchored, bare = _endpoint_terms(base_url)
-    always = sorted({*always, *(s for s in secrets if s)}, key=lambda t: -len(t))
+    keep = (s for s in secrets if len(s) >= 8 and s.lower() not in _PLACEHOLDER_KEYS)
+    always = sorted({*always, *keep}, key=lambda t: -len(t))
     alts = [re.escape(t) for t in always]
     alts += [rf"(?<![\w.-]){re.escape(t)}" for t in anchored]
     alts += [rf"(?<![\w.-]){re.escape(t)}(?![\w.-])" for t in bare]
@@ -296,7 +300,7 @@ async def execute_run(
     files["samples.jsonl"] = samples
 
     meta = {
-        "bundle_format": "m1",
+        "bundle_format": "m2",
         "run_id": rid,
         "started_at": started_at,
         "ended_at": _iso(now()),

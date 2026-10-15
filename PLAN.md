@@ -1,7 +1,7 @@
 # bakeoff.si plan
 
-Status as of 2026-10-14: **M0 and M1 done**. The repo is seeded, and the holding page has been live at
-https://bakeoff.si since 2026-10-12. It was uploaded by hand; deploying from Git comes in M2. The repo
+Status as of 2026-10-14: **M0, M1 and M2 done**. The repo is seeded, and the holding page has been live at
+https://bakeoff.si since 2026-10-12. It was uploaded by hand; deploying from Git is set up in M2. The repo
 stays **private until the first public Monday** (M5).
 
 ## Goal
@@ -67,7 +67,7 @@ In short:
 |---|---|
 | **M0** ✅ | Repo seed: README, plan, licenses, the holding page in `site/`, the logo source and asset script |
 | **M1** ✅ | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
-| **M2** | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
+| **M2** ✅ | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
 | **M3** | Private side: scouting, the weekend schedule, the Monday standup and [Publish] opening a draft PR here |
 | **M4** | Two or three private dry-run weekends; review the report quality and the scrub |
 | **M5** | First public Monday: scrub the history, make the repo public, announce |
@@ -87,11 +87,20 @@ Later:
   - `bot-branches-only`: bots may create and update `athena/**` branches only.
 - [x] Connect the `bakeoff` Worker to this repo in Workers Builds. **Check at the first Git deploy that
   the custom domains survive and workers.dev stays off.**
+- [ ] After merging M2, check the first Git deploy (the site stays the holding page until M5):
+  1. bakeoff.si and www resolve, and www redirects with a 301 to the root.
+  2. workers.dev is still off.
+  3. `curl -sI https://bakeoff.si/` shows the CSP header.
+  4. `https://bakeoff.si/_headers` and `https://bakeoff.si/results/` return 404.
+  5. The holding page looks unchanged.
+  6. `https://bakeoff.si/_headers` returns 404 (a `_headers` file is applied by Cloudflare, never served).
 
 ## Open questions
 
-- Results to site: should a build step copy `results/` into `site/api/v1/`, or should the site read
-  from a separate path? Decide in M2.
-- Results schema: versioning and URL stability guarantees.
+- ~~Results to site~~ Decided in M2: `bakeoff publish` generates `site/` (pages and `site/api/v1/`)
+  from `results/`, and the generated files are committed. There is no build step on Cloudflare, and CI
+  fails when `site/` is stale.
+- ~~Results schema versioning~~ Decided in M2: `/api/v1` is additive-only. v1 URLs never change, fields
+  are only added, and a breaking change goes to `/api/v2/`.
 - Which judge model, and its budget per weekend. It must be paid API usage, never a consumer
   subscription.
