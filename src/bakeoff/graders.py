@@ -47,7 +47,7 @@ def grade(grader: str, output: str, expected: Any, options: dict) -> Grade:
     try:
         return fn(output, expected, options)
     except BadExpected as e:
-        return Grade(False, 0.0, f"bad expected: {e}")
+        return Grade(False, 0.0, f"bad expected: {e}", False if grader == "json_schema" else None)
 
 
 def _result(ok: bool, reason: str) -> Grade:
@@ -349,7 +349,7 @@ def _json_schema(output: str, expected: Any, options: dict) -> Grade:
         _check_values_shape(values)
     m = _FENCE_RE.match(output)
     ok, reason = _check_json(m.group(1) if m else output, expected, values)
-    return Grade(ok, 1.0 if ok else 0.0, reason, _extractable(output, expected, values))
+    return Grade(ok, 1.0 if ok else 0.0, reason, ok or _extractable(output, expected, values))
 
 
 @register("needle")

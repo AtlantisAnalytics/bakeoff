@@ -261,3 +261,16 @@ def test_extractable_checks_values():
 
 def test_other_graders_extractable_none():
     assert grade("exact", "x", "x", {}).extractable is None
+
+
+@pytest.mark.parametrize(
+    "output, schema", [("5", {"type": "integer"}), ('"hi"', {"type": "string"})]
+)
+def test_strict_scalar_pass_is_extractable(output, schema):
+    g = grade("json_schema", output, schema, {})
+    assert g.passed is True and g.extractable is True
+
+
+def test_bad_expected_json_schema_extractable_false():
+    g = grade("json_schema", "{}", {"type": "bogus"}, {})
+    assert g.passed is False and g.extractable is False
