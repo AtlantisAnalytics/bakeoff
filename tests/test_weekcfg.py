@@ -145,3 +145,32 @@ def test_site_rejections(tmp_path, text, match):
 def test_site_https_action(tmp_path):
     text = SITE.replace('action = ""', 'action = "https://x.org/f"')
     assert load_site(write(tmp_path, text, "site.toml")).newsletter_action == "https://x.org/f"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://u:tok@news.example.org/x",
+        "https://a.example;script-src/x",
+        "https:///path",
+        "https://",
+        "https://exa mple.org/",
+        "https://example.org/\tx",
+        "https://example.org:notaport/",
+        "https://Ex_ample.org/",
+    ],
+)
+def test_hostile_urls_rejected(tmp_path, tiers, url):
+    for field, text in (
+        ("base_url", SITE.replace("https://bakeoff.si", url)),
+        ("newsletter.action", SITE.replace('action = ""', f'action = "{url}"')),
+    ):
+        with pytest.raises(WeekInputError, match=field.split(".")[-1]):
+            load_site(write(tmp_path, text, "site.toml"))
+    with pytest.raises(WeekInputError, match="source_url"):
+        load_week(write(tmp_path, GOOD.replace("https://huggingface.co/x/y", url)), tiers)
+
+
+def test_url_with_port_is_accepted(tmp_path):
+    text = SITE.replace('action = ""', 'action = "https://news.example.org:8443/f"')  # scrub-ok
+    assert load_site(write(tmp_path, text, "site.toml")).newsletter_action.endswith("/f")

@@ -24,7 +24,7 @@ h3 { font-size: 1.05rem; margin: 1.5rem 0 0.4rem; }
 .lede { font-size: 1.2rem; margin: 0 auto 1.5rem; max-width: 30rem; }
 ul { list-style: none; padding: 0; margin: 0 0 2rem; color: var(--muted); }
 li { margin: 0.35rem 0; }
-li::before { content: "•"; color: var(--blue); font-weight: 700; margin-right: 0.5rem; }
+ul li::before { content: "•"; color: var(--blue); font-weight: 700; margin-right: 0.5rem; }
 .holding main ul { text-align: center; }
 .muted { color: var(--muted); }
 .small { font-size: 0.9rem; }

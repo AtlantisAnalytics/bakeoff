@@ -10,10 +10,12 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 VERDICTS = ("replace", "hold", "watch")
 
 _SLUG = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
+_HOST = re.compile(r"[a-z0-9.-]+")
 _LICENSE = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+\-() ]*")
 _PUBLISHED_AT = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
 
@@ -111,8 +113,17 @@ def _https(where: str, v: Any, *, allow_empty: bool = False) -> str:
     s = _text(where, v, allow_empty=allow_empty)
     if s == "" and allow_empty:
         return s
-    if not s.startswith("https://") or len(s) == len("https://") or any(c.isspace() for c in s):
-        raise WeekInputError(f"{where} must be an https:// URL, got {s!r}")
+    bad = WeekInputError(f"{where} must be an https:// URL with a plain host, got {s!r}")
+    if any(c.isspace() or ord(c) < 32 or ord(c) == 127 or c == "\\" for c in s):
+        raise bad
+    try:
+        parts = urlsplit(s)
+        parts.port  # noqa: B018 - raises ValueError on a malformed port
+    except ValueError as e:
+        raise bad from e
+    host = parts.hostname or ""
+    if parts.scheme != "https" or "@" in parts.netloc or not _HOST.fullmatch(host):
+        raise bad
     return s
 
 

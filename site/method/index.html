@@ -81,7 +81,8 @@ hash, and a week records the hash it used.</p>
 <h2>Reproduce a week</h2>
 <p>Everything is in the open repository. Raw bundles for each run sit next to the week's results.</p>
 <pre><code>uv sync
-uv run bakeoff publish</code></pre>
+uv run bakeoff publish &lt;week.toml&gt;
+uv run bakeoff site --check</code></pre>
 <p><code>bakeoff publish</code> verifies the bundles, applies the rules above and rewrites the
 week's JSON and pages. The JSON for any week is at <code>/api/v1/weeks/&lt;week&gt;.json</code>
 and is described by a JSON Schema at <code>/api/v1/schema/week.v1.json</code>.</p>

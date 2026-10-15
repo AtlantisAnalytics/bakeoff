@@ -1,6 +1,7 @@
 import json
 import shutil
 import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -13,10 +14,11 @@ from bakeoff.web.build import (
     atom_feed,
     check_site,
     headers_file,
+    https_origin,
     render_site,
     write_site,
 )
-from bakeoff.weekcfg import SiteConfig
+from bakeoff.weekcfg import SiteConfig, load_site
 
 REPO = Path(__file__).resolve().parents[1]
 W1, W2 = "2026-10-19", "2026-10-26"
@@ -223,3 +225,83 @@ def test_write_site_removes_stale_owned_only(two_weeks):
         if p.name
         not in {"style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"}
     }
+
+
+@pytest.mark.parametrize(
+    ("url", "origin"),
+    [
+        ("https://news.example.org/x?y=1", "https://news.example.org"),
+        ("https://news.example.org:8443/f", "https://news.example.org:8443"),  # scrub-ok
+        ("https://News.Example.org", "https://news.example.org"),
+    ],
+)
+def test_https_origin(url, origin):
+    assert https_origin(url) == origin
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://u:tok@news.example.org/x",
+        "https://a.example;script-src/x",
+        "https:///path",
+        "http://news.example.org/",
+    ],
+)
+def test_https_origin_rejects_hostile(url):
+    with pytest.raises(ValueError):
+        https_origin(url)
+
+
+class _Refs(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.refs = []
+
+    def handle_starttag(self, tag, attrs):
+        for k, v in attrs:
+            if k in ("href", "src") and v:
+                self.refs.append(v)
+
+
+def _assert_links_resolve(files):
+    assets = {"style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"}
+    for name, data in files.items():
+        if not name.endswith(".html"):
+            continue
+        p = _Refs()
+        p.feed(data.decode("utf-8"))
+        for ref in p.refs:
+            if ref.startswith("https://bakeoff.si/"):
+                ref = ref[len("https://bakeoff.si") :]
+            if not ref.startswith("/"):
+                assert ref.startswith("https://"), (name, ref)
+                continue
+            path = ref.split("#")[0].lstrip("/")
+            if path.endswith("/") or path == "":
+                path += "index.html"
+            assert path in files or path in assets, (name, ref)
+
+
+def test_links_resolve_unlaunched(root):
+    _assert_links_resolve(render_site(root))
+
+
+def test_links_resolve_launched(two_weeks):
+    files = render_site(two_weeks)
+    _assert_links_resolve(files)
+    # same-origin links in pages that are not .html (API/feed) are not checked here
+    assert "weeks/index.html" in files
+
+
+def test_week_page_never_links_javascript(two_weeks):
+    from bakeoff.publish import week_docs
+    from bakeoff.web.pages import week_page
+
+    doc = week_docs(two_weeks)[-1]
+    model = next(r for t in doc["tiers"] for r in t["runs"])["model"]
+    model["source_url"] = "javascript:alert(1)"
+    model["license_url"] = "data:text/html,x"
+    html = week_page(doc, load_site(two_weeks / "site.toml"))
+    assert 'href="javascript:' not in html and 'href="data:' not in html
+    assert "Source" in html

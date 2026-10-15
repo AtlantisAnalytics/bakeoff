@@ -2,6 +2,7 @@ import json
 
 import pytest
 from fake_openai import FakeOpenAI
+from weekfix import make_bundle
 
 from bakeoff import cli
 from bakeoff.client import EndpointClient
@@ -293,6 +294,15 @@ def test_cli_site_write_check_preview(tmp_path, capsys):
     for asset in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
         assert (prev / asset).is_file()
     assert cli.main(["site", "--root", str(r), "--preview", str(r / "site")]) == 2
+    assert cli.main(["site", "--root", str(r), "--preview", str(r / "site" / "sub")]) == 2
+    assert not (r / "site" / "sub").exists()
+
+
+def test_cli_site_bad_source_is_one_line(tmp_path, capsys):
+    r = _site_root(tmp_path)
+    (r / "site_src" / "method.html").write_bytes(b"\xff\xfe bad")
+    assert cli.main(["site", "--root", str(r)]) == 1
+    assert capsys.readouterr().err.startswith("error:")
 
 
 def test_cli_site_usage_errors(tmp_path):
@@ -302,11 +312,6 @@ def test_cli_site_usage_errors(tmp_path):
 
 
 def test_cli_publish_end_to_end(tmp_path, monkeypatch, capsys):
-    import sys
-
-    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
-    from weekfix import make_bundle
-
     monkeypatch.setattr(cli, "DEFAULT_DENYLIST", tmp_path / "no-such-denylist")
     r = _site_root(tmp_path, launched=True)
     g = [True] * 6 + [False] * 4

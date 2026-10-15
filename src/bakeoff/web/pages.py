@@ -47,6 +47,17 @@ def _e(v: object) -> str:
     return escape(str(v), quote=True)
 
 
+def _link(href: object, text: str) -> str:
+    """An anchor for https:// and site-relative hrefs only; anything else is plain text.
+
+    ``text`` must already be escaped.
+    """
+    h = str(href)
+    if not (h.startswith("https://") or (h.startswith("/") and not h.startswith("//"))):
+        return text
+    return f'<a href="{_e(h)}">{text}</a>'
+
+
 def reason_text(code: object) -> str:
     return REASONS.get(code, str(code)) if isinstance(code, str) else str(code)
 
@@ -160,7 +171,7 @@ def holding_page(site: SiteConfig) -> str:
 
 def _bundle_link(run: dict, site: SiteConfig) -> str:
     href = f"{site.repo_url.rstrip('/')}/tree/main/{run['bundle_path']}"
-    return f'<a href="{_e(href)}">Raw bundle</a>'
+    return _link(href, "Raw bundle")
 
 
 def _model_cell(run: dict) -> str:
@@ -170,9 +181,9 @@ def _model_cell(run: dict) -> str:
     out.append(f'<div class="small muted">{_e(m.get("quant"))} · {_e(m.get("runtime"))}</div>')
     lic = _e(m.get("license"))
     if m.get("license_url"):
-        lic = f'<a href="{_e(m["license_url"])}">{lic}</a>'
+        lic = _link(m["license_url"], lic)
     src = m.get("source_url")
-    src_html = f' · <a href="{_e(src)}">Source</a>' if src else ""
+    src_html = f" · {_link(src, 'Source')}" if src else ""
     out.append(f'<div class="small">{lic}{src_html}</div>')
     return "".join(out)
 
@@ -360,7 +371,7 @@ def week_page(doc: dict, site: SiteConfig) -> str:
 def archive_page(index: list[dict], site: SiteConfig) -> str:
     if index:
         items = "".join(
-            f'<li><a href="{_e(w["url"])}">Week of {_e(w["week"])}</a> '
+            f"<li>{_link(w['url'], 'Week of ' + _e(w['week']))} "
             f'<span class="muted">revision {_e(w["revision"])}, {_e(w["published_at"])}</span></li>'
             for w in index
         )

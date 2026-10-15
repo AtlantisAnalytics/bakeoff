@@ -7,6 +7,7 @@ the environment, so two renders are byte-identical.
 
 import dataclasses
 import json
+import re
 import shutil
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -32,10 +33,18 @@ def picks_bytes(docs: list[dict]) -> bytes:
     return _json(docs[-1]["picks_after"] if docs else {})
 
 
+def https_origin(url: str) -> str:
+    """``https://host[:port]`` of an https URL: no userinfo, path or anything else."""
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    if parts.scheme != "https" or "@" in parts.netloc or not re.fullmatch(r"[a-z0-9.-]+", host):
+        raise ValueError(f"not an https URL with a plain host: {url!r}")
+    return f"https://{host}" + (f":{parts.port}" if parts.port else "")
+
+
 def headers_file(site: SiteConfig) -> str:
     if site.newsletter_action:
-        parts = urlsplit(site.newsletter_action)
-        form_action = f"{parts.scheme}://{parts.netloc}"
+        form_action = https_origin(site.newsletter_action)
     else:
         form_action = "'none'"
     csp = (

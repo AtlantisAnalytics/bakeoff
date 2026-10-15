@@ -266,7 +266,7 @@ def _cmd_publish(args: argparse.Namespace) -> int:
         )
         print(f"published week {out.name}")
         write_site(render_site(root), root / "site")
-    except (PublishError, WeekInputError, OSError) as e:
+    except (PublishError, WeekInputError, OSError, ValueError) as e:
         _err(str(e))
         return 1
     return 0
@@ -284,15 +284,15 @@ def _cmd_site(args: argparse.Namespace) -> int:
             return 1 if problems else 0
         if args.preview:
             out = Path(args.preview)
-            if out.resolve() == (root / "site").resolve():
-                _err("--preview must not be the site/ directory")
+            if out.resolve().is_relative_to((root / "site").resolve()):
+                _err("--preview must not be site/ or a path inside it")
                 return 2
             write_preview(root, out)
             return 0
         if week_docs(root) or (root / "results" / "picks.json").exists():
             write_picks(root)
         write_site(render_site(root), root / "site")
-    except (PublishError, WeekInputError, OSError) as e:
+    except (PublishError, WeekInputError, OSError, ValueError) as e:
         _err(str(e))
         return 1
     return 0
