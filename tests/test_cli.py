@@ -258,3 +258,80 @@ def test_public_suite_text_survives_any_error(monkeypatch):
 
     monkeypatch.setattr(cli, "resolve_suites", boom)
     assert cli._public_suite_text() == ""
+
+
+# --- publish and site ---------------------------------------------------------------------
+
+
+def _site_root(tmp_path, launched=False):
+    import shutil
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[1]
+    r = tmp_path / "root"
+    r.mkdir()
+    for name in ("tiers.toml", "site.toml"):
+        shutil.copy(repo / name, r / name)
+    shutil.copytree(repo / "site_src", r / "site_src")
+    shutil.copytree(repo / "site", r / "site")
+    if launched:
+        t = (r / "site.toml").read_text(encoding="utf-8")
+        (r / "site.toml").write_text(t.replace("launched = false", "launched = true"))
+    return r
+
+
+def test_cli_site_write_check_preview(tmp_path, capsys):
+    r = _site_root(tmp_path)
+    assert cli.main(["site", "--root", str(r)]) == 0
+    assert cli.main(["site", "--root", str(r), "--check"]) == 0
+    (r / "site" / "index.html").write_text("edited", encoding="utf-8")
+    assert cli.main(["site", "--root", str(r), "--check"]) == 1
+    assert "changed: index.html" in capsys.readouterr().out
+    prev = tmp_path / "prev"
+    assert cli.main(["site", "--root", str(r), "--preview", str(prev)]) == 0
+    assert (prev / "feed.xml").is_file() and (prev / "api/v1/picks.json").is_file()
+    for asset in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
+        assert (prev / asset).is_file()
+    assert cli.main(["site", "--root", str(r), "--preview", str(r / "site")]) == 2
+
+
+def test_cli_site_usage_errors(tmp_path):
+    with pytest.raises(SystemExit) as e:
+        cli.main(["site", "--check", "--preview", str(tmp_path)])
+    assert e.value.code == 2
+
+
+def test_cli_publish_end_to_end(tmp_path, monkeypatch, capsys):
+    import sys
+
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent))
+    from weekfix import make_bundle
+
+    monkeypatch.setattr(cli, "DEFAULT_DENYLIST", tmp_path / "no-such-denylist")
+    r = _site_root(tmp_path, launched=True)
+    g = [True] * 6 + [False] * 4
+    b = make_bundle(
+        r / "runs",
+        label="m",
+        weights="m",
+        envelope="1× RTX 3090 Ti 24 GB",
+        grades={"general/gsm8k": g},
+    )
+    toml = r / "w.toml"
+    toml.write_text(
+        'week = "2026-10-19"\npublished_at = "2026-10-19T07:00:00Z"\n\n[[run]]\n'
+        f'bundle = "{b.relative_to(r).as_posix()}"\ntier = "24gb"\nlicense = "Apache-2.0"\n'
+        'source_url = "https://example.org/m"\n',
+        encoding="utf-8",
+    )
+    assert cli.main(["publish", str(toml), "--root", str(r), "--no-username"]) == 0
+    assert (r / "site" / "weeks" / "2026-10-19" / "index.html").is_file()
+    assert cli.main(["site", "--root", str(r), "--check"]) == 0
+    # a second publish of the same week is refused with exit 1
+    assert cli.main(["publish", str(toml), "--root", str(r), "--no-username"]) == 1
+    assert "already published" in capsys.readouterr().err
+    # an explicit missing denylist is an error, not silently ignored
+    assert (
+        cli.main(["publish", str(toml), "--root", str(r), "--denylist", str(tmp_path / "nope")])
+        == 1
+    )
