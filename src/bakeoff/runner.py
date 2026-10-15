@@ -300,7 +300,7 @@ async def execute_run(
     files["samples.jsonl"] = samples
 
     meta = {
-        "bundle_format": "m1",
+        "bundle_format": "m2",
         "run_id": rid,
         "started_at": started_at,
         "ended_at": _iso(now()),

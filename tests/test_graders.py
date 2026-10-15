@@ -228,3 +228,36 @@ def test_json_values_reason_is_capped():
         "json_schema", json.dumps({"a": "x" * 1000}), {"schema": schema, "values": {"a": "y"}}, {}
     )
     assert not r.passed and len(r.reason) <= 200
+
+
+_OBJ = {"type": "object", "required": ["a"]}
+_TWO_FENCES = '```json\n{"a":1}\n```\nand\n```json\n{"a":2}\n```'
+
+
+@pytest.mark.parametrize(
+    "output, strict, extractable",
+    [
+        ('<json>{"a":1}</json>', False, True),
+        ('Sure:\n```json\n{"a":1}\n```\nDone', False, True),
+        ('Here: {"a": 1} ok', False, True),
+        (_TWO_FENCES, False, False),
+        ('{"a":1}', True, True),
+        ('{"b":1}', False, False),
+        ('<json>{"b":1}</json>', False, False),
+        ('Here: {"s": "}{", "a": 1} ok', False, True),
+    ],
+)
+def test_extractable(output, strict, extractable):
+    g = grade("json_schema", output, _OBJ, {})
+    assert g.passed is strict and g.extractable is extractable
+
+
+def test_extractable_checks_values():
+    exp = {"schema": {**_OBJ, "properties": {"a": {"type": "integer"}}}, "values": {"a": 2}}
+    g = grade("json_schema", '<json>{"a":1}</json>', exp, {})
+    assert g.passed is False and g.extractable is False
+    assert grade("json_schema", '<json>{"a":2}</json>', exp, {}).extractable is True
+
+
+def test_other_graders_extractable_none():
+    assert grade("exact", "x", "x", {}).extractable is None

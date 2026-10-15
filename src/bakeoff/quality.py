@@ -43,6 +43,10 @@ def _summary(suite: Suite, recs: list[dict]) -> dict:
         if n:
             s["accuracy"] = passed / n
             s["ci95"] = list(wilson(passed, n))
+    if suite.grader == "json_schema":
+        ext = sum(1 for r in recs if r.get("extractable") is True)
+        s["extractable_accuracy"] = ext / n if n else None
+        s["extractable_ci95"] = list(wilson(ext, n)) if n else None
     return s
 
 
@@ -81,14 +85,18 @@ async def run_quality(
                 r = await client.chat(item.messages, suite.max_tokens, temperature=0.0, seed=0)
                 if r.error is not None:
                     passed, score, reason = False, 0.0, "error"
+                    extractable = False
                 else:
                     try:
                         g = grade(suite.grader, r.content, item.expected, suite.grader_options)
                         passed, score, reason = g.passed, g.score, g.reason
+                        extractable = g.extractable
                     except Exception as e:  # noqa: BLE001 - one bad item must not kill the run
                         passed, score, reason = False, 0.0, f"grader error: {type(e).__name__}"
+                        extractable = False
                     if r.finish_reason == "length":
                         passed, score, reason = False, 0.0, "truncated"
+                        extractable = False
                 recs.append(
                     {
                         "id": item.id,
@@ -101,6 +109,7 @@ async def run_quality(
                         "score": score,
                         "reason": reason,
                         "error": r.error,
+                        "extractable": extractable,
                     }
                 )
                 try:

@@ -65,7 +65,7 @@ def all_text(path):
 def test_end_to_end_bundle_verifies(tmp_path):
     path = go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
     meta = json.loads((path / "bundle.json").read_text())
-    assert meta["status"] == "complete" and meta["bundle_format"] == "m1"
+    assert meta["status"] == "complete" and meta["bundle_format"] == "m2"
     assert verify_bundle(path, username="alice", denylist=None) == []
     assert meta["memory"]["peaks"]["value"]
     assert meta["memory"]["platform"]["value"] == "nvidia"

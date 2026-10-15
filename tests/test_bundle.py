@@ -24,7 +24,7 @@ def test_run_id_format():
 def test_round_trip_verifies_with_unicode(tmp_path):
     write_bundle(
         tmp_path,
-        {"status": "complete", "bundle_format": "m1"},
+        {"status": "complete", "bundle_format": "m2"},
         {"quality/general.x.jsonl": [{"output": "naïve 🍰"}]},
     )
     assert verify_bundle(tmp_path, username=None, denylist=None) == []

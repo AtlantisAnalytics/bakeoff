@@ -1,5 +1,6 @@
 import asyncio
 import json
+from dataclasses import replace
 
 import pytest
 from fake_openai import FakeOpenAI, FakeReply
@@ -63,7 +64,7 @@ def test_scores_and_ci():
     rec = res.records["general/s"][0]
     assert set(rec) == {
         "id", "prompt_sha256", "output", "reasoning_tokens", "finish_reason",
-        "latency_s", "pass", "score", "reason", "error",
+        "latency_s", "pass", "score", "reason", "error", "extractable",
     }  # fmt: skip
     assert rec["pass"] is True and rec["error"] is None
     assert fake.requests[0]["temperature"] == 0.0 and fake.requests[0]["seed"] == 0
@@ -189,3 +190,28 @@ def test_grader_crash_is_a_fail_not_a_dead_run(monkeypatch):
     assert all(r["pass"] is False and r["score"] == 0.0 for r in recs)
     assert all(r["reason"] == "grader error: RuntimeError" for r in recs)
     assert res.suites[0]["accuracy"] == 0.0
+
+
+def test_json_suite_extractable_summary_and_error_records():
+    fake = FakeOpenAI(
+        responder=reply_for(
+            lambda p: FakeReply('<json>{"a":1}</json>' if p.endswith("-0") else "nope")
+        )
+    )
+    suite = make_suite(name="j", grader="json_schema", n=2)
+    schema = {"type": "object", "required": ["a"]}
+    suite = replace(suite, items=[replace(it, expected=schema) for it in suite.items])
+    res = run_q(fake, [suite])
+    (s,) = res.suites
+    assert s["extractable_accuracy"] == 0.5 and s["extractable_ci95"] == list(wilson(1, 2))
+    assert [r["extractable"] for r in res.records["general/j"]] == [True, False]
+    (plain,) = run_q(FakeOpenAI(responder=lambda m: FakeReply("OK-42")), [make_suite()]).suites
+    assert "extractable_accuracy" not in plain and "extractable_ci95" not in plain
+
+
+def test_truncated_json_not_extractable():
+    fake = FakeOpenAI(responder=lambda m: FakeReply('{"a":1}', finish_reason="length"))
+    suite = make_suite(name="j", grader="json_schema", n=1)
+    suite = replace(suite, items=[replace(suite.items[0], expected={"type": "object"})])
+    res = run_q(fake, [suite])
+    assert res.records["general/j"][0]["extractable"] is False
