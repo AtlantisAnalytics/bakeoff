@@ -1,0 +1,77 @@
+/* The logo ships on an opaque white field, so the page stays light to match it. */
+:root {
+  --bg: #fefefe; --ink: #1c2b46; --muted: #5d6779; --blue: #2093fb; --rule: #e6e9ef;
+  --amber: #9a6200;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; min-height: 100vh;
+  background: var(--bg); color: var(--ink);
+  font: 17px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+body.holding { display: grid; place-items: center; }
+a { color: var(--blue); }
+main { width: 100%; max-width: 62rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.holding main { max-width: 34rem; padding-top: 2.5rem; text-align: center; }
+.site-header { max-width: 62rem; margin: 0 auto; padding: 1rem 1rem 0; line-height: 0; }
+.site-header img { width: 120px; height: auto; }
+h1 { margin: 0 0 1.75rem; line-height: 0; }
+h1 img { width: min(100%, 440px); height: auto; }
+main h1.title { line-height: 1.2; font-size: 1.8rem; margin: 0.5rem 0 0.75rem; }
+h2 { font-size: 1.35rem; margin: 2rem 0 0.5rem; }
+h3 { font-size: 1.05rem; margin: 1.5rem 0 0.4rem; }
+.lede { font-size: 1.2rem; margin: 0 auto 1.5rem; max-width: 30rem; }
+ul { list-style: none; padding: 0; margin: 0 0 2rem; color: var(--muted); }
+li { margin: 0.35rem 0; }
+li::before { content: "•"; color: var(--blue); font-weight: 700; margin-right: 0.5rem; }
+.holding main ul { text-align: center; }
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+
+/* tables scroll inside their wrapper at phone width */
+.table-wrap { overflow-x: auto; margin: 0.5rem 0 1rem; border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+tr.pick td { background: #f4f9ff; }
+.track { color: var(--muted); font-size: 0.85rem; }
+.block { margin: 0 0 0.4rem; }
+
+/* verdict badges */
+.badge {
+  display: inline-block; padding: 0 0.5rem; border-radius: 0.6rem; font-size: 0.82rem;
+  font-weight: 600; border: 1px solid currentColor; white-space: nowrap;
+}
+.badge-replace, .badge-initial_pick, .badge-pick { color: var(--blue); }
+.badge-hold, .badge-same { color: var(--muted); }
+.badge-watch { color: var(--amber); }
+
+ul.flat { color: var(--ink); margin-bottom: 1rem; }
+ul.flat li::before { content: none; margin: 0; }
+
+footer { border-top: 1px solid var(--rule); padding-top: 1rem; color: var(--muted); font-size: 0.95rem; }
+footer strong { color: var(--blue); font-weight: 600; }
+.site-footer { max-width: 62rem; margin: 0 auto; padding: 0 1rem 2rem; }
+.holding .site-footer { max-width: 34rem; text-align: center; }
+.footer-links a { margin-right: 1rem; }
+.holding .footer-links a { margin: 0 0.5rem; }
+
+form.signup { margin: 1rem 0 0; }
+form.signup label { display: block; margin-bottom: 0.25rem; }
+form.signup input[type="email"] {
+  font: inherit; padding: 0.4rem 0.6rem; border: 1px solid var(--muted); border-radius: 0.3rem;
+  width: min(100%, 18rem);
+}
+form.signup button {
+  font: inherit; padding: 0.4rem 0.9rem; border: 0; border-radius: 0.3rem;
+  background: var(--blue); color: #fff; cursor: pointer;
+}
+form.signup a { margin-left: 0.75rem; }
+
+pre { background: #f4f6fa; border: 1px solid var(--rule); padding: 0.75rem 1rem; overflow-x: auto; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+main ol { padding-left: 1.4rem; }
+main ol li { margin: 0.5rem 0; }
