@@ -359,6 +359,14 @@ def publish(
                 )
     except VerdictError as e:
         raise PublishError(f"verdicts: {e}") from e
+    # Defensive: assess_tier reads only its own tier's overrides, so one whose tier was never
+    # assessed, or whose run is not in that tier, would otherwise vanish silently.
+    for o in inp.overrides:
+        if o.tier not in assessed or o.run not in {v.run_id for v in by_tier.get(o.tier, [])}:
+            raise PublishError(
+                f"override {o.run} / {o.track} for tier {o.tier} was not applied: "
+                f"the run is not in tier {o.tier} this week"
+            )
 
     if prev is None:
         revision, published_at, corrections = 1, inp.published_at, []

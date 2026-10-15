@@ -195,7 +195,9 @@ def _run(i: int, t: dict[str, Any], base: Path, tiers: dict[str, Tier]) -> RunEn
     return RunEntry(bundle, tier, lic, source_url, license_url)
 
 
-def _override(i: int, t: dict[str, Any], tiers: dict[str, Tier], run_ids: set[str]) -> Override:
+def _override(
+    i: int, t: dict[str, Any], tiers: dict[str, Tier], run_tiers: dict[str, str]
+) -> Override:
     where = f"override[{i}]"
     _check_keys(where, t, ("tier", "track", "run", "verdict", "reason"))
     tier = _text(f"{where}.tier", t["tier"])
@@ -203,8 +205,12 @@ def _override(i: int, t: dict[str, Any], tiers: dict[str, Tier], run_ids: set[st
         raise WeekInputError(f"{where}.tier {tier!r} is not in tiers.toml")
     track = _text(f"{where}.track", t["track"])
     run = _text(f"{where}.run", t["run"])
-    if run not in run_ids:
+    if run not in run_tiers:
         raise WeekInputError(f"{where}.run {run!r} is not a run in this week")
+    if run_tiers[run] != tier:
+        raise WeekInputError(
+            f"{where}.tier {tier!r} does not match the tier of run {run!r} ({run_tiers[run]!r})"
+        )
     verdict = _text(f"{where}.verdict", t["verdict"])
     if verdict not in VERDICTS:
         raise WeekInputError(f"{where}.verdict must be one of {', '.join(VERDICTS)}: {verdict!r}")
@@ -235,7 +241,7 @@ def load_week(path: Path, tiers: dict[str, Tier]) -> WeekInput:
         _check_keys(f"judge[{i}]", t, ("bundle",))
         judges.append(base / _text(f"judge[{i}].bundle", t["bundle"]))
     overrides = [
-        _override(i, t, tiers, set(run_ids))
+        _override(i, t, tiers, {r.bundle.name: r.tier for r in runs})
         for i, t in enumerate(_table_list("override", data.get("override", [])))
     ]
     correction = None

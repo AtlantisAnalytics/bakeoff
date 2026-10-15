@@ -174,3 +174,9 @@ def test_hostile_urls_rejected(tmp_path, tiers, url):
 def test_url_with_port_is_accepted(tmp_path):
     text = SITE.replace('action = ""', 'action = "https://news.example.org:8443/f"')  # scrub-ok
     assert load_site(write(tmp_path, text, "site.toml")).newsletter_action.endswith("/f")
+
+
+def test_override_tier_must_match_its_runs_tier(tmp_path, tiers):
+    text = GOOD.replace('tier = "24gb"\ntrack', 'tier = "12gb"\ntrack')
+    with pytest.raises(WeekInputError, match=r"override\[0\]\.tier '12gb'.*run .*'24gb'"):
+        load_week(write(tmp_path, text), tiers)

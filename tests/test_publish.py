@@ -601,3 +601,24 @@ def test_refuses_run_with_private_split_even_without_private_files(root, monkeyp
 
     monkeypatch.setattr(pub, "load_run", private_split)
     refused(root, week_toml(root, [(a, "24gb")]), f"run {a.name}.*private")
+
+
+# --- overrides ----------------------------------------------------------------------------------
+
+
+def test_refuses_override_not_consumed_by_any_tier(root, monkeypatch):
+    """Defensive: an override whose tier is never assessed is an error, not silently ignored."""
+    from dataclasses import replace
+
+    from bakeoff.weekcfg import Override
+
+    a = bundle(root, "base", 6)
+    real = pub.load_week
+
+    def with_stray_override(path, tiers):
+        inp = real(path, tiers)
+        stray = Override("12gb", "general", a.name, "hold", "wrong tier")
+        return replace(inp, overrides=[*inp.overrides, stray])
+
+    monkeypatch.setattr(pub, "load_week", with_stray_override)
+    refused(root, week_toml(root, [(a, "24gb")]), "override.*12gb.*not applied")

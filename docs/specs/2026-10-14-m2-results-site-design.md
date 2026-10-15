@@ -105,7 +105,7 @@ note = "Re-graded structured/json after a grader fix; no verdict changed."
 Validation fails closed, naming the field, when:
 - a field is unknown or a required field is missing;
 - a tier doesn't exist;
-- an override names a run that isn't in this week;
+- an override names a run that isn't in this week, or a tier other than that run's;
 - a `reason` is empty.
 
 ## Verdict rules (rules v1)
