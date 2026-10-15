@@ -217,7 +217,7 @@ def _quality_cell(run: dict) -> str:
     return "".join(parts)
 
 
-def _verdict_cell(run: dict) -> str:
+def _verdict_cell(run: dict, label_of: dict) -> str:
     parts = []
     if run["role"] == "pick":
         tracks = ", ".join(_e(t) for t in run["pick_tracks"])
@@ -226,11 +226,11 @@ def _verdict_cell(run: dict) -> str:
             f'<span class="track">{tracks}</span></div>'
         )
     for track in sorted(run["verdicts"]):
-        parts.append(_one_verdict(track, run["verdicts"][track]))
+        parts.append(_one_verdict(track, run["verdicts"][track], label_of))
     return "".join(parts) or fmt.DASH
 
 
-def _one_verdict(track: str, v: dict) -> str:
+def _one_verdict(track: str, v: dict, label_of: dict) -> str:
     final = v["final"]
     if final == "replace" and not v.get("new_pick") and not v.get("outranked_by"):
         badge, cls = "same model as pick", "same"
@@ -246,9 +246,11 @@ def _one_verdict(track: str, v: dict) -> str:
             f"{_e(v['override_reason'])}</div>"
         )
     if v.get("new_pick"):
-        out.append('<div class="small">Becomes the pick next week</div>')
+        note = "Now the pick" if final == "initial_pick" else "Becomes the pick next week"
+        out.append(f'<div class="small">{note}</div>')
     if v.get("outranked_by"):
-        out.append(f'<div class="small">Outranked by {_e(v["outranked_by"])}</div>')
+        by = v["outranked_by"]
+        out.append(f'<div class="small">Outranked by {_e(label_of.get(by) or by)}</div>')
     if v.get("diff") is None or v.get("diff_ci95") is None:
         diff = f"Difference {fmt.DASH}"
     else:
@@ -272,11 +274,12 @@ def _speed_cells(run: dict) -> str:
     )
 
 
-def _run_row(run: dict, site: SiteConfig) -> str:
+def _run_row(run: dict, site: SiteConfig, label_of: dict) -> str:
     cls = ' class="pick"' if run["role"] == "pick" else ""
     return (
         f"<tr{cls}><td>{_model_cell(run)}</td><td>{_quality_cell(run)}</td>"
-        f"{_speed_cells(run)}<td>{_verdict_cell(run)}</td><td>{_bundle_link(run, site)}</td></tr>"
+        f"{_speed_cells(run)}<td>{_verdict_cell(run, label_of)}</td>"
+        f"<td>{_bundle_link(run, site)}</td></tr>"
     )
 
 
@@ -287,29 +290,53 @@ _HEAD_ROW = (
 )
 
 
-def _pick_status(status: dict) -> str:
+def _pick_status(status: dict, picks: dict, week: str) -> str:
+    """One note per track whose pick was not re-measured, or that had no pick before this week.
+
+    ``picks`` is the tier's ``picks_after``: a pick that was not re-measured carries forward
+    unchanged, so it names the current pick. Should an override have replaced it anyway, its
+    ``since_week`` is this week and only the previous pick's status is stated.
+    """
     notes = []
     for track in sorted(status):
         s = status[track]
+        p = picks.get(track) if isinstance(picks.get(track), dict) else {}
         if s == "not_re-measured":
-            notes.append(f"{track}: the current pick was not re-measured this week")
+            if p and p.get("since_week") != week:
+                label = p.get("label") or p.get("run_id")
+                notes.append(
+                    f"{track}: Current pick: {label} (since {p.get('since_week')}) "
+                    "— not re-measured this week"
+                )
+            else:
+                notes.append(f"{track}: the previous pick was not re-measured this week")
         elif s == "none":
-            notes.append(f"{track}: no pick yet")
-    if not notes:
-        return ""
-    return '<p class="small muted">' + _e("; ".join(notes)) + ".</p>"
+            notes.append(f"{track}: No previous pick — initial pick chosen this week")
+    return "\n".join(f'<p class="small muted">{_e(n)}.</p>' for n in notes)
 
 
-def _misfit_item(r: dict, site: SiteConfig) -> str:
+def _model_of(d: dict) -> tuple:
+    return (d.get("weights"), d.get("quant"), d.get("runtime"))
+
+
+def _misfit_item(r: dict, site: SiteConfig, pick_tracks: list[str]) -> str:
     label = _e(r["model"].get("label"))
+    mark = ""
+    if pick_tracks:
+        tracks = ", ".join(_e(t) for t in pick_tracks)
+        mark = (
+            f' <span class="badge badge-pick">Current pick</span> <span class="track">{tracks}'
+            "</span>, not re-measured"
+        )
     return (
-        f'<li><strong title="{label}">{label}</strong> ({_e(r["run_id"])}): '
+        f'<li><strong title="{label}">{label}</strong> ({_e(r["run_id"])}){mark}: '
         f"{_reasons(r['ineligible_reasons'])}. {_bundle_link(r, site)}</li>"
     )
 
 
-def _tier_section(tier: dict, site: SiteConfig) -> str:
+def _tier_section(tier: dict, site: SiteConfig, picks: dict, week: str) -> str:
     runs = tier["runs"]
+    status = tier.get("pick_status", {})
     label_of = {r["run_id"]: r["model"].get("label") for r in runs}
     fits = sorted(
         (r for r in runs if r["eligible"]), key=lambda r: (r["role"] != "pick", r["run_id"])
@@ -319,16 +346,24 @@ def _tier_section(tier: dict, site: SiteConfig) -> str:
         f'<section class="tier" id="tier-{_e(tier["id"])}">',
         f"<h2>{_e(tier['name'])}</h2>",
         f'<p class="small muted">{_e(tier["envelope"])}</p>',
-        _pick_status(tier.get("pick_status", {})),
+        _pick_status(status, picks, week),
     ]
     if fits:
-        rows = "".join(_run_row(r, site) for r in fits)
+        rows = "".join(_run_row(r, site, label_of) for r in fits)
         out.append(f'<div class="table-wrap"><table>{_HEAD_ROW}{rows}</table></div>')
     else:
         out.append("<p>No run fit this tier this week.</p>")
     if misfits:
         out.append("<h3>Tested, doesn&#x27;t fit</h3>")
-        items = "".join(_misfit_item(r, site) for r in misfits)
+        stale = {
+            t: _model_of(picks[t])
+            for t, s in status.items()
+            if s == "not_re-measured" and isinstance(picks.get(t), dict)
+        }
+        items = "".join(
+            _misfit_item(r, site, [t for t in sorted(stale) if stale[t] == _model_of(r["model"])])
+            for r in misfits
+        )
         out.append(f'<ul class="flat">{items}</ul>')
     if tier.get("judge"):
         items = "".join(
@@ -360,7 +395,8 @@ def week_page(doc: dict, site: SiteConfig) -> str:
         f"speed ratio {_e(rules.get('speed_ratio'))}. "
         '<a href="/method/">How verdicts work</a>.'
     )
-    sections = "\n".join(_tier_section(t, site) for t in doc["tiers"])
+    picks = doc.get("picks_after", {})
+    sections = "\n".join(_tier_section(t, site, picks.get(t["id"], {}), week) for t in doc["tiers"])
     main = (
         f'<h1 class="title">Week of {_e(week)}</h1>\n<p class="muted">{meta}</p>\n'
         f'<p class="small muted">{rules_line}</p>\n{corr}\n{sections}'

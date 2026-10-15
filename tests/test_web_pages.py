@@ -191,7 +191,8 @@ def test_week_page_pick_and_verdicts(doc):
 
 def test_week_page_ineligible_reasons(doc):
     h = week_page(doc, SITE)
-    assert "r-slow" in h
+    assert "(r-slow): Decode speed below the minimum." in h
+    assert "not re-measured" not in h  # the pick was re-measured
 
 
 def test_strict_extractable_and_not_measured(doc):
@@ -297,3 +298,100 @@ def test_stylesheet_has_tokens_and_wrapper():
     css = (Path(__file__).parent.parent / "site" / "style.css").read_text(encoding="utf-8")
     for needle in ("--amber", ".table-wrap", "overflow-x: auto", ".badge-watch", "td.num"):
         assert needle in css
+
+
+# pick status: not re-measured, initial picks, outranked labels
+
+
+def _doc_for(tmp, specs, picks):
+    """specs: (run_id, weights, grades, kw); picks: {track: pick dict}."""
+    made = []
+    for rid, weights, grades, kw in specs:
+        path = make_bundle(
+            tmp,
+            label=weights.title(),
+            weights=weights,
+            envelope=ENV,
+            grades=grades,
+            run_id=rid,
+            **kw,
+        )
+        entry = RunEntry(path, "24gb", "Apache-2.0", "https://example.org/" + weights, None)
+        made.append((load_run(path), entry))
+    runs = {v.run_id: (v, e) for v, e in made}
+    tiers = {"24gb": Tier("24gb", "24 GB", ENV)}
+    res = {"24gb": assess_tier(WEEK, "24gb", [v for v, _ in made], picks, [], RULES)}
+    inp = WeekInput(WEEK, AT, [e for _, e in made], [], [], None, b"")
+    return build_week(
+        inp, tiers, runs, res, [], revision=1, published_at=AT, corrections=[], rules=RULES
+    )
+
+
+def labelled_pick(track, weights, label):
+    return {**pick(track, weights), "label": label}
+
+
+NOT_REMEASURED = "general: Current pick: Gone 8B (since 2026-10-12) — not re-measured this week"
+
+
+def test_not_remeasured_pick_is_named_when_control_missing(tmp_path):
+    d = _doc_for(
+        tmp_path,
+        [("r-cand", "big", {GSM: g(40)}, {})],
+        {"general": labelled_pick("general", "gone", "Gone 8B")},
+    )
+    assert d["tiers"][0]["pick_status"] == {"general": "not_re-measured"}
+    h = week_page(d, SITE)
+    assert NOT_REMEASURED in h
+    assert_balanced(h)
+
+
+def test_not_remeasured_pick_is_named_for_tier_without_runs(tmp_path):
+    d = _doc_for(tmp_path, [], {"general": labelled_pick("general", "gone", "Gone 8B")})
+    h = week_page(d, SITE)
+    assert NOT_REMEASURED in h
+    assert "No run fit this tier this week." in h
+
+
+def test_ineligible_control_is_marked_as_the_pick(tmp_path):
+    d = _doc_for(
+        tmp_path,
+        [
+            ("r-slow", "slow", {GSM: g(30)}, {"decode": 3.0}),
+            ("r-cand", "big", {GSM: g(40)}, {}),
+        ],
+        {"general": labelled_pick("general", "slow", "Slow 8B")},
+    )
+    assert d["tiers"][0]["pick_status"] == {"general": "not_re-measured"}
+    h = week_page(d, SITE)
+    assert "general: Current pick: Slow 8B (since 2026-10-12) — not re-measured this week" in h
+    misfits = h[h.index("Tested, doesn") :]
+    item = misfits[: misfits.index("</li>")]
+    assert "r-slow" in item and "Current pick" in item and "general" in item
+    assert_balanced(h)
+
+
+def test_initial_pick_wording(tmp_path):
+    d = _doc_for(
+        tmp_path,
+        [("r-a", "alpha", {GSM: g(40)}, {}), ("r-b", "beta", {GSM: g(20)}, {})],
+        {},
+    )
+    h = week_page(d, SITE)
+    assert "general: No previous pick — initial pick chosen this week" in h
+    assert "Now the pick" in h
+    assert "no pick yet" not in h
+    assert "Becomes the pick next week" not in h
+
+
+def test_replace_new_pick_keeps_becomes_wording(doc):
+    h = week_page(doc, SITE)
+    assert "Becomes the pick next week" in h
+    assert "Now the pick" not in h
+
+
+def test_outranked_by_shows_label(doc):
+    d = copy.deepcopy(doc)
+    v = run_of(d, "r-cand")["verdicts"]["general"]
+    v.update(final="replace", new_pick=False, outranked_by="r-ctrl")
+    assert "Outranked by base" in week_page(d, SITE)
