@@ -145,10 +145,16 @@ def _verify(path: Path, what: str, username, denylist, skip_output: bool) -> dic
     return meta
 
 
-def _no_private(path: Path, view: RunView) -> None:
-    """Fail closed on private-suite results: their outputs must never reach ``results/``."""
+def _no_private(path: Path, view: RunView, meta: dict) -> None:
+    """Fail closed on private-suite results: their outputs must never reach ``results/``.
+    bundle.json's top-level ``suites`` counts too: a run that stopped before a private suite
+    started has no summary for it there, but still names it."""
     private = path / "private"
-    suites = sorted(k for k, s in view.suites.items() if s.get("split") == "private")
+    listed = meta.get("suites") if isinstance(meta.get("suites"), list) else []
+    suites = sorted(
+        {k for k, s in view.suites.items() if s.get("split") == "private"}
+        | {str(s.get("key")) for s in listed if isinstance(s, dict) and s.get("split") == "private"}
+    )
     if suites or private.exists() or private.is_symlink():  # even an empty private/ refuses
         what = f"private suite(s) {suites}" if suites else "a private/ folder"
         raise PublishError(
@@ -316,7 +322,7 @@ def publish(
     runs: dict[str, tuple[RunView, RunEntry]] = {}
     sources: dict[str, Path] = {}
     for entry in inp.runs:
-        _verify(entry.bundle, "run", *vargs)
+        meta = _verify(entry.bundle, "run", *vargs)
         try:
             view = load_run(entry.bundle)
         except RunViewError as e:
@@ -326,7 +332,7 @@ def publish(
                 f"run {entry.bundle.name}: bundle_format must be one of {list(RUN_FORMATS)}, "
                 f"got {view.bundle_format!r}"
             )
-        _no_private(entry.bundle, view)
+        _no_private(entry.bundle, view, meta)
         rid = _segment(view.run_id, "run_id")
         if entry.bundle.name != rid:  # overrides name runs by directory name
             raise PublishError(
