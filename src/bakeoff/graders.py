@@ -137,7 +137,23 @@ _TYPE_CHECKS: dict[str, Callable[[Any], bool]] = {
     "array": lambda v: isinstance(v, list),
     "null": lambda v: v is None,
 }
-_KEYWORDS = {"type", "properties", "required", "enum", "items", "additionalProperties"}
+_ANNOTATIONS = {"$schema", "$id", "title", "description"}  # accepted, never enforced
+_KEYWORDS = {
+    "type",
+    "properties",
+    "required",
+    "enum",
+    "items",
+    "additionalProperties",
+} | _ANNOTATIONS
+
+
+def _type_names(t: Any) -> list[str] | None:
+    """The type names of a `type` keyword (a name or a non-empty list of names), or None."""
+    names = t if isinstance(t, list) else [t]
+    if not names or not all(isinstance(n, str) and n in _TYPE_CHECKS for n in names):
+        return None
+    return names
 
 
 def _enum_eq(a: Any, b: Any) -> bool:
@@ -152,7 +168,7 @@ def schema_problems(schema: Any, path: str = "$") -> list[str]:
         return [f"{path}: schema must be an object"]
     out = [f"{path}: unsupported keyword {k!r}" for k in schema if k not in _KEYWORDS]
     t = schema.get("type")
-    if "type" in schema and (not isinstance(t, str) or t not in _TYPE_CHECKS):
+    if "type" in schema and _type_names(t) is None:
         out.append(f"{path}: unsupported type {t!r}")
     if "properties" in schema:
         props = schema["properties"]
@@ -172,15 +188,21 @@ def schema_problems(schema: Any, path: str = "$") -> list[str]:
             out.extend(schema_problems(schema["items"], f"{path}[]"))
         else:
             out.append(f"{path}: unsupported 'items' (must be an object)")
-    if "additionalProperties" in schema and not isinstance(schema["additionalProperties"], bool):
-        out.append(f"{path}: unsupported 'additionalProperties' (must be a bool)")
+    if "additionalProperties" in schema:
+        ap = schema["additionalProperties"]
+        if isinstance(ap, dict):
+            out.extend(schema_problems(ap, f"{path}.*"))
+        elif not isinstance(ap, bool):
+            out.append(f"{path}: unsupported 'additionalProperties' (must be a bool or schema)")
     return out
 
 
 def _validate(value: Any, schema: dict, path: str) -> list[str]:
     errors: list[str] = []
-    if "type" in schema and not _TYPE_CHECKS[schema["type"]](value):
-        return [f"{path}: expected {schema['type']}, got {type(value).__name__}"]
+    if "type" in schema:
+        names = _type_names(schema["type"]) or []
+        if not any(_TYPE_CHECKS[n](value) for n in names):
+            return [f"{path}: expected {'/'.join(names)}, got {type(value).__name__}"]
     if "enum" in schema and not any(_enum_eq(value, e) for e in schema["enum"]):
         errors.append(f"{path}: {value!r} not in enum {schema['enum']!r}")
     if isinstance(value, dict):
@@ -191,10 +213,14 @@ def _validate(value: Any, schema: dict, path: str) -> list[str]:
         for key, sub in props.items():
             if key in value:
                 errors.extend(_validate(value[key], sub, f"{path}.{key}"))
-        if schema.get("additionalProperties") is False:
-            for key in value:
-                if key not in props:
-                    errors.append(f"{path}: additional property {key!r} not allowed")
+        extra = schema.get("additionalProperties")
+        for key in value:
+            if key in props:
+                continue
+            if extra is False:
+                errors.append(f"{path}: additional property {key!r} not allowed")
+            elif isinstance(extra, dict):
+                errors.extend(_validate(value[key], extra, f"{path}.{key}"))
     if isinstance(value, list) and "items" in schema:
         for i, item in enumerate(value):
             errors.extend(_validate(item, schema["items"], f"{path}[{i}]"))

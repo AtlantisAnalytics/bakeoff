@@ -161,9 +161,11 @@ def test_malformed_input_returns_grade_never_raises():
         {"const": 1},
         {"anyOf": []},
         {"minimum": 1},
-        {"additionalProperties": {"type": "string"}},
+        {"additionalProperties": "string"},
+        {"additionalProperties": {"minimum": 1}},
         {"items": [{"type": "string"}]},
-        {"type": ["array", "null"]},
+        {"type": ["array", "bogus"]},
+        {"type": []},
         {"properties": {"a": {"minLength": 1}}},
     ],
 )
@@ -274,3 +276,36 @@ def test_strict_scalar_pass_is_extractable(output, schema):
 def test_bad_expected_json_schema_extractable_false():
     g = grade("json_schema", "{}", {"type": "bogus"}, {})
     assert g.passed is False and g.extractable is False
+
+
+def test_type_list_accepts_any_listed_type():
+    schema = {"type": ["number", "null"]}
+    assert not validate_schema(1.5, schema)
+    assert not validate_schema(None, schema)
+    errs = validate_schema("x", schema)
+    assert errs and "number/null" in errs[0]
+
+
+def test_additional_properties_schema_validates_map_values():
+    schema = {
+        "type": "object",
+        "properties": {"k": {"type": "string"}},
+        "additionalProperties": {"type": "integer"},
+    }
+    assert not validate_schema({"k": "s", "a": 1, "b": 2}, schema)
+    errs = validate_schema({"k": "s", "a": "no"}, schema)
+    assert errs == ["$.a: expected integer, got str"]
+
+
+def test_annotation_keywords_accepted_and_ignored():
+    schema = {
+        "$schema": "x",
+        "$id": "y",
+        "title": "t",
+        "description": "d",
+        "type": "object",
+        "properties": {"a": {"description": "d", "type": "integer"}},
+    }
+    assert not validate_schema({"a": 1}, schema)
+    assert validate_schema({"a": "no"}, schema)
+    assert "unsupported" in validate_schema({}, {"title": "t", "minItems": 1})[0]
