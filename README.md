@@ -63,6 +63,10 @@ python3 -m http.server -d runs/preview 8000
 generated and committed, so the PR diff is exactly what deploys, and CI fails when it is stale. `--root DIR`
 points `publish` and `site` at another checkout-shaped directory.
 
+**Private suites.** Bundles with private-suite results (a `private/` folder, or any suite with
+`split = "private"`) are refused until a public form for them is decided. Private outputs are never
+published.
+
 **Launch gate.** While `launched = false` in `site.toml`, the deployed site stays the holding page with
 the sign-up form, and published weeks exist only in `results/` and in `--preview`. Flipping it to
 `true` is the M5 launch step.

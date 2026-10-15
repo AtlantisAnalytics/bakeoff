@@ -19,6 +19,8 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
 * A run or judge bundle must have ``status`` ``complete`` or ``incomplete``. Its only tolerated
   verify finding is ``incomplete`` on an incomplete bundle; incomplete runs are published but
   ineligible.
+* A run bundle with a ``private/`` folder or any suite with ``split == "private"`` is refused:
+  private-suite outputs are never published, and their public form is not decided yet.
 * Each run's ``config.model.envelope`` equals its tier's envelope exactly; a run's directory name
   equals its ``run_id`` (overrides name runs by directory name), so run_ids are unique.
 * A judge bundle's ``a`` and ``b`` are two different runs of this week.
@@ -138,6 +140,18 @@ def _verify(path: Path, what: str, username, denylist, skip_output: bool) -> dic
             f"{what} {path.name}: status must be complete or incomplete, got {status!r}"
         )
     return meta
+
+
+def _no_private(path: Path, view: RunView) -> None:
+    """Fail closed on private-suite results: their outputs must never reach ``results/``."""
+    private = path / "private"
+    suites = sorted(k for k, s in view.suites.items() if s.get("split") == "private")
+    if suites or private.exists() or private.is_symlink():  # even an empty private/ refuses
+        what = f"private suite(s) {suites}" if suites else "a private/ folder"
+        raise PublishError(
+            f"run {path.name} has {what}; private-suite publishing is not yet supported "
+            "(private outputs are never published)"
+        )
 
 
 def _check_paths(source: bytes) -> None:
@@ -297,6 +311,7 @@ def publish(
             view = load_run(entry.bundle)
         except RunViewError as e:
             raise PublishError(f"run {entry.bundle.name}: {e}") from e
+        _no_private(entry.bundle, view)
         rid = _segment(view.run_id, "run_id")
         if entry.bundle.name != rid:  # overrides name runs by directory name
             raise PublishError(

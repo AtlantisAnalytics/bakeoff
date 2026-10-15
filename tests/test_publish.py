@@ -566,3 +566,38 @@ def test_week_docs_refuses_week_dir_without_week_json(root):
     (root / "results" / W1).mkdir(parents=True)
     with pytest.raises(PublishError, match="week.json"):
         week_docs(root)
+
+
+# --- private suites (ruling 13: fail closed) ----------------------------------------------------
+
+
+def test_refuses_run_with_private_suite(root):
+    a = bundle(root, "base", 6)
+    b = make_bundle(
+        root / "runs",
+        label="secret",
+        weights="secret",
+        envelope=ENV24,
+        grades={GSM: g(6), "general/holdout": g(5)},
+        private=("general/holdout",),
+    )
+    assert (b / "private").is_dir()
+    refused(
+        root,
+        week_toml(root, [(a, "24gb"), (b, "24gb")]),
+        f"run {b.name}.*private-suite publishing is not yet supported",
+    )
+
+
+def test_refuses_run_with_private_split_even_without_private_files(root, monkeypatch):
+    a = bundle(root, "base", 6)
+    real = pub.load_run
+
+    def private_split(path):
+        view = real(path)
+        for s in view.suites.values():
+            s["split"] = "private"
+        return view
+
+    monkeypatch.setattr(pub, "load_run", private_split)
+    refused(root, week_toml(root, [(a, "24gb")]), f"run {a.name}.*private")

@@ -246,6 +246,7 @@ results/
 - It refuses to publish when there is any finding, when any `status` isn't `complete` or
   `incomplete`, or when a `run_id` appears twice.
 - Incomplete runs are published, but they are ineligible.
+- Bundles with private-suite results are refused until a public form for them is decided.
 
 ## API (`site/api/v1/`)
 
