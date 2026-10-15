@@ -27,8 +27,49 @@ Each memory tier gets a weekly verdict for each candidate: **replace / hold / wa
 | `scripts/` | Maintenance scripts: rebuilding the benchmark slices, locking suites, the repo scrub scan |
 | `examples/` | A sample `run.toml` with placeholder values only |
 | `site/` | The static site served at bakeoff.si, a Cloudflare Worker with static assets (`wrangler.jsonc`) |
+| `tiers.toml` | The memory tiers: id, display name and the hardware envelope that maps to each |
+| `site.toml` | Site settings: the launch gate, base URL, repo URL and the sign-up form |
+| `site_src/` | Hand-written pages (`method.html`, `privacy.html`) and the stylesheet, copied into `site/` |
 | `results/` | Published results, licensed CC BY 4.0 |
 | `brand/` | Source logo and `make_assets.py`, which regenerates the site's logo, icons and preview image |
+
+## Publishing a week
+
+A week is published from a `week.toml` that lists the verified run bundles to include:
+
+```toml
+week = "2026-10-19"
+published_at = "2026-10-19T07:00:00Z"   # every timestamp in the output comes from here
+
+[[run]]
+bundle = "../final/<run-id>"            # relative to this file
+tier = "36gb-unified"                   # an id from tiers.toml
+license = "Apache-2.0"
+source_url = "https://huggingface.co/<org>/<model>"
+```
+
+Optional `[[judge]]`, `[[override]]` and `[correction]` tables add judge bundles, a reviewed verdict
+override with its reason, and a correction note.
+
+```sh
+uv run bakeoff publish week.toml      # verify, copy bundles into results/<week>/, compute verdicts,
+                                      # write week.json and picks.json, then regenerate site/
+uv run bakeoff site --check           # exit 1 if site/ differs from what results/ regenerates
+uv run bakeoff site --preview runs/preview   # build the full site as though launched, into a git-ignored dir
+python3 -m http.server -d runs/preview 8000
+```
+
+`publish` refuses to overwrite an existing week; to fix one, add a `[correction]` table. `site/` is
+generated and committed, so the PR diff is exactly what deploys, and CI fails when it is stale. `--root DIR`
+points `publish` and `site` at another checkout-shaped directory.
+
+**Launch gate.** While `launched = false` in `site.toml`, the deployed site stays the holding page with
+the sign-up form, and published weeks exist only in `results/` and in `--preview`. Flipping it to
+`true` is the M5 launch step.
+
+**API.** Once launched, `site/api/v1/` serves `latest.json`, `weeks/index.json`, `weeks/<week>.json`,
+`picks.json` and `schema/week.v1.json`. v1 URLs never change and fields are only ever added; a breaking
+change goes to `/api/v2/`.
 
 ## Running the harness
 
