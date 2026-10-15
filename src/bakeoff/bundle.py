@@ -119,14 +119,14 @@ def scan_text(
     return hits
 
 
-def _load_terms(denylist: Path | None) -> list[str]:
+def load_terms(denylist: Path | None) -> list[str]:
     if denylist is None or not Path(denylist).is_file():
         return []
     lines = Path(denylist).read_text(encoding="utf-8").splitlines()
     return [s for s in (ln.strip() for ln in lines) if s and not s.startswith("#")]
 
 
-def _strings(obj: object):
+def iter_strings(obj: object):
     stack = [obj]
     while stack:
         cur = stack.pop()
@@ -235,7 +235,7 @@ def verify_bundle(
         findings.append(
             Finding("bundle.json", 0, "incomplete", f"status is {meta.get('status')!r}")
         )
-    terms = _load_terms(denylist)
+    terms = load_terms(denylist)
     seen: set[Finding] = set()
 
     def add(f: Finding) -> None:
@@ -281,7 +281,7 @@ def verify_bundle(
             except (ValueError, RecursionError):
                 add(Finding(rel, 0, "unreadable", "file is not valid JSON"))
                 continue
-            for st in _strings(obj):
+            for st in iter_strings(obj):
                 for _, kind, match in scan_text(st, terms, username):
                     add(Finding(rel, 0, kind, match))
     return findings

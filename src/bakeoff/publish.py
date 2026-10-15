@@ -19,7 +19,9 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
 * A run or judge bundle must have ``status`` ``complete`` or ``incomplete``. Its only tolerated
   verify finding is ``incomplete`` on an incomplete bundle; incomplete runs are published but
   ineligible.
-* Each run's ``config.model.envelope`` equals its tier's envelope exactly; run_ids are unique.
+* Each run's ``config.model.envelope`` equals its tier's envelope exactly; a run's directory name
+  equals its ``run_id`` (overrides name runs by directory name), so run_ids are unique.
+* A judge bundle's ``a`` and ``b`` are two different runs of this week.
 * Bundle paths in ``week.toml`` are relative (the file is published as given).
 * Published bundles are immutable: a run_id already published in any week, or a judge bundle
   already in this week, must carry the same ``bundle_sha256``.
@@ -27,6 +29,8 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
   that later weeks were assessed against). An existing week is re-published only with
   ``[correction]``; that raises ``revision``, keeps the original ``published_at``, appends to
   ``corrections`` and is refused when a later week exists and the week's ``picks_after`` changes.
+* The username scan of the staged ``week.toml`` and ``week.json`` does not honour
+  ``username_skip_output`` (it fails closed); pass ``username=None`` (``--no-username``) instead.
 * ``picks_before`` is the ``picks_after`` of the latest published week before this one. A tier
   with no runs this week still carries its picks forward (as ``not_re-measured``).
 """
@@ -38,7 +42,7 @@ import shutil
 import tomllib
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
-from bakeoff.bundle import Finding, _load_terms, _strings, scan_text, verify_bundle
+from bakeoff.bundle import Finding, iter_strings, load_terms, scan_text, verify_bundle
 from bakeoff.runview import RunView, RunViewError, load_run
 from bakeoff.verdicts import RULES_V1, TierResult, VerdictError, assess_tier
 from bakeoff.week import build_week, validate_week
@@ -117,7 +121,9 @@ def _findings_text(findings: list[Finding]) -> str:
 
 def _verify(path: Path, what: str, username, denylist, skip_output: bool) -> dict:
     """Verify one bundle; return its bundle.json. Refuses on any finding or a bad status."""
-    if not path.is_dir() or path.is_symlink():
+    if path.is_symlink():
+        raise PublishError(f"{what}: bundle directory is a symlink: {path}")
+    if not path.is_dir():
         raise PublishError(f"{what}: bundle directory not found: {path}")
     findings = verify_bundle(path, username, denylist, skip_output)
     real = [f for f in findings if f.kind != "incomplete"]
@@ -163,10 +169,14 @@ def _judge_entry(meta: dict, name: str, run_by_sha: dict[str, str]) -> dict:
     if meta.get("bundle_format") != JUDGE_FORMAT:
         raise PublishError(f"judge bundle {name}: bundle_format must be {JUDGE_FORMAT!r}")
     for side in ("a", "b"):
-        if meta.get(side) not in run_by_sha:
+        if not isinstance(meta.get(side), str):
+            raise PublishError(f"judge bundle {name}: {side} must be a bundle_sha256 string")
+        if meta[side] not in run_by_sha:
             raise PublishError(
-                f"judge bundle {name}: side {side} ({meta.get(side)!r}) is not in this week"
+                f"judge bundle {name}: side {side} ({meta[side]!r}) is not in this week"
             )
+    if meta["a"] == meta["b"]:
+        raise PublishError(f"judge bundle {name}: a and b are the same run")
     counts = meta.get("counts")
     if not isinstance(counts, dict):
         raise PublishError(f"judge bundle {name}: counts must be an object")
@@ -234,7 +244,7 @@ def publish(
     _check_paths(inp.source_bytes)
     if denylist is not None and not Path(denylist).is_file():
         raise PublishError(f"denylist not found: {denylist}")
-    terms = _load_terms(denylist)
+    terms = load_terms(denylist)
     vargs = (username, denylist, username_skip_output)
 
     final = results / inp.week
@@ -288,7 +298,11 @@ def publish(
         except RunViewError as e:
             raise PublishError(f"run {entry.bundle.name}: {e}") from e
         rid = _segment(view.run_id, "run_id")
-        if rid in runs:
+        if entry.bundle.name != rid:  # overrides name runs by directory name
+            raise PublishError(
+                f"run directory {entry.bundle.name!r} does not match its bundle.json run_id {rid!r}"
+            )
+        if rid in runs:  # defensive: load_week already refuses repeated directory names
             raise PublishError(f"duplicate run_id {rid}")
         want = tiers[entry.tier].envelope
         if view.envelope != want:
@@ -377,26 +391,32 @@ def publish(
             _stage_bundle(src, staging / "judge" / jid, sha, "judge bundle", *vargs)
         (staging / "week.toml").write_bytes(inp.source_bytes)
         (staging / "week.json").write_bytes(_dumps(doc))
-        toml_strings = list(_strings(tomllib.loads(inp.source_bytes.decode("utf-8"))))
+        toml_strings = list(iter_strings(tomllib.loads(inp.source_bytes.decode("utf-8"))))
         _scan(staging / "week.toml", toml_strings, terms, username)
-        _scan(staging / "week.json", list(_strings(doc)), terms, username)
+        _scan(staging / "week.json", list(iter_strings(doc)), terms, username)
 
-        moved_old = False
         try:
             if exists:
                 os.rename(final, old)
-                moved_old = True
             os.rename(staging, final)
         except BaseException:
-            if moved_old and not final.exists():
+            # Restore on any failure, even one between the two renames: the old week is only
+            # ever in one of the two places.
+            if exists and old.exists() and not final.exists():
                 os.rename(old, final)
             raise
-        if moved_old:
+        if exists:
             shutil.rmtree(old, ignore_errors=True)
-        write_picks(root)
     except OSError as e:
         raise PublishError(f"cannot write results: {e}") from e
     finally:
         if created and staging.exists():
             shutil.rmtree(staging, ignore_errors=True)
+    try:
+        write_picks(root)
+    except (OSError, PublishError) as e:
+        raise PublishError(
+            f"week {inp.week} published; picks.json not updated — run `bakeoff site` "
+            f"to regenerate (cause: {e})"
+        ) from e
     return final

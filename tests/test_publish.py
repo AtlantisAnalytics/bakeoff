@@ -237,9 +237,56 @@ def test_refuses_absolute_path_in_week_toml(root):
 
 def test_refuses_duplicate_run_id(root):
     a = bundle(root, "base", 6)
-    dup = root / "runs" / "copy-of-base"
+    dup = root / "other" / a.name
     shutil.copytree(a, dup)
-    refused(root, week_toml(root, [(a, "24gb"), (dup, "24gb")]), "duplicate run_id")
+    refused(root, week_toml(root, [(a, "24gb"), (dup, "24gb")]), "bundle directory name")
+
+
+def test_refuses_directory_name_not_matching_run_id(root):
+    a = bundle(root, "base", 6)
+    renamed = root / "runs" / "copy-of-base"
+    a.rename(renamed)
+    refused(root, week_toml(root, [(renamed, "24gb")]), "does not match its bundle.json run_id")
+
+
+def test_refuses_symlinked_bundle_directory(root):
+    a = bundle(root, "base", 6)
+    link = root / "runs" / "linked"
+    link.symlink_to(a, target_is_directory=True)
+    refused(root, week_toml(root, [(link, "24gb")]), "is a symlink")
+
+
+def test_refuses_judge_with_same_run_twice(root):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    j = judge_bundle(root, "judge-chat-1", sha(a), sha(a))
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), "same run")
+
+
+def test_refuses_judge_with_non_string_side(root):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    j = judge_bundle(root, "judge-chat-1", [sha(a)], sha(b))
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), "must be a bundle")
+
+
+@pytest.mark.parametrize("tamper", ["jsonl", "unlisted"])
+def test_refuses_tampered_staged_copy(root, monkeypatch, tamper):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    real = shutil.copytree
+
+    def copy_then_tamper(src, dst, *args, **kw):
+        out = real(src, dst, *args, **kw)
+        if Path(dst).parent.name != "runs":  # copytree recurses through the patched name
+            return out
+        if tamper == "jsonl":
+            with (Path(dst) / "quality" / "general.gsm8k.jsonl").open("a", encoding="utf-8") as f:
+                f.write('{"id": "gsm8k-99", "pass": true, "error": null}\n')
+        else:
+            (Path(dst) / "notes.txt").write_text("from /home/alice/runs\n")  # scrub-ok
+        return out
+
+    monkeypatch.setattr(pub.shutil, "copytree", copy_then_tamper)
+    kind = "hash_mismatch" if tamper == "jsonl" else "home_path"
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")]), f"copied run.*{kind}")
 
 
 def test_refuses_envelope_not_matching_tier(root):
@@ -460,6 +507,38 @@ def test_interrupted_copy_cleans_staging_and_rerun_succeeds(root, monkeypatch):
     no_week(root)
     monkeypatch.setattr(pub.shutil, "copytree", real)
     assert run(toml, root) == root / "results" / W1
+
+
+def test_interrupt_right_after_first_swap_rename_keeps_old_week(root, monkeypatch):
+    a, b = week1(root)
+    before = tree(root / "results")
+    real = os.rename
+
+    def rename_then_interrupt(src, dst):
+        real(src, dst)
+        if Path(dst).name == f".{W1}.old":
+            raise KeyboardInterrupt  # the rename happened; control never got past it
+
+    monkeypatch.setattr(pub.os, "rename", rename_then_interrupt)
+    with pytest.raises(KeyboardInterrupt):
+        run(week_toml(root, [(b, "24gb")], correction="Dropped a run."), root)
+    monkeypatch.setattr(pub.os, "rename", real)
+    assert tree(root / "results") == before
+    no_week(root, "never")
+
+
+def test_write_picks_failure_after_swap_is_reported_as_published(root, monkeypatch):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+
+    def boom(root):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pub, "write_picks", boom)
+    with pytest.raises(PublishError, match=f"week {W1} published; picks.json not updated"):
+        run(week_toml(root, [(a, "24gb"), (b, "24gb")]), root)
+    assert (root / "results" / W1 / "week.json").is_file()
+    assert not (root / "results" / "picks.json").exists()
+    no_week(root, "never")
 
 
 def test_failed_correction_swap_keeps_old_week(root, monkeypatch):
