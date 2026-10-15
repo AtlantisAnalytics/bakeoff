@@ -45,6 +45,7 @@ Until launch (M5), the deployed site stays the holding page, with a newsletter s
 | `bakeoff site` | Regenerates `site/` from `results/` and `site.toml` |
 | `bakeoff site --check` | Regenerates into a temporary directory and exits 1 with a diff summary if `site/` differs |
 | `bakeoff site --preview <dir>` | Builds the full site as though `launched = true` into a git-ignored directory, for viewing locally |
+| `bakeoff rederive <week>` | Re-publishes a published week from `results/<week>/` (its `week.toml` and bundle copies) and the earlier weeks' picks in a temporary directory, and byte-compares the new `week.json`; exit 0 identical, 1 differs or error, 2 usage. For a corrected week, the earlier revisions' bookkeeping comes from the published file |
 
 `publish` refuses to overwrite an existing week. To correct a week, add a `[correction]` table to
 its `week.toml` (see Corrections).

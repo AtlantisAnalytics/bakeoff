@@ -42,7 +42,7 @@ week = "2026-10-19"
 published_at = "2026-10-19T07:00:00Z"   # every timestamp in the output comes from here
 
 [[run]]
-bundle = "../final/<run-id>"            # relative to this file
+bundle = "runs/<run-id>"               # relative to this file; the directory name is the run_id
 tier = "36gb-unified"                   # an id from tiers.toml
 license = "Apache-2.0"
 source_url = "https://huggingface.co/<org>/<model>"
@@ -55,13 +55,24 @@ override with its reason, and a correction note.
 uv run bakeoff publish week.toml      # verify, copy bundles into results/<week>/, compute verdicts,
                                       # write week.json and picks.json, then regenerate site/
 uv run bakeoff site --check           # exit 1 if site/ differs from what results/ regenerates
+uv run bakeoff rederive 2026-10-19    # re-publish a published week in a temp dir; compare week.json
 uv run bakeoff site --preview runs/preview   # build the full site as though launched, into a git-ignored dir
 python3 -m http.server -d runs/preview 8000
 ```
 
 `publish` refuses to overwrite an existing week; to fix one, add a `[correction]` table. `site/` is
 generated and committed, so the PR diff is exactly what deploys, and CI fails when it is stale. `--root DIR`
-points `publish` and `site` at another checkout-shaped directory.
+points `publish`, `site` and `rederive` at another checkout-shaped directory. `week.toml` is
+published as given, so its bundle paths must be relative and free of local paths.
+
+**Reproducing a week.** `bakeoff rederive <week>` needs only the checkout: it re-publishes
+`results/<week>/week.toml` in a temporary directory, with each `[[run]]` mapped to
+`results/<week>/runs/<dir>` and each `[[judge]]` to `results/<week>/judge/<dir>`, the earlier weeks'
+`week.json` (for the picks) and the tiers the week lists, then compares the new `week.json` byte for
+byte with the published one. It prints `identical` (exit 0) or the fields that differ (exit 1). For a
+corrected week the earlier revisions' inputs are only in git history, so the previous revision's
+bookkeeping (`revision`, the original `published_at` and the earlier corrections) is taken from the
+published file; everything else, including the latest correction entry, is re-derived.
 
 **Private suites.** Bundles with private-suite results (a `private/` folder, or any suite with
 `split = "private"`) are refused until a public form for them is decided. Private outputs are never

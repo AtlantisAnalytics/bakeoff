@@ -1,4 +1,4 @@
-"""Command line: run, env, verify, judge, publish, site."""
+"""Command line: run, env, verify, judge, publish, site, rederive."""
 
 import argparse
 import asyncio
@@ -16,6 +16,7 @@ from bakeoff.config import ConfigError, RunConfig, load_config
 from bakeoff.env import capture_env
 from bakeoff.judge import JudgeError, Prices, run_judge
 from bakeoff.publish import PublishError, publish, week_docs, write_picks
+from bakeoff.rederive import RederiveError, rederive
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
 from bakeoff.suites import SuiteError, resolve_suites, suites_root
 from bakeoff.web.build import check_site, render_site, write_preview, write_site
@@ -298,6 +299,24 @@ def _cmd_site(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_rederive(args: argparse.Namespace) -> int:
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.week):
+        _err(f"week must be YYYY-MM-DD, got {args.week!r}")
+        return 2
+    try:
+        problems = rederive(Path(args.root), args.week)
+    except (RederiveError, OSError) as e:
+        _err(str(e))
+        return 1
+    if not problems:
+        print("identical")
+        return 0
+    print(f"differs: results/{args.week}/week.json does not match its re-derivation")
+    for line in problems:
+        print(f"  {line}")
+    return 1
+
+
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="bakeoff")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -344,6 +363,10 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--check", action="store_true", help="exit 1 if site/ is out of date")
     mode.add_argument("--preview", metavar="DIR", help="build a launched site into DIR")
     st.set_defaults(fn=_cmd_site)
+    rd = sub.add_parser("rederive", help="re-publish a published week and compare its week.json")
+    rd.add_argument("week", help="the week, YYYY-MM-DD")
+    rd.add_argument("--root", default=".")
+    rd.set_defaults(fn=_cmd_rederive)
     return p
 
 
