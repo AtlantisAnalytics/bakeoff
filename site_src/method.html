@@ -7,6 +7,13 @@ measured, the rules that turned it into verdicts, and the raw data. Anyone can r
 compared with other models in the same tier. Today's tiers are 12&nbsp;GB, 24&nbsp;GB and
 36&nbsp;GB unified. Each tier has a current <em>pick</em> per quality track.</p>
 
+<h2>Engines</h2>
+<p>A model runs on the inference engine its format needs: vLLM for safetensors weights, ExLlamaV3
+(served by TabbyAPI) for EXL3 quantizations. Models on different engines compete for the same pick,
+and every result names its engine and version. Every engine keeps its KV cache at FP16, so
+differences come from the model and its quantization, not cache settings. We run only pinned
+upstream engine releases.</p>
+
 <h2>Rules v1</h2>
 <p>Each run is assessed separately for every track it has scores in.</p>
 <ol>

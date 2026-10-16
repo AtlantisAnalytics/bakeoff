@@ -50,6 +50,9 @@ In short:
   repeated runs.
 - Every run records its environment by allowlist, with provenance, in a hashed bundle. Weights come
   from allowlisted publishers only, and `trust_remote_code` is never used.
+- Engines: a model runs on the engine its format needs (vLLM; ExLlamaV3 via TabbyAPI for EXL3).
+  Engines compete for the same pick, every result names its engine and version, every engine keeps
+  an FP16 KV cache, and only pinned upstream engine releases are used.
 
 ## Hosting (decided)
 

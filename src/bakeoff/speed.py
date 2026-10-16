@@ -10,7 +10,12 @@ from bakeoff.sampler import Sampler
 from bakeoff.stats import summarize
 
 MAX_TOKENS = 256
-IGNORE_EOS_RUNTIMES = ("vllm", "llamacpp")
+# The request field that makes each runtime generate exactly max_tokens, so decode speeds compare.
+FORCED_LENGTH = {
+    "vllm": {"ignore_eos": True},
+    "llamacpp": {"ignore_eos": True},
+    "exllamav3": {"ban_eos_token": True},  # TabbyAPI's sampler field
+}
 
 _SHORT_INSTRUCTION = (
     "Write a numbered list of 60 practical tips for keeping these depots organised. "
@@ -106,8 +111,8 @@ async def run_speed(
     """Run the speed pass. On AbortRun the exception gains `partial = (records, summary)`."""
     if sampler is not None:
         sampler.mark("speed")
-    ignore_eos = runtime in IGNORE_EOS_RUNTIMES
-    extra = {"ignore_eos": True} if ignore_eos else None
+    ignore_eos = runtime in FORCED_LENGTH
+    extra = FORCED_LENGTH.get(runtime)
     budget = ErrorBudget("speed")
     records: list[dict] = []
     summary: dict = {}

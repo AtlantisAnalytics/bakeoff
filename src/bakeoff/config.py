@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-RUNTIMES = ("vllm", "llamacpp", "ollama", "mlx", "other")
+RUNTIMES = ("vllm", "llamacpp", "ollama", "mlx", "exllamav3", "other")
 
 
 class ConfigError(Exception):
@@ -29,6 +29,9 @@ class ModelConfig:
     weights_file: str = ""
     quant: str = ""
     runtime: str = "other"
+    # The engine's version when its API reports none (e.g. "exllamav3 1.6.2 (TabbyAPI 63860e6)");
+    # recorded with source "operator".
+    runtime_version: str = ""
     envelope: str = ""
 
 
