@@ -10,7 +10,7 @@ import math
 import threading
 import time
 
-from bakeoff.env import Runner, parse_vm_stat
+from bakeoff.env import Runner, nvidia_argv, parse_vm_stat
 
 SAMPLER_NVIDIA_ARGV = [
     "nvidia-smi",
@@ -70,7 +70,7 @@ class Sampler:
     def _read(self) -> dict | None:
         """One reading without t/pass, or None."""
         if self.platform == "nvidia":
-            gpus = parse_sampler_query(self._run(SAMPLER_NVIDIA_ARGV) or "")
+            gpus = parse_sampler_query(self._run(nvidia_argv(SAMPLER_NVIDIA_ARGV)) or "")
             return None if gpus is None else {"gpus": gpus}
         if self.platform == "darwin":
             used = parse_vm_stat(self._run(DARWIN_ARGV) or "")
