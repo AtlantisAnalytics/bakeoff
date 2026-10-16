@@ -213,6 +213,10 @@ keeps a separate peak for each pass.
 | Platform | Memory | Power |
 |---|---|---|
 | NVIDIA (Linux) | `nvidia-smi --query-gpu=index,memory.used,power.draw`, per GPU and summed | `power.draw` per GPU |
+
+On a multi-GPU host, set `CUDA_VISIBLE_DEVICES` to the run's GPUs, as for its server. The sampler and
+the environment capture then query only those GPUs (`nvidia-smi -i`), so the bundle neither lists
+nor sums cards the run didn't use. Unset or unparseable, they cover every GPU.
 | macOS | `vm_stat`: wired + active + compressed pages. Plus Ollama `/api/ps` `size_vram` when the runtime is Ollama | `not_captured` (needs `sudo powermetrics`) |
 | Other | `not_captured` | `not_captured` |
 

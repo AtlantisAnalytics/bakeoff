@@ -1,6 +1,6 @@
 # bakeoff.si plan
 
-Status as of 2026-10-15: **M0 to M2 done, M3 in progress** (the private runner is built; acceptance pending). The repo is seeded, and the holding page has been live at
+Status as of 2026-10-15: **M0 to M3 done; M4 starts the weekend of 2026-10-17** (the private runner passed its live acceptance on both tiers). The repo is seeded, and the holding page has been live at
 https://bakeoff.si since 2026-10-12. It was uploaded by hand; deploying from Git is set up in M2. The repo
 stays **private until the first public Monday** (M5).
 
@@ -68,8 +68,8 @@ In short:
 | **M0** ✅ | Repo seed: README, plan, licenses, the holding page in `site/`, the logo source and asset script |
 | **M1** ✅ | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
 | **M2** ✅ | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
-| **M3** 🚧 | Private side: the weekend schedule, the Monday standup and [Publish] opening a draft PR here (scouting follows later). In progress: the private runner is built; acceptance pending |
-| **M4** | Two or three private dry-run weekends; review the report quality and the scrub |
+| **M3** ✅ | Private side: the weekend schedule, the Monday standup and [Publish] opening a draft PR here (scouting follows later). Live acceptance passed 2026-10-15 on both tiers; its draft PRs were closed unmerged |
+| **M4** | Two or three private dry-run weekends; review the report quality and the scrub. The first is the weekend of 2026-10-17 |
 | **M5** | First public Monday: scrub the history, make the repo public, announce |
 
 Later:

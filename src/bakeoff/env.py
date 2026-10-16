@@ -29,6 +29,18 @@ NVIDIA_QUERY = (
     "--query-gpu=index,name,memory.total,driver_version,power.limit,memory.used,power.draw"
 )
 NVIDIA_QUERY_ARGV = ["nvidia-smi", NVIDIA_QUERY, "--format=csv,noheader,nounits"]
+_GPU_ID = re.compile(r"\d+|GPU-[0-9A-Fa-f-]+|MIG-[0-9A-Za-z/-]+")
+
+
+def nvidia_argv(argv: Sequence[str]) -> list[str]:
+    """``argv`` limited to the GPUs in CUDA_VISIBLE_DEVICES (``nvidia-smi -i``), so a run on a
+    multi-GPU host records and samples only the GPUs it was given. Unset, empty or unparseable:
+    every GPU, as before. The ids go to nvidia-smi only; they are never recorded."""
+    raw = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+    ids = [t.strip() for t in raw.split(",")]
+    if not raw.strip() or not all(_GPU_ID.fullmatch(t) for t in ids):
+        return list(argv)
+    return [argv[0], "-i", ",".join(ids), *argv[1:]]
 
 
 def default_run(argv: list[str]) -> str | None:
@@ -183,7 +195,7 @@ def _mac_host(
 
 
 def _nvidia_gpus(run: Runner, clean: Cleaner) -> list[dict]:
-    rows = parse_nvidia_query(run(NVIDIA_QUERY_ARGV) or "")
+    rows = parse_nvidia_query(run(nvidia_argv(NVIDIA_QUERY_ARGV)) or "")
     cuda = parse_cuda_version(run(["nvidia-smi"]) or "")
     return [
         {
