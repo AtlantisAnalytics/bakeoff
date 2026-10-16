@@ -1,0 +1,173 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": null,
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "12gb": {
+      "format": {
+        "bundle_sha256": "73101ab80001dd34ed26f4fd990428661eefe8e360c43ac62ce8f218a9b1718d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261016T053424Z-qwen2-5-0-5b-instruct-e81b2deb",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "12gb",
+        "track": "format",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      }
+    }
+  },
+  "published_at": "2026-10-16T05:39:06Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {
+        "format": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-10-19/runs/20261016T053424Z-qwen2-5-0-5b-instruct-e81b2deb",
+          "bundle_sha256": "73101ab80001dd34ed26f4fd990428661eefe8e360c43ac62ce8f218a9b1718d",
+          "eligible": true,
+          "fit": {
+            "max_context_passed": 16384,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen2.5 0.5B Instruct",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+            "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.65,
+                "suites": [
+                  {
+                    "accuracy": 0.65,
+                    "ci95": [
+                      0.43285051021946463,
+                      0.8188104521320554
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 13,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261016T053424Z-qwen2-5-0-5b-instruct-e81b2deb",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 232.13856342160162,
+                "median": 230.5417298931203,
+                "min": 228.94489636463902,
+                "n": 2
+              },
+              "decode_tps": {
+                "max": 238.5256506163952,
+                "median": 238.32391482299994,
+                "min": 238.1221790296047,
+                "n": 2
+              },
+              "prefill_tps": {
+                "max": 66958.8261940665,
+                "median": 57351.27974294858,
+                "min": 47743.73329183066,
+                "n": 2
+              },
+              "ttft_s": {
+                "max": 0.04729416499958461,
+                "median": 0.04050819049962229,
+                "min": 0.033722215999659966,
+                "n": 2
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 234.7987514130287,
+                "median": 233.5545645089884,
+                "min": 232.31037760494806,
+                "n": 2
+              },
+              "decode_tps": {
+                "max": 239.95265830032713,
+                "median": 239.6591345713535,
+                "min": 239.36561084237988,
+                "n": 2
+              },
+              "prefill_tps": {
+                "max": 6645.457515571218,
+                "median": 5436.60344171734,
+                "min": 4227.749367863462,
+                "n": 2
+              },
+              "ttft_s": {
+                "max": 0.039264389999516425,
+                "median": 0.032121929499680846,
+                "min": 0.024979468999845267,
+                "n": 2
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {},
+      "runs": []
+    },
+    {
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-10-19"
+}
