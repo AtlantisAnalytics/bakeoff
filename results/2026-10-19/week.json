@@ -1,0 +1,173 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": null,
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "24gb": {
+      "format": {
+        "bundle_sha256": "2ecd3039b65727b878e7847ce584e391521d309cb4e2fde9bc9b038ff0a64778",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261016T051953Z-qwen2-5-0-5b-instruct-de46527c",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      }
+    }
+  },
+  "published_at": "2026-10-16T05:28:06Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {},
+      "runs": []
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-10-19/runs/20261016T051953Z-qwen2-5-0-5b-instruct-de46527c",
+          "bundle_sha256": "2ecd3039b65727b878e7847ce584e391521d309cb4e2fde9bc9b038ff0a64778",
+          "eligible": true,
+          "fit": {
+            "max_context_passed": 16384,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen2.5 0.5B Instruct",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+            "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.65,
+                "suites": [
+                  {
+                    "accuracy": 0.65,
+                    "ci95": [
+                      0.43285051021946463,
+                      0.8188104521320554
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 13,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261016T051953Z-qwen2-5-0-5b-instruct-de46527c",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 442.05348764306046,
+                "median": 435.7323476245069,
+                "min": 429.4112076059533,
+                "n": 2
+              },
+              "decode_tps": {
+                "max": 457.6219810502362,
+                "median": 451.5052905071599,
+                "min": 445.3885999640836,
+                "n": 2
+              },
+              "prefill_tps": {
+                "max": 103166.4421948787,
+                "median": 99358.60013808598,
+                "min": 95550.75808129327,
+                "n": 2
+              },
+              "ttft_s": {
+                "max": 0.02363141900013943,
+                "median": 0.022759190500096338,
+                "min": 0.021886962000053245,
+                "n": 2
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 401.1338134985392,
+                "median": 399.1919429367024,
+                "min": 397.2500723748656,
+                "n": 2
+              },
+              "decode_tps": {
+                "max": 412.5457231703943,
+                "median": 410.07710190585124,
+                "min": 407.60848064130823,
+                "n": 2
+              },
+              "prefill_tps": {
+                "max": 8815.713978371112,
+                "median": 8541.792103936874,
+                "min": 8267.870229502636,
+                "n": 2
+              },
+              "ttft_s": {
+                "max": 0.020077721999996356,
+                "median": 0.019453866999924685,
+                "min": 0.018830011999853014,
+                "n": 2
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-10-19"
+}

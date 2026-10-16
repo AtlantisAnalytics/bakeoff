@@ -1,0 +1,331 @@
+{
+  "bundle_format": "m2",
+  "run_id": "20261016T051953Z-qwen2-5-0-5b-instruct-de46527c",
+  "started_at": "2026-10-16T05:19:53Z",
+  "ended_at": "2026-10-16T05:20:00Z",
+  "status": "complete",
+  "status_reason": null,
+  "config": {
+    "endpoint": {
+      "model": "i3-qwen2-5-0-5b-instruct",
+      "timeout_s": 600.0
+    },
+    "model": {
+      "label": "Qwen2.5 0.5B Instruct",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775",
+      "weights_file": "",
+      "quant": "bf16",
+      "runtime": "vllm",
+      "envelope": "1× RTX 3090 Ti 24 GB"
+    },
+    "quality": {
+      "suites": [
+        "format"
+      ],
+      "private_suites": []
+    },
+    "speed": {
+      "concurrency": [
+        1
+      ],
+      "repeats": 2,
+      "warmup": 1
+    },
+    "fit": {
+      "steps": [
+        4096,
+        16384
+      ],
+      "max_context": 0
+    }
+  },
+  "env": {
+    "host": {
+      "os": {
+        "value": "Linux",
+        "source": "measured"
+      },
+      "os_version": {
+        "value": "Ubuntu 24.04.4 LTS",
+        "source": "measured"
+      },
+      "cpu": {
+        "value": "Intel(R) Xeon(R) Gold 6150 CPU @ 2.70GHz",
+        "source": "measured"
+      },
+      "cpu_cores": {
+        "value": 18,
+        "source": "measured"
+      },
+      "ram_bytes": {
+        "value": 67401670656,
+        "source": "measured"
+      }
+    },
+    "gpus": [
+      {
+        "name": {
+          "value": "NVIDIA GeForce RTX 3090 Ti",
+          "source": "measured"
+        },
+        "vram_mib": {
+          "value": 24564,
+          "source": "measured"
+        },
+        "driver": {
+          "value": "570.207",
+          "source": "measured"
+        },
+        "cuda": {
+          "value": "12.8",
+          "source": "measured"
+        },
+        "power_limit_w": {
+          "value": 450.0,
+          "source": "measured"
+        }
+      }
+    ],
+    "runtime": {
+      "name": {
+        "value": "vllm",
+        "source": "operator"
+      },
+      "version": {
+        "value": "0.19.0",
+        "source": "reported"
+      },
+      "served_model": {
+        "value": "i3-qwen2-5-0-5b-instruct",
+        "source": "reported"
+      }
+    },
+    "model": {
+      "label": {
+        "value": "Qwen2.5 0.5B Instruct",
+        "source": "operator"
+      },
+      "weights": {
+        "value": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775",
+        "source": "operator"
+      },
+      "weights_file": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "quant": {
+        "value": "bf16",
+        "source": "operator"
+      },
+      "envelope": {
+        "value": "1× RTX 3090 Ti 24 GB",
+        "source": "operator"
+      }
+    },
+    "harness": {
+      "version": {
+        "value": "0.1.0",
+        "source": "measured"
+      },
+      "git_commit": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "git_dirty": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "python": {
+        "value": "3.12.3",
+        "source": "measured"
+      }
+    }
+  },
+  "suites": [
+    {
+      "key": "format/exact-reply",
+      "version": 1,
+      "split": "public",
+      "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e"
+    }
+  ],
+  "quality": {
+    "suites": [
+      {
+        "key": "format/exact-reply",
+        "track": "format",
+        "name": "exact-reply",
+        "version": 1,
+        "split": "public",
+        "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+        "n": 20,
+        "passed": 13,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.65,
+        "ci95": [
+          0.43285051021946463,
+          0.8188104521320554
+        ]
+      }
+    ],
+    "tracks": {
+      "format": 0.65
+    }
+  },
+  "speed": {
+    "short@1": {
+      "ttft_s": {
+        "median": 0.019453866999924685,
+        "min": 0.018830011999853014,
+        "max": 0.020077721999996356,
+        "n": 2
+      },
+      "prefill_tps": {
+        "median": 8541.792103936874,
+        "min": 8267.870229502636,
+        "max": 8815.713978371112,
+        "n": 2
+      },
+      "decode_tps": {
+        "median": 410.07710190585124,
+        "min": 407.60848064130823,
+        "max": 412.5457231703943,
+        "n": 2
+      },
+      "aggregate_tps": {
+        "median": 399.1919429367024,
+        "min": 397.2500723748656,
+        "max": 401.1338134985392,
+        "n": 2
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@1": {
+      "ttft_s": {
+        "median": 0.022759190500096338,
+        "min": 0.021886962000053245,
+        "max": 0.02363141900013943,
+        "n": 2
+      },
+      "prefill_tps": {
+        "median": 99358.60013808598,
+        "min": 95550.75808129327,
+        "max": 103166.4421948787,
+        "n": 2
+      },
+      "decode_tps": {
+        "median": 451.5052905071599,
+        "min": 445.3885999640836,
+        "max": 457.6219810502362,
+        "n": 2
+      },
+      "aggregate_tps": {
+        "median": 435.7323476245069,
+        "min": 429.4112076059533,
+        "max": 442.05348764306046,
+        "n": 2
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    }
+  },
+  "fit": {
+    "max_context_passed": 16384,
+    "server_context": 32768,
+    "server_context_probe": "pre_fit",
+    "limit_source": "reported",
+    "truncation_check": "measured",
+    "incomplete": false,
+    "steps": {
+      "4096": {
+        "status": "pass",
+        "kv_cache_usage": 0.0
+      },
+      "16384": {
+        "status": "pass",
+        "kv_cache_usage": 0.0
+      }
+    }
+  },
+  "memory": {
+    "platform": {
+      "value": "nvidia",
+      "source": "measured"
+    },
+    "baseline": {
+      "value": {
+        "mem_used_mib_total": 23004,
+        "mem_used_mib_per_gpu": [
+          23004
+        ],
+        "power_w_mean": 92.26,
+        "power_w_max": 92.26
+      },
+      "source": "measured"
+    },
+    "peaks": {
+      "value": {
+        "baseline": {
+          "mem_used_mib_total": 23004,
+          "mem_used_mib_per_gpu": [
+            23004
+          ],
+          "power_w_mean": 92.26,
+          "power_w_max": 92.26
+        },
+        "quality": {
+          "mem_used_mib_total": 23004,
+          "mem_used_mib_per_gpu": [
+            23004
+          ],
+          "power_w_mean": 94.88,
+          "power_w_max": 96.77
+        },
+        "speed": {
+          "mem_used_mib_total": 23004,
+          "mem_used_mib_per_gpu": [
+            23004
+          ],
+          "power_w_mean": 235.06571428571428,
+          "power_w_max": 260.81
+        },
+        "fit:calibrate": {
+          "mem_used_mib_total": 23004,
+          "mem_used_mib_per_gpu": [
+            23004
+          ],
+          "power_w_mean": 272.07,
+          "power_w_max": 272.07
+        },
+        "fit:16384": {
+          "mem_used_mib_total": 23004,
+          "mem_used_mib_per_gpu": [
+            23004
+          ],
+          "power_w_mean": 293.595,
+          "power_w_max": 304.29
+        }
+      },
+      "source": "measured"
+    },
+    "runtime_reported": {
+      "size_vram": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "kv_cache_usage": {
+        "value": 0.0,
+        "source": "reported"
+      }
+    }
+  },
+  "files": {
+    "quality/format.exact-reply.jsonl": "40485a83e6cfc0f8c75fb756c3d2eff3e177e3984ea371d0e95a1f6e041f6b2a",
+    "speed.jsonl": "227da42374ba57c64da8a7ca767a2c1b3334c3fdca1e62a6d0e3eb5c0d50d35e",
+    "fit.jsonl": "da3c61f7405e21c109e1ea1ce928771ab4ffc9a95e54928b3293c4fd02ace96b",
+    "samples.jsonl": "8478b40b40df2939c18b95e979de66ee176425edeabbdaf11494d1da6ad36159"
+  },
+  "bundle_sha256": "2ecd3039b65727b878e7847ce584e391521d309cb4e2fde9bc9b038ff0a64778"
+}
