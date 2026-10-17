@@ -3,7 +3,8 @@
     uv run --no-project --with pillow python brand/make_assets.py brand/bakeoff-logo.png site
 
 Writes logo.webp (lockup, 2x for 440 css px), favicon-32.png and apple-touch-icon.png (the
-cupcake mark alone) and og.jpg (1200x630 link preview). The source has an opaque white field,
+cupcake mark alone), og.jpg (1200x630 link preview) and, from atlantis-emblem.png beside the
+source, atlantis.webp (the Atlantis Analytics emblem in the footer, 2x for 40 css px). The source has an opaque white field,
 so the page is light-only; a dark variant needs a transparent-background source logo.
 """
 
@@ -59,5 +60,8 @@ ol = lockup.resize((round(lockup.width * oh / lockup.height), oh), Image.Resampl
 og.paste(ol, ((1200 - ol.width) // 2, (630 - oh) // 2))
 og.save(out / "og.jpg", "JPEG", quality=86, optimize=True, progressive=True)  # JPEG keeps the gradients
 
-for f in ("logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
+emblem = Image.open(src.parent / "atlantis-emblem.png").convert("RGB")
+emblem.resize((80, 80), Image.Resampling.LANCZOS).save(out / "atlantis.webp", "WEBP", quality=88, method=6)
+
+for f in ("logo.webp", "atlantis.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
     print(f, (out / f).stat().st_size // 1024, "KB")

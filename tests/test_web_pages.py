@@ -395,3 +395,23 @@ def test_outranked_by_shows_label(doc):
     v = run_of(d, "r-cand")["verdicts"]["general"]
     v.update(final="replace", new_pick=False, outranked_by="r-ctrl")
     assert "Outranked by base" in week_page(d, SITE)
+
+
+MAKER = '<a class="maker" href="https://www.atlantisanalytics.com/">'
+
+
+def test_footer_credits_atlantis_on_every_page(doc):
+    for h in (holding_page(QUIET), wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
+        assert MAKER in h
+        assert '<img src="/atlantis.webp" width="40" height="40" alt="">' in h
+        assert "A project of Atlantis Analytics" in h
+        assert_balanced(h)
+
+
+def test_atlantis_emblem_is_a_shipped_asset():
+    from pathlib import Path
+
+    from bakeoff.web.build import ASSETS
+
+    assert "atlantis.webp" in ASSETS
+    assert (Path(__file__).parent.parent / "site" / "atlantis.webp").is_file()

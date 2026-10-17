@@ -37,6 +37,10 @@ VERDICTS = {
 _BADGE_CLASSES = ("replace", "hold", "watch", "initial_pick")
 _SPEED_CELL = "short@1"
 _LOGO = '<img src="/logo.webp" width="440" height="360" alt="bakeoff.si">'
+_MAKER = (
+    '<a class="maker" href="https://www.atlantisanalytics.com/">'
+    '<img src="/atlantis.webp" width="40" height="40" alt="">A project of Atlantis Analytics</a>'
+)
 _LEDE = (
     "Every week, new open-weight models get tested on ordinary consumer GPUs, "
     "and the results are published Monday morning."
@@ -119,6 +123,7 @@ def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
 <footer>
 {lead}<p class="footer-links">{"".join(links)}</p>
 {form}
+<p>{_MAKER}</p>
 </footer>
 </div>"""
 

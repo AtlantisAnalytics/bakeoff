@@ -58,6 +58,9 @@ footer strong { color: var(--blue); font-weight: 600; }
 .holding .site-footer { max-width: 34rem; text-align: center; }
 .footer-links a { margin-right: 1rem; }
 .holding .footer-links a { margin: 0 0.5rem; }
+.maker { color: var(--muted); text-decoration: none; }
+.maker:hover { color: var(--ink); }
+.maker img { vertical-align: middle; margin-right: 0.5rem; }
 
 form.signup { margin: 1rem 0 0; }
 form.signup label { display: block; margin-bottom: 0.25rem; }

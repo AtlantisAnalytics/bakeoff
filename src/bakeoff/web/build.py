@@ -19,7 +19,14 @@ from bakeoff.week import load_week_schema
 from bakeoff.weekcfg import SiteConfig, load_site
 
 OWNED = ("index.html", "weeks", "api", "feed.xml", "_headers", "method", "privacy")
-ASSETS = ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg")
+ASSETS = (
+    "style.css",
+    "logo.webp",
+    "atlantis.webp",
+    "favicon-32.png",
+    "apple-touch-icon.png",
+    "og.jpg",
+)
 FEED_EPOCH = "2026-01-01T00:00:00Z"
 
 
