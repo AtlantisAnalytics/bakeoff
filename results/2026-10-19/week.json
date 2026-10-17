@@ -1,0 +1,399 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": null,
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "24gb": {
+      "format": {
+        "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "general": {
+        "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "general",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "grounding": {
+        "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "grounding",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "longctx": {
+        "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "longctx",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "structured": {
+        "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+        "runtime": "vllm",
+        "since_week": "2026-10-19",
+        "tier": "24gb",
+        "track": "structured",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      }
+    }
+  },
+  "published_at": "2026-10-17T05:25:26Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {},
+      "runs": []
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "none",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-10-19/runs/20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+          "bundle_sha256": "dd1af17328aecabd4ada24e28d8a0051a06c6f1bbfb73db1630202b03a75585d",
+          "eligible": true,
+          "fit": {
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen2.5 0.5B Instruct",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+            "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.65,
+                "suites": [
+                  {
+                    "accuracy": 0.65,
+                    "ci95": [
+                      0.43285051021946463,
+                      0.8188104521320554
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 13,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.31,
+                "suites": [
+                  {
+                    "accuracy": 0.37,
+                    "ci95": [
+                      0.28182212569509163,
+                      0.46779652424866885
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 37,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.25,
+                    "ci95": [
+                      0.1754509400372426,
+                      0.3430464637007583
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 25,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.5333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.5333333333333333,
+                    "ci95": [
+                      0.3614201328152505,
+                      0.6976787277587178
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 16,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.6666666666666666,
+                "suites": [
+                  {
+                    "accuracy": 0.6666666666666666,
+                    "ci95": [
+                      0.48779725813830266,
+                      0.807697044731538
+                    ],
+                    "extractable_accuracy": 0.6666666666666666,
+                    "extractable_ci95": [
+                      0.48779725813830266,
+                      0.807697044731538
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 20,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261017T051459Z-qwen2-5-0-5b-instruct-24754fe4",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 439.31930425480994,
+                "median": 437.51969639757664,
+                "min": 425.7615628674397,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 454.9471566656439,
+                "median": 454.3264546170101,
+                "min": 441.5290192878708,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 101642.9745054754,
+                "median": 95125.65285665536,
+                "min": 84855.55990318891,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.02660992399998463,
+                "median": 0.02373702500000263,
+                "min": 0.0222150130000216,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 1450.118134709387,
+                "median": 1444.803089846894,
+                "min": 1432.9294010768967,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 390.40193445352793,
+                "median": 388.32681513978764,
+                "min": 387.05132863891333,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 50115.12384993381,
+                "median": 44909.52541350585,
+                "min": 38005.88283263858,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.05941185500000756,
+                "median": 0.05028081749999558,
+                "min": 0.045056259000006094,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 445.1134484118803,
+                "median": 441.45632696785685,
+                "min": 431.599559743496,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 456.0540080403131,
+                "median": 452.52693998019845,
+                "min": 441.3134060151356,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 10834.27083496042,
+                "median": 10275.389093693382,
+                "min": 10124.142726015674,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.016396450000002005,
+                "median": 0.016155106000013575,
+                "min": 0.015321751000016093,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 1509.4406661920798,
+                "median": 1503.993390325014,
+                "min": 1494.4197687217197,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 393.2299459944429,
+                "median": 392.2976336916945,
+                "min": 388.29957981371325,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 6310.756475323605,
+                "median": 5790.950003167629,
+                "min": 5304.109691285591,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.03129648700002008,
+                "median": 0.028665430000017977,
+                "min": 0.026304294999988542,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "grounding": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-10-19"
+}
