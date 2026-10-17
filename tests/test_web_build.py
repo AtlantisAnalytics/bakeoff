@@ -10,6 +10,7 @@ from weekfix import make_bundle
 
 from bakeoff.publish import publish
 from bakeoff.web.build import (
+    ASSETS,
     OWNED,
     atom_feed,
     check_site,
@@ -265,7 +266,7 @@ class _Refs(HTMLParser):
 
 
 def _assert_links_resolve(files):
-    assets = {"style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"}
+    assets = set(ASSETS)
     for name, data in files.items():
         if not name.endswith(".html"):
             continue
