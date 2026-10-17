@@ -1,0 +1,59 @@
+{
+  "12gb": {
+    "format": {
+      "bundle_sha256": "2a3d4ddc83b560ba0040d9944847bda2813d6ed837456a15fd790895d9cf78c7",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261017T051509Z-qwen2-5-0-5b-instruct-ff35a450",
+      "runtime": "vllm",
+      "since_week": "2026-10-19",
+      "tier": "12gb",
+      "track": "format",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "general": {
+      "bundle_sha256": "2a3d4ddc83b560ba0040d9944847bda2813d6ed837456a15fd790895d9cf78c7",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261017T051509Z-qwen2-5-0-5b-instruct-ff35a450",
+      "runtime": "vllm",
+      "since_week": "2026-10-19",
+      "tier": "12gb",
+      "track": "general",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "grounding": {
+      "bundle_sha256": "2a3d4ddc83b560ba0040d9944847bda2813d6ed837456a15fd790895d9cf78c7",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261017T051509Z-qwen2-5-0-5b-instruct-ff35a450",
+      "runtime": "vllm",
+      "since_week": "2026-10-19",
+      "tier": "12gb",
+      "track": "grounding",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "longctx": {
+      "bundle_sha256": "2a3d4ddc83b560ba0040d9944847bda2813d6ed837456a15fd790895d9cf78c7",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261017T051509Z-qwen2-5-0-5b-instruct-ff35a450",
+      "runtime": "vllm",
+      "since_week": "2026-10-19",
+      "tier": "12gb",
+      "track": "longctx",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "structured": {
+      "bundle_sha256": "2a3d4ddc83b560ba0040d9944847bda2813d6ed837456a15fd790895d9cf78c7",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261017T051509Z-qwen2-5-0-5b-instruct-ff35a450",
+      "runtime": "vllm",
+      "since_week": "2026-10-19",
+      "tier": "12gb",
+      "track": "structured",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    }
+  }
+}
