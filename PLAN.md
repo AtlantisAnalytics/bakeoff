@@ -78,7 +78,13 @@ Later:
 - community submissions from the open harness, shown as distributions;
 - a predictive model across hardware × model × quantization that estimates unmeasured cells and picks
   what to measure next;
-- edge devices and energy per token.
+- edge devices and energy per token;
+- **the llama.cpp engine** (a pinned upstream `llama-server` release), which adds GGUF, the format most
+  people run locally;
+- **the wrapper tax:** the cost of the convenience layers (Ollama, LocalAI, LM Studio) against the engine
+  each one wraps, measured with the same model, quantization and card. Each result records the wrapper's
+  version and the engine and version underneath it, and keeps an FP16 KV cache. Environment capture works
+  inside containers.
 
 ## Repo admin to finish
 
