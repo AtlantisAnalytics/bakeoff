@@ -236,6 +236,12 @@ def _git(run: Runner, root: Path) -> tuple[str | None, bool | None]:
     return commit, None if status is None else bool(status.strip())
 
 
+def _archive_commit(read: Reader, path: Path) -> str | None:
+    """The commit `git archive` wrote into `_commit` (export-subst); None for the placeholder."""
+    text = (read(str(path)) or "").strip()
+    return text if re.fullmatch(r"[0-9a-f]{40}", text) else None
+
+
 _IPV4 = re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b")
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 
@@ -278,6 +284,7 @@ def capture_env(
     platform: str = sys.platform,
     repo_root: Path | None = None,
     identity: Sequence[str] | None = None,
+    commit_file: Path | None = None,
 ) -> dict:
     clean = make_cleaner(default_identity() if identity is None else identity)
     root = repo_root if repo_root is not None else Path(__file__).resolve().parents[2]
@@ -303,6 +310,11 @@ def capture_env(
         gpus = []
     model = cfg.model if cfg else None
     commit, dirty = _git(run, root)
+    git_source = "measured"
+    if commit is None:  # no checkout: a harness unpacked from `git archive` names its commit
+        archived = _archive_commit(read, commit_file or Path(__file__).with_name("_commit"))
+        if archived is not None:
+            commit, dirty, git_source = archived, False, "reported"
     return {
         "host": host,
         "gpus": gpus,
@@ -320,8 +332,8 @@ def capture_env(
         },
         "harness": {
             "version": field(__version__, "measured"),
-            "git_commit": field(commit, "measured"),
-            "git_dirty": field(dirty, "measured"),
+            "git_commit": field(commit, git_source),
+            "git_dirty": field(dirty, git_source),
             "python": field(_platform.python_version(), "measured"),
         },
     }
