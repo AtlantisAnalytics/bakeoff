@@ -46,6 +46,7 @@ import shutil
 import tomllib
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from bakeoff import safejson
 from bakeoff.bundle import Finding, iter_strings, load_terms, scan_text, verify_bundle
 from bakeoff.runview import RunView, RunViewError, load_run
 from bakeoff.verdicts import RULES_V1, TierResult, VerdictError, assess_tier
@@ -77,8 +78,8 @@ def _no_constants(name: str) -> float:
 
 def _read_json(path: Path, what: str) -> object:
     try:
-        return json.loads(path.read_bytes().decode("utf-8"), parse_constant=_no_constants)
-    except (OSError, ValueError, RecursionError) as e:
+        return safejson.loads(path.read_bytes().decode("utf-8"), parse_constant=_no_constants)
+    except (OSError, ValueError) as e:
         raise PublishError(f"cannot read {what}: {e}") from e
 
 

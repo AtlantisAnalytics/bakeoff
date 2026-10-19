@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from bakeoff import safejson
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
 
 GENERIC_USERNAMES = frozenset(
@@ -194,8 +195,8 @@ def verify_bundle(
     if not meta_path.is_file():
         return [Finding("bundle.json", 0, "missing_file", "bundle.json not found")]
     try:
-        meta = json.loads(meta_path.read_bytes().decode("utf-8"))
-    except (ValueError, OSError, RecursionError) as e:
+        meta = safejson.loads(meta_path.read_bytes().decode("utf-8"))
+    except (ValueError, OSError) as e:
         return [Finding("bundle.json", 0, "unreadable", f"cannot parse bundle.json: {e}")]
     if not isinstance(meta, dict):
         return [Finding("bundle.json", 0, "unreadable", "bundle.json is not an object")]
@@ -267,8 +268,8 @@ def verify_bundle(
                 if not line.strip():
                     continue
                 try:
-                    obj = json.loads(line)
-                except (ValueError, RecursionError):
+                    obj = safejson.loads(line)
+                except ValueError:
                     add(Finding(rel, no, "unreadable", "line is not valid JSON"))
                     continue
                 for st, is_out in _strings_tagged(obj):
@@ -277,8 +278,8 @@ def verify_bundle(
                         add(Finding(rel, no, kind, match))
         elif suffix == ".json":
             try:
-                obj = json.loads(text)
-            except (ValueError, RecursionError):
+                obj = safejson.loads(text)
+            except ValueError:
                 add(Finding(rel, 0, "unreadable", "file is not valid JSON"))
                 continue
             for st in iter_strings(obj):

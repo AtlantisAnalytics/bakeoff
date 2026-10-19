@@ -14,11 +14,11 @@ Deviations from upstream:
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Callable
 from typing import Any
 
+from bakeoff import safejson
 from bakeoff.graders import BadExpected, Grade, register
 
 _RELATIONS = ("less than", "at least")
@@ -86,8 +86,8 @@ def _json_format(out: str, kw: dict) -> bool:
         .strip()
     )
     try:
-        json.loads(value)
-    except (ValueError, RecursionError):
+        safejson.loads(value)
+    except ValueError:
         return False
     return True
 
