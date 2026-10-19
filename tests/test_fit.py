@@ -6,7 +6,7 @@ from fake_openai import FakeOpenAI, FakeReply, default_responder
 from bakeoff.client import EndpointClient
 from bakeoff.config import FitConfig
 from bakeoff.errors import AbortRun
-from bakeoff.fit import calibrate, run_fit
+from bakeoff.fit import calibrate, kv_fraction, kv_summary, run_fit
 
 STEPS = [4096, 8192, 16384, 32768, 65536]
 
@@ -141,6 +141,12 @@ def test_small_step_is_skipped_with_reason():
     assert all(r["step"] != 1024 for r in records)
 
 
+CACHE = (
+    'vllm:cache_config_info{block_size="16",cache_dtype="auto",engine="0",'
+    'num_gpu_blocks="1000"} 1.0\n'
+)
+
+
 def test_steps_sorted_and_marked_and_kv():
     marks = []
 
@@ -148,12 +154,44 @@ def test_steps_sorted_and_marked_and_kv():
         def mark(self, name):
             marks.append(name)
 
-    fake = FakeOpenAI(extras={"/metrics": '# HELP x\nvllm:gpu_cache_usage_perc{model="m"} 0.25\n'})
+    fake = FakeOpenAI(extras={"/metrics": "# HELP x\n" + CACHE})
     _, s = go(fake, FitConfig(steps=[8192, 4096]), runtime="vllm", sampler=S())
     assert marks == ["fit:calibrate", "fit:4096", "fit:8192"]
-    assert s["steps"]["4096"]["kv_cache_usage"] == 0.25
+    assert s["kv"]["capacity_tokens"] == {"value": 16000, "source": "reported"}
+    assert s["kv"]["block_size"] == {"value": 16, "source": "reported"}
+    assert s["kv"]["cache_dtype"] == {"value": "auto", "source": "reported"}
+    assert s["steps"]["4096"]["kv_fraction"] == 0.256
+    assert all("kv_cache_usage" not in step for step in s["steps"].values())
     _, s2 = go(fake, FitConfig(steps=[4096]), runtime="ollama")
-    assert s2["steps"]["4096"]["kv_cache_usage"] is None
+    assert s2["kv"]["capacity_tokens"]["source"] == "not_captured"
+    assert s2["steps"]["4096"]["kv_fraction"] is None
+
+
+def test_kv_fraction_math():
+    assert kv_fraction(4096, 16, 1000) == 0.256
+    assert kv_fraction(4097, 16, 1000) == 0.2570
+    assert kv_fraction(16, 16, 3) == 0.3333
+
+
+def test_kv_summary_unusable_blocks():
+    for blocks in ("None", "0", "x"):
+        kv = kv_summary({"num_gpu_blocks": blocks, "block_size": "16", "cache_dtype": "auto"})
+        assert kv["capacity_tokens"]["source"] == "not_captured"
+        assert kv["cache_dtype"] == {"value": "auto", "source": "reported"}
+    assert all(f["source"] == "not_captured" for f in kv_summary(None).values())
+
+
+def test_fit_abort_keeps_kv_shape():
+    class Drops(FakeOpenAI):
+        def _chat(self, body):
+            if body["max_tokens"] == 2048:
+                body = {k: v for k, v in body.items() if k != "stream_options"}
+            return super()._chat(body)
+
+    with pytest.raises(AbortRun) as ei:
+        go(Drops(extras={"/metrics": CACHE}), FitConfig(steps=[4096]), runtime="vllm")
+    _, s = ei.value.partial
+    assert s["kv"]["capacity_tokens"]["source"] == "not_captured"
 
 
 def _is_big(body):
@@ -222,11 +260,7 @@ def test_usage_missing_after_calibration_is_error():
     with pytest.raises(AbortRun) as ei:
         go(Drops(), FitConfig(steps=[4096, 8192]))
     records, s = ei.value.partial
-    assert s["steps"]["4096"] == {
-        "status": "error",
-        "reason": "usage missing",
-        "kv_cache_usage": None,
-    }
+    assert s["steps"]["4096"] == {"status": "error", "reason": "usage missing"}
     assert s["steps"]["8192"]["status"] == "not_run"
     assert all(r["within_5pct"] is None for r in records)
 

@@ -5,6 +5,7 @@ import math
 
 from bakeoff.client import ChatResult, EndpointClient
 from bakeoff.config import FitConfig
+from bakeoff.env import field
 from bakeoff.errors import AbortRun, ErrorBudget
 from bakeoff.needle import needle_messages
 from bakeoff.sampler import Sampler
@@ -47,6 +48,31 @@ def _expected_failure(r: ChatResult) -> bool:
     return any(marker in text for marker in CONTEXT_ERROR_MARKERS)
 
 
+def _positive_int(value: str | None) -> int | None:
+    try:
+        n = int(value) if value is not None else None
+    except ValueError:
+        return None
+    return n if n is not None and n > 0 else None
+
+
+def kv_summary(labels: dict[str, str] | None) -> dict:
+    """KV cache capacity from vLLM's cache_config_info labels; not_captured when unusable."""
+    labels = labels or {}
+    blocks = _positive_int(labels.get("num_gpu_blocks"))
+    size = _positive_int(labels.get("block_size"))
+    return {
+        "capacity_tokens": field(blocks * size if blocks and size else None, "reported"),
+        "block_size": field(size, "reported"),
+        "cache_dtype": field(labels.get("cache_dtype") or None, "reported"),
+    }
+
+
+def kv_fraction(step: int, block_size: int, num_gpu_blocks: int) -> float:
+    """Share of the KV pool one request of `step` tokens needs (full attention on every layer)."""
+    return round(math.ceil(step / block_size) / num_gpu_blocks, 4)
+
+
 def _summary(
     server_context: int | None,
     probe: str | None,
@@ -54,6 +80,7 @@ def _summary(
     calibrated: bool,
     steps: dict[str, dict],
     incomplete: bool,
+    kv: dict,
 ) -> dict:
     passed = [int(s) for s, v in steps.items() if v["status"] == "pass"]
     return {
@@ -64,6 +91,7 @@ def _summary(
         "truncation_check": "measured" if calibrated else "not_captured",
         "incomplete": incomplete,
         "steps": steps,
+        "kv": kv,
     }
 
 
@@ -92,9 +120,10 @@ async def run_fit(
     budget = ErrorBudget("fit")
     records: list[dict] = []
     steps: dict[str, dict] = {}
+    kv = kv_summary(None)
 
     def summary(incomplete: bool = False) -> dict:
-        return _summary(server_context, probe, source, cal is not None, steps, incomplete)
+        return _summary(server_context, probe, source, cal is not None, steps, incomplete, kv)
 
     ordered = sorted(cfg.steps)
     failed = False
@@ -102,13 +131,12 @@ async def run_fit(
         for idx, step in enumerate(ordered):
             key = str(step)
             if failed:
-                steps[key] = {"status": "not_run", "kv_cache_usage": None}
+                steps[key] = {"status": "not_run"}
                 continue
             if limit is not None and step > limit:
                 steps[key] = {
                     "status": "skipped",
                     "reason": "above context limit",
-                    "kv_cache_usage": None,
                 }
                 continue
             lines = math.floor((step - intercept - HEADROOM) / per_line)
@@ -116,7 +144,6 @@ async def run_fit(
                 steps[key] = {
                     "status": "skipped",
                     "reason": "step too small for the prompt overhead",
-                    "kv_cache_usage": None,
                 }
                 continue
             if sampler is not None:
@@ -168,17 +195,25 @@ async def run_fit(
                 except AbortRun as exc:
                     tripped = tripped or exc
             if step_error is not None:
-                steps[key] = {"status": "error", "reason": step_error, "kv_cache_usage": None}
+                steps[key] = {"status": "error", "reason": step_error}
                 for later in ordered[idx + 1 :]:
-                    steps[str(later)] = {"status": "not_run", "kv_cache_usage": None}
+                    steps[str(later)] = {"status": "not_run"}
                 exc = tripped or AbortRun(f"fit: step {step} error: {step_error}")
                 exc.partial = (records, summary(True))
                 raise exc
-            kv = await client.kv_cache_usage() if runtime == "vllm" else None
-            steps[key] = {"status": "pass" if step_ok else "fail", "kv_cache_usage": kv}
+            steps[key] = {"status": "pass" if step_ok else "fail", "kv_fraction": None}
             if not step_ok:
                 failed = True
     except (asyncio.CancelledError, KeyboardInterrupt) as exc:
         exc.partial = (records, summary(True))  # type: ignore[attr-defined]
         raise
+    if runtime == "vllm":
+        labels = await client.cache_config()
+        kv = kv_summary(labels)
+        blocks = _positive_int((labels or {}).get("num_gpu_blocks"))
+        size = kv["block_size"]["value"]
+        if blocks and size:
+            for key, step in steps.items():
+                if "kv_fraction" in step:
+                    step["kv_fraction"] = kv_fraction(int(key), size, blocks)
     return records, summary()

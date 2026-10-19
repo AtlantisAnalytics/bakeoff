@@ -13,6 +13,8 @@ import httpx
 THINK_OPEN = "<think>"
 THINK_CLOSE = "</think>"
 KV_METRICS = ("vllm:gpu_cache_usage_perc", "vllm:kv_cache_usage_perc")
+CACHE_CONFIG_METRIC = "vllm:cache_config_info"
+_LABEL = re.compile(r'(\w+)="((?:[^"\\]|\\.)*)"')
 ERROR_BODY_MAX = 500
 
 
@@ -313,6 +315,24 @@ class EndpointClient:
         except (httpx.HTTPError, ValueError):
             return None
         return None
+
+    async def cache_config(self) -> dict[str, str] | None:
+        """vLLM's `cache_config_info` labels (its CacheConfig, e.g. num_gpu_blocks, block_size)."""
+        try:
+            r = await self._http.get(f"{self.root}/metrics")
+            if r.status_code != 200:
+                return None
+            for line in r.text.splitlines():
+                if line.startswith(CACHE_CONFIG_METRIC + "{"):
+                    body = line[len(CACHE_CONFIG_METRIC) + 1 :]
+                    return {k: _unescape_label(v) for k, v in _LABEL.findall(body)}
+        except httpx.HTTPError:
+            return None
+        return None
+
+
+def _unescape_label(value: str) -> str:
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) == "n" else m.group(1), value)
 
 
 def _str_or_none(v) -> str | None:
