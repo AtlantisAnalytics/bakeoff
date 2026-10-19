@@ -461,3 +461,21 @@ def test_redactor_ignores_short_and_placeholder_keys(key):
 def test_redactor_still_redacts_real_key():
     red = make_redactor("http://192.0.2.5:11434/v1", ("sk-real-key-123",))  # scrub-ok
     assert red("auth sk-real-key-123 ok") == "auth <endpoint> ok"
+
+
+def test_run_records_kv_capacity(tmp_path):
+    import dataclasses
+
+    cfg = make_cfg()
+    cfg = dataclasses.replace(cfg, model=dataclasses.replace(cfg.model, runtime="vllm"))
+    cache = (
+        'vllm:cache_config_info{block_size="16",cache_dtype="auto",engine="0",'
+        'num_gpu_blocks="1000"} 1.0\n'
+    )
+    fake = FakeOpenAI(extras={"/metrics": cache})
+    path = go(cfg, fake, tmp_path, run=fake_nvidia, platform="linux")
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["fit"]["kv"]["capacity_tokens"] == {"value": 16000, "source": "reported"}
+    ran = [s for s in meta["fit"]["steps"].values() if s["status"] in ("pass", "fail")]
+    assert ran and all(s["kv_fraction"] == 0.256 for s in ran)
+    assert verify_bundle(path, username="alice", denylist=None) == []
