@@ -78,6 +78,20 @@ def _quality(view: RunView) -> dict:
     }
 
 
+def _fit(fit: dict) -> dict:
+    out = {
+        "max_context_passed": fit.get("max_context_passed"),
+        "server_context": fit.get("server_context"),
+    }
+    kv = fit.get("kv")
+    if isinstance(kv, dict):  # bundles before KV capacity keep the two fields above, unchanged
+        step = (fit.get("steps") or {}).get(str(out["max_context_passed"])) or {}
+        out["kv_capacity_tokens"] = (kv.get("capacity_tokens") or {}).get("value")
+        out["kv_cache_dtype"] = (kv.get("cache_dtype") or {}).get("value")
+        out["kv_fraction_at_max"] = step.get("kv_fraction")
+    return out
+
+
 def _verdict(v: Verdict) -> dict:
     out = {
         "computed": v.computed,
@@ -112,10 +126,7 @@ def _run(week: str, view: RunView, entry: RunEntry, res: TierResult | None) -> d
         "ineligible_reasons": list(reasons),
         "quality": _quality(view),
         "speed": _speed(view),
-        "fit": {
-            "max_context_passed": view.fit.get("max_context_passed"),
-            "server_context": view.fit.get("server_context"),
-        },
+        "fit": _fit(view.fit),
         "memory": {} if view.size_vram is None else {"size_vram": view.size_vram},
         "verdicts": {t: _verdict(verdicts[t]) for t in sorted(verdicts)},
     }

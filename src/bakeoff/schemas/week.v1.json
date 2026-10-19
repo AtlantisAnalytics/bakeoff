@@ -488,6 +488,27 @@
                         "integer",
                         "null"
                       ]
+                    },
+                    "kv_capacity_tokens": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "KV cache capacity in tokens for the run's serving config (reported)."
+                    },
+                    "kv_cache_dtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "KV cache dtype the engine reports, e.g. auto (the model's dtype)."
+                    },
+                    "kv_fraction_at_max": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "Share of the KV pool one request of max_context_passed tokens needs (derived; an upper bound for sliding-window or hybrid models)."
                     }
                   },
                   "required": [

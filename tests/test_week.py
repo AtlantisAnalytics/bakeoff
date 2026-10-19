@@ -257,3 +257,55 @@ def test_every_fixed_key_object_is_closed():
             assert "required" in node, path
         else:  # a map: values must be described
             assert isinstance(node.get("additionalProperties"), dict), path
+
+
+# --- KV fit fields ---------------------------------------------------------------------------
+
+KV = {
+    "capacity_tokens": {"value": 16000, "source": "reported"},
+    "block_size": {"value": 16, "source": "reported"},
+    "cache_dtype": {"value": "auto", "source": "reported"},
+}
+
+
+def _one_run(tmp_path, fit_extra):
+    path = make_bundle(
+        tmp_path, label="m", weights="m", envelope=ENV_A, grades={GSM: g(20)}, run_id="r-kv",
+        max_context=4096, fit_extra=fit_extra,
+    )  # fmt: skip
+    entry = RunEntry(bundle=path, tier="24gb", license="MIT", source_url="https://example.org/m",
+                     license_url=None)  # fmt: skip
+    view = load_run(path)
+    tiers = {"24gb": Tier("24gb", "24 GB", ENV_A)}
+    results = {"24gb": assess_tier(WEEK, "24gb", [view], {}, [], RULES)}
+    inp = WeekInput(WEEK, AT, [entry], [], [], None, b"")
+    doc = build_week(inp, tiers, {view.run_id: (view, entry)}, results, [],
+                     revision=1, published_at=AT, corrections=[], rules=RULES)  # fmt: skip
+    return doc, doc["tiers"][0]["runs"][0]
+
+
+def test_fit_kv_fields_present(tmp_path):
+    steps = {"4096": {"status": "pass", "kv_fraction": 0.256}}
+    doc, run = _one_run(tmp_path, {"kv": KV, "steps": steps})
+    assert run["fit"] == {
+        "max_context_passed": 4096,
+        "server_context": 65536,
+        "kv_capacity_tokens": 16000,
+        "kv_cache_dtype": "auto",
+        "kv_fraction_at_max": 0.256,
+    }
+    assert validate_week(doc) == []
+
+
+def test_fit_kv_fields_absent_for_old_bundles(tmp_path):
+    _, run = _one_run(tmp_path, None)
+    assert run["fit"] == {"max_context_passed": 4096, "server_context": 65536}
+
+
+def test_fit_kv_not_captured(tmp_path):
+    none = {k: {"value": None, "source": "not_captured"} for k in KV}
+    doc, run = _one_run(tmp_path, {"kv": none, "steps": {"4096": {"status": "pass"}}})
+    assert run["fit"]["kv_capacity_tokens"] is None
+    assert run["fit"]["kv_cache_dtype"] is None
+    assert run["fit"]["kv_fraction_at_max"] is None
+    assert validate_week(doc) == []
