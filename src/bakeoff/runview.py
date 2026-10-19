@@ -1,8 +1,9 @@
 """Read-only view over one run bundle, plus the eligibility check."""
 
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from bakeoff import safejson
 
 
 class RunViewError(ValueError):
@@ -50,8 +51,8 @@ def _read_items(path: Path, key: str) -> dict[str, bool]:
         if not line.strip():
             continue
         try:
-            rec = json.loads(line)
-        except (ValueError, RecursionError) as e:
+            rec = safejson.loads(line)
+        except ValueError as e:
             raise RunViewError(f"{path.name} line {no}: not valid JSON") from e
         if not isinstance(rec, dict) or not isinstance(rec.get("id"), str):
             raise RunViewError(f"{path.name} line {no}: record has no id")
@@ -63,8 +64,8 @@ def load_run(path: Path) -> RunView:
     path = Path(path)
     meta_path = path / "bundle.json"
     try:
-        meta = json.loads(meta_path.read_bytes().decode("utf-8"))
-    except (OSError, ValueError, RecursionError) as e:
+        meta = safejson.loads(meta_path.read_bytes().decode("utf-8"))
+    except (OSError, ValueError) as e:
         raise RunViewError(f"cannot read {meta_path.name} in {path.name}: {e}") from e
     if not isinstance(meta, dict):
         raise RunViewError("bundle.json is not an object")
