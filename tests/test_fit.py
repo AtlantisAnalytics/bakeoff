@@ -311,3 +311,18 @@ def test_calibrate_runs_under_its_own_mark_and_probe_is_recorded():
 
     _, s = asyncio.run(main())
     assert s["server_context_probe"] == "pre_fit" and s["server_context"] == 8192
+
+
+def test_cancel_during_cache_config_keeps_partial():
+    class CancelMetrics(FakeOpenAI):
+        async def _handle(self, request):
+            if request.url.path == "/metrics":
+                raise asyncio.CancelledError
+            return await super()._handle(request)
+
+    with pytest.raises(asyncio.CancelledError) as ei:
+        go(CancelMetrics(), FitConfig(steps=[4096]), runtime="vllm")
+    records, s = ei.value.partial
+    assert records and s["steps"]["4096"]["status"] == "pass"
+    assert s["incomplete"] is True
+    assert s["kv"]["capacity_tokens"]["source"] == "not_captured"

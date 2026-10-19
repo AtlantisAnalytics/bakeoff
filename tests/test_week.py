@@ -405,3 +405,23 @@ def test_agreement_one_run_per_tier_lowest_id(tmp_path):
     [entry] = quality_agreement(runs)
     assert entry["runs"] == ["r-a", "r-b"]
     assert entry["suites"][GSM]["same_pass"] == 1
+
+
+def test_fit_kv_malformed_is_tolerated(tmp_path):
+    _, run = _one_run(
+        tmp_path, {"kv": {"capacity_tokens": "x", "cache_dtype": ["a"]}, "steps": ["bad"]}
+    )
+    assert run["fit"]["kv_capacity_tokens"] is None
+    assert run["fit"]["kv_cache_dtype"] is None
+    assert run["fit"]["kv_fraction_at_max"] is None
+
+
+def test_agreement_sort_tolerates_missing_model_fields(tmp_path):
+    runs = {}
+    for rid, quant in (("r-a", None), ("r-b", "Q4_K_M")):
+        path = make_bundle(tmp_path, label="m", weights="m", quant=quant, envelope=ENV_A,
+                           grades={GSM: [True]}, run_id=rid)  # fmt: skip
+        entry = RunEntry(bundle=path, tier="24gb", license="MIT",
+                         source_url="https://example.org/m", license_url=None)  # fmt: skip
+        runs[rid] = (load_run(path), entry)
+    assert quality_agreement(runs) == []

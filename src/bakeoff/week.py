@@ -85,11 +85,15 @@ def _fit(fit: dict) -> dict:
     }
     kv = fit.get("kv")
     if isinstance(kv, dict):  # bundles before KV capacity keep the two fields above, unchanged
-        step = (fit.get("steps") or {}).get(str(out["max_context_passed"])) or {}
-        out["kv_capacity_tokens"] = (kv.get("capacity_tokens") or {}).get("value")
-        out["kv_cache_dtype"] = (kv.get("cache_dtype") or {}).get("value")
-        out["kv_fraction_at_max"] = step.get("kv_fraction")
+        step = _dict(_dict(fit.get("steps")).get(str(out["max_context_passed"])))
+        out["kv_capacity_tokens"] = _dict(kv.get("capacity_tokens")).get("value")
+        out["kv_cache_dtype"] = _dict(kv.get("cache_dtype")).get("value")
+        out["kv_fraction_at_max"] = step.get("kv_fraction")  # wrong types: validate_week says so
     return out
+
+
+def _dict(v: object) -> dict:
+    return v if isinstance(v, dict) else {}
 
 
 def _verdict(v: Verdict) -> dict:
@@ -156,7 +160,7 @@ def quality_agreement(runs: dict[str, tuple[RunView, RunEntry]]) -> list[dict]:
         view, entry = runs[rid]
         groups.setdefault(model_key(view), {}).setdefault(entry.tier, view)
     out = []
-    for key in sorted(groups):
+    for key in sorted(groups, key=lambda k: tuple(map(str, k))):  # a None field must not crash
         views = sorted(groups[key].values(), key=lambda v: v.run_id)
         if len(views) < 2:
             continue

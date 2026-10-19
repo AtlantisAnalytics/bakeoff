@@ -204,16 +204,16 @@ async def run_fit(
             steps[key] = {"status": "pass" if step_ok else "fail", "kv_fraction": None}
             if not step_ok:
                 failed = True
+        if runtime == "vllm":  # inside the try: an interrupt here still keeps the steps
+            labels = await client.cache_config()
+            kv = kv_summary(labels)
+            blocks = _positive_int((labels or {}).get("num_gpu_blocks"))
+            size = kv["block_size"]["value"]
+            if blocks and size:
+                for key, step in steps.items():
+                    if "kv_fraction" in step:
+                        step["kv_fraction"] = kv_fraction(int(key), size, blocks)
     except (asyncio.CancelledError, KeyboardInterrupt) as exc:
         exc.partial = (records, summary(True))  # type: ignore[attr-defined]
         raise
-    if runtime == "vllm":
-        labels = await client.cache_config()
-        kv = kv_summary(labels)
-        blocks = _positive_int((labels or {}).get("num_gpu_blocks"))
-        size = kv["block_size"]["value"]
-        if blocks and size:
-            for key, step in steps.items():
-                if "kv_fraction" in step:
-                    step["kv_fraction"] = kv_fraction(int(key), size, blocks)
     return records, summary()
