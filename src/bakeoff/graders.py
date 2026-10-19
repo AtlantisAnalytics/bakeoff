@@ -6,12 +6,13 @@ Only an unknown grader name raises (KeyError).
 
 from __future__ import annotations
 
-import json
 import math
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+
+from bakeoff import safejson
 
 
 @dataclass(frozen=True)
@@ -288,8 +289,8 @@ def _check_values_shape(v: Any) -> None:
 def _check_json(text: str, schema: dict, values: dict | None) -> tuple[bool, str]:
     """Parse `text` as strict JSON, then check the schema and `values`. Returns (ok, reason)."""
     try:
-        value = json.loads(text, parse_constant=_reject_constant, parse_float=_parse_float)
-    except (ValueError, RecursionError) as e:
+        value = safejson.loads(text, parse_constant=_reject_constant, parse_float=_parse_float)
+    except ValueError as e:
         return False, f"not valid JSON: {type(e).__name__}: {str(e)[:100]}"
     errors = validate_schema(value, schema)
     if errors:

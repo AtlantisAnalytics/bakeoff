@@ -464,3 +464,38 @@ def test_non_finite_kv_metric_is_none():
             return await c.kv_cache_usage()
 
     assert run(go()) is None
+
+
+CACHE_LINE = (
+    'vllm:cache_config_info{block_size="16",cache_dtype="auto",engine="0",'
+    'num_gpu_blocks="27000"} 1.0\n'
+)
+
+
+def _cache_config(text, status=200):
+    async def go():
+        fake = FakeOpenAI(extras={"/metrics": text} if status == 200 else None)
+        async with make(fake) as c:
+            return await c.cache_config()
+
+    return run(go())
+
+
+def test_cache_config_parsed():
+    got = _cache_config("# HELP vllm:cache_config_info x\n" + CACHE_LINE)
+    assert got["block_size"] == "16"
+    assert got["num_gpu_blocks"] == "27000"
+    assert got["cache_dtype"] == "auto"
+
+
+def test_cache_config_missing():
+    assert _cache_config("vllm:kv_cache_usage_perc 0.5\n") is None
+    assert _cache_config("", status=404) is None
+
+
+def test_cache_config_escaped_labels():
+    line = 'vllm:cache_config_info{prefix="a\\"b,c",block_size="16",num_gpu_blocks="27000"} 1.0\n'
+    got = _cache_config(line)
+    assert got["prefix"] == 'a"b,c'
+    assert got["block_size"] == "16"
+    assert got["num_gpu_blocks"] == "27000"

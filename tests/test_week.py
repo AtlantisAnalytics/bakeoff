@@ -257,3 +257,171 @@ def test_every_fixed_key_object_is_closed():
             assert "required" in node, path
         else:  # a map: values must be described
             assert isinstance(node.get("additionalProperties"), dict), path
+
+
+# --- KV fit fields ---------------------------------------------------------------------------
+
+KV = {
+    "capacity_tokens": {"value": 16000, "source": "reported"},
+    "block_size": {"value": 16, "source": "reported"},
+    "cache_dtype": {"value": "auto", "source": "reported"},
+}
+
+
+def _one_run(tmp_path, fit_extra):
+    path = make_bundle(
+        tmp_path, label="m", weights="m", envelope=ENV_A, grades={GSM: g(20)}, run_id="r-kv",
+        max_context=4096, fit_extra=fit_extra,
+    )  # fmt: skip
+    entry = RunEntry(bundle=path, tier="24gb", license="MIT", source_url="https://example.org/m",
+                     license_url=None)  # fmt: skip
+    view = load_run(path)
+    tiers = {"24gb": Tier("24gb", "24 GB", ENV_A)}
+    results = {"24gb": assess_tier(WEEK, "24gb", [view], {}, [], RULES)}
+    inp = WeekInput(WEEK, AT, [entry], [], [], None, b"")
+    doc = build_week(inp, tiers, {view.run_id: (view, entry)}, results, [],
+                     revision=1, published_at=AT, corrections=[], rules=RULES)  # fmt: skip
+    return doc, doc["tiers"][0]["runs"][0]
+
+
+def test_fit_kv_fields_present(tmp_path):
+    steps = {"4096": {"status": "pass", "kv_fraction": 0.256}}
+    doc, run = _one_run(tmp_path, {"kv": KV, "steps": steps})
+    assert run["fit"] == {
+        "max_context_passed": 4096,
+        "server_context": 65536,
+        "kv_capacity_tokens": 16000,
+        "kv_cache_dtype": "auto",
+        "kv_fraction_at_max": 0.256,
+    }
+    assert validate_week(doc) == []
+
+
+def test_fit_kv_fields_absent_for_old_bundles(tmp_path):
+    _, run = _one_run(tmp_path, None)
+    assert run["fit"] == {"max_context_passed": 4096, "server_context": 65536}
+
+
+def test_fit_kv_not_captured(tmp_path):
+    none = {k: {"value": None, "source": "not_captured"} for k in KV}
+    doc, run = _one_run(tmp_path, {"kv": none, "steps": {"4096": {"status": "pass"}}})
+    assert run["fit"]["kv_capacity_tokens"] is None
+    assert run["fit"]["kv_cache_dtype"] is None
+    assert run["fit"]["kv_fraction_at_max"] is None
+    assert validate_week(doc) == []
+
+
+# --- quality_agreement -----------------------------------------------------------------------
+
+from bakeoff.week import quality_agreement  # noqa: E402
+
+IFE = "general/ifeval"
+JUDGED = "general/open-ended"
+
+
+def _runs(tmp_path, specs):
+    """specs: (run_id, tier, weights, grades, outputs, judge)."""
+    runs = {}
+    for rid, tier, weights, grades, outputs, judge in specs:
+        path = make_bundle(
+            tmp_path, label=weights, weights=weights, envelope=ENV_A, grades=grades,
+            outputs=outputs, judge=judge, run_id=rid,
+        )  # fmt: skip
+        entry = RunEntry(bundle=path, tier=tier, license="MIT",
+                         source_url="https://example.org/m", license_url=None)  # fmt: skip
+        runs[rid] = (load_run(path), entry)
+    return runs
+
+
+def _doc(runs):
+    tiers = {t: Tier(t, t, ENV_A) for t in ("12gb", "24gb", "36gb")}
+    results = {
+        t: assess_tier(WEEK, t, [v for v, e in runs.values() if e.tier == t], {}, [], RULES)
+        for t in tiers
+    }
+    inp = WeekInput(WEEK, AT, [e for _, e in runs.values()], [], [], None, b"")
+    return build_week(inp, tiers, runs, results, [],
+                      revision=1, published_at=AT, corrections=[], rules=RULES)  # fmt: skip
+
+
+def test_agreement_two_tiers(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True, True, False, True]}, {GSM: ["a", "b", "c", "d"]}, ()),
+        ("r-b", "24gb", "m", {GSM: [True, True, True, True]}, {GSM: ["a", "B", "c", "D"]}, ()),
+    ])  # fmt: skip
+    doc = _doc(runs)
+    assert doc["quality_agreement"] == [
+        {
+            "weights": "m",
+            "quant": "Q4_K_M",
+            "runtime": "ollama",
+            "runs": ["r-a", "r-b"],
+            "suites": {GSM: {"n": 4, "same_pass": 3, "same_output": 2}},
+        }
+    ]
+    assert validate_week(doc) == []
+
+
+def test_agreement_three_tiers_needs_all(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True, False]}, {GSM: ["x", "y"]}, ()),
+        ("r-b", "24gb", "m", {GSM: [True, False]}, {GSM: ["x", "y"]}, ()),
+        ("r-c", "36gb", "m", {GSM: [True, True]}, {GSM: ["x", "z"]}, ()),
+    ])  # fmt: skip
+    [entry] = quality_agreement(runs)
+    assert entry["runs"] == ["r-a", "r-b", "r-c"]
+    assert entry["suites"][GSM] == {"n": 2, "same_pass": 1, "same_output": 1}
+
+
+def test_agreement_uses_shared_items_only(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True, True, True], IFE: [True]}, None, ()),
+        ("r-b", "24gb", "m", {GSM: [True, True]}, None, ()),
+    ])  # fmt: skip
+    [entry] = quality_agreement(runs)
+    assert entry["suites"] == {GSM: {"n": 2, "same_pass": 2, "same_output": 2}}
+
+
+def test_agreement_skips_judged_and_single_tier(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True]}, None, (JUDGED,)),
+        ("r-b", "24gb", "m", {GSM: [True]}, None, (JUDGED,)),
+        ("r-c", "24gb", "solo", {GSM: [True]}, None, ()),
+        ("r-d", "24gb", "solo", {GSM: [False]}, None, ()),
+    ])  # fmt: skip
+    [entry] = quality_agreement(runs)
+    assert entry["weights"] == "m" and set(entry["suites"]) == {GSM}
+    only_one_tier = {k: v for k, v in runs.items() if k in ("r-c", "r-d")}
+    assert quality_agreement(only_one_tier) == []
+    assert "quality_agreement" not in _doc(only_one_tier)
+
+
+def test_agreement_one_run_per_tier_lowest_id(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True]}, None, ()),
+        ("r-b", "24gb", "m", {GSM: [True]}, None, ()),
+        ("r-c", "24gb", "m", {GSM: [False]}, None, ()),
+    ])  # fmt: skip
+    [entry] = quality_agreement(runs)
+    assert entry["runs"] == ["r-a", "r-b"]
+    assert entry["suites"][GSM]["same_pass"] == 1
+
+
+def test_fit_kv_malformed_is_tolerated(tmp_path):
+    _, run = _one_run(
+        tmp_path, {"kv": {"capacity_tokens": "x", "cache_dtype": ["a"]}, "steps": ["bad"]}
+    )
+    assert run["fit"]["kv_capacity_tokens"] is None
+    assert run["fit"]["kv_cache_dtype"] is None
+    assert run["fit"]["kv_fraction_at_max"] is None
+
+
+def test_agreement_sort_tolerates_missing_model_fields(tmp_path):
+    runs = {}
+    for rid, quant in (("r-a", None), ("r-b", "Q4_K_M")):
+        path = make_bundle(tmp_path, label="m", weights="m", quant=quant, envelope=ENV_A,
+                           grades={GSM: [True]}, run_id=rid)  # fmt: skip
+        entry = RunEntry(bundle=path, tier="24gb", license="MIT",
+                         source_url="https://example.org/m", license_url=None)  # fmt: skip
+        runs[rid] = (load_run(path), entry)
+    assert quality_agreement(runs) == []

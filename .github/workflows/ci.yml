@@ -10,10 +10,14 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Pinned to match the lab hosts (Ubuntu 24.04, Python 3.12). ubuntu-latest moved to 26.04 and
+    # Python 3.14 on 2026-10-19 and changed results under us.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
       - run: uv sync --locked
       - run: uv run ruff check
       - run: uv run ruff format --check

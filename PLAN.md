@@ -45,8 +45,9 @@ the site. The bot never pushes to `main` and has no merge path; the rulesets enf
 The method is specified in [docs/specs/2026-10-13-m1-harness-design.md](docs/specs/2026-10-13-m1-harness-design.md).
 In short:
 
-- Quality is measured once per model × quantization × runtime. Speed and fit are measured per hardware
-  envelope, with the median and spread over repeated runs.
+- Quality is measured on every host that runs the model, and verdicts compare runs on the same host,
+  item by item. Speed and fit are measured per hardware envelope, with the median and spread over
+  repeated runs.
 - Every run records its environment by allowlist, with provenance, in a hashed bundle. Weights come
   from allowlisted publishers only, and `trust_remote_code` is never used.
 

@@ -415,3 +415,40 @@ def test_atlantis_emblem_is_a_shipped_asset():
 
     assert "atlantis.webp" in ASSETS
     assert (Path(__file__).parent.parent / "site" / "atlantis.webp").is_file()
+
+
+def _with_agreement(doc):
+    d = copy.deepcopy(doc)
+    first = d["tiers"][0]["runs"][0]
+    d["quality_agreement"] = [
+        {
+            "weights": first["model"]["weights"],
+            "quant": first["model"]["quant"],
+            "runtime": first["model"]["runtime"],
+            "runs": [first["run_id"], "r-other-tier"],
+            "suites": {
+                "general/gsm8k": {"n": 100, "same_pass": 90, "same_output": 32},
+                "general/ifeval": {"n": 100, "same_pass": 94, "same_output": 12},
+            },
+        }
+    ]
+    return d, first["model"]["label"]
+
+
+def test_week_page_agreement_line(doc):
+    d, label = _with_agreement(doc)
+    h = week_page(d, SITE)
+    assert "Same model, several cards" in h
+    assert fmt_label(label) in h
+    assert "same model on 2 cards, pass/fail agreed on 90% (gsm8k) and 94% (ifeval) of items" in h
+    assert_balanced(h)
+
+
+def test_week_page_no_agreement(doc):
+    assert "agreed on" not in week_page(doc, SITE)
+
+
+def fmt_label(label):
+    from html import escape
+
+    return escape(label, quote=True)

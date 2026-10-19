@@ -18,7 +18,7 @@ import json
 from importlib import resources
 
 from bakeoff.graders import validate_schema
-from bakeoff.runview import RunView
+from bakeoff.runview import RunView, model_key
 from bakeoff.verdicts import TierResult, Verdict
 from bakeoff.weekcfg import RunEntry, Tier, WeekInput
 
@@ -78,6 +78,24 @@ def _quality(view: RunView) -> dict:
     }
 
 
+def _fit(fit: dict) -> dict:
+    out = {
+        "max_context_passed": fit.get("max_context_passed"),
+        "server_context": fit.get("server_context"),
+    }
+    kv = fit.get("kv")
+    if isinstance(kv, dict):  # bundles before KV capacity keep the two fields above, unchanged
+        step = _dict(_dict(fit.get("steps")).get(str(out["max_context_passed"])))
+        out["kv_capacity_tokens"] = _dict(kv.get("capacity_tokens")).get("value")
+        out["kv_cache_dtype"] = _dict(kv.get("cache_dtype")).get("value")
+        out["kv_fraction_at_max"] = step.get("kv_fraction")  # wrong types: validate_week says so
+    return out
+
+
+def _dict(v: object) -> dict:
+    return v if isinstance(v, dict) else {}
+
+
 def _verdict(v: Verdict) -> dict:
     out = {
         "computed": v.computed,
@@ -112,10 +130,7 @@ def _run(week: str, view: RunView, entry: RunEntry, res: TierResult | None) -> d
         "ineligible_reasons": list(reasons),
         "quality": _quality(view),
         "speed": _speed(view),
-        "fit": {
-            "max_context_passed": view.fit.get("max_context_passed"),
-            "server_context": view.fit.get("server_context"),
-        },
+        "fit": _fit(view.fit),
         "memory": {} if view.size_vram is None else {"size_vram": view.size_vram},
         "verdicts": {t: _verdict(verdicts[t]) for t in sorted(verdicts)},
     }
@@ -135,6 +150,41 @@ def _judges(judges: list[dict], tier_of: dict[str, str]) -> dict[str, list[dict]
     for entries in by_tier.values():
         entries.sort(key=lambda j: (j["a"], j["b"], j["bundle_sha256"]))
     return by_tier
+
+
+def quality_agreement(runs: dict[str, tuple[RunView, RunEntry]]) -> list[dict]:
+    """How often the same weights, quant and engine agreed across tiers (one run per tier, its
+    lowest run_id), per public suite with item records in every run, over their shared item ids."""
+    groups: dict[tuple[str, str, str], dict[str, RunView]] = {}
+    for rid in sorted(runs):
+        view, entry = runs[rid]
+        groups.setdefault(model_key(view), {}).setdefault(entry.tier, view)
+    out = []
+    for key in sorted(groups, key=lambda k: tuple(map(str, k))):  # a None field must not crash
+        views = sorted(groups[key].values(), key=lambda v: v.run_id)
+        if len(views) < 2:
+            continue
+        suites = {}
+        for sk in sorted(set.intersection(*(set(v.items) for v in views))):
+            if any(v.suites[sk].get("split") != "public" for v in views):
+                continue
+            ids = set.intersection(*(set(v.items[sk]) for v in views))
+            suites[sk] = {
+                "n": len(ids),
+                "same_pass": sum(len({v.items[sk][i] for v in views}) == 1 for i in ids),
+                "same_output": sum(len({v.outputs[sk].get(i) for v in views}) == 1 for i in ids),
+            }
+        weights, quant, runtime = key
+        out.append(
+            {
+                "weights": weights,
+                "quant": quant,
+                "runtime": runtime,
+                "runs": [v.run_id for v in views],
+                "suites": suites,
+            }
+        )
+    return out
 
 
 def build_week(
@@ -174,7 +224,7 @@ def build_week(
         )
         if res:
             picks_after[tid] = {t: dict(res.picks_after[t]) for t in sorted(res.picks_after)}
-    return {
+    doc = {
         "schema": SCHEMA_ID,
         "week": inp.week,
         "revision": revision,
@@ -188,3 +238,7 @@ def build_week(
         "tiers": out_tiers,
         "picks_after": picks_after,
     }
+    agreement = quality_agreement(runs)
+    if agreement:  # absent rather than empty, so weeks without it re-derive byte for byte
+        doc["quality_agreement"] = agreement
+    return doc

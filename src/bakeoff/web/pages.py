@@ -382,6 +382,32 @@ def _tier_section(tier: dict, site: SiteConfig, picks: dict, week: str) -> str:
     return "\n".join(p for p in out if p)
 
 
+def _agreement_section(doc: dict) -> str:
+    """One line per model measured on several cards: how often their pass/fail agreed."""
+    entries = doc.get("quality_agreement") or []
+    if not entries:
+        return ""
+    label_of = {r["run_id"]: r["model"]["label"] for t in doc["tiers"] for r in t["runs"]}
+    items = []
+    for a in entries:
+        label = next((label_of[r] for r in a["runs"] if r in label_of), a["weights"])
+        parts = [
+            f"{round(100 * c['same_pass'] / c['n'])}% ({key.split('/', 1)[-1]})"
+            for key, c in sorted(a["suites"].items())
+            if c["n"]
+        ]
+        if not parts:
+            continue
+        agreed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+        items.append(
+            f"<li>{_e(label)}: same model on {len(a['runs'])} cards, "
+            f"pass/fail agreed on {_e(agreed)} of items.</li>"
+        )
+    if not items:
+        return ""
+    return f'<h2>Same model, several cards</h2>\n<ul class="flat">{"".join(items)}</ul>'
+
+
 def week_page(doc: dict, site: SiteConfig) -> str:
     week = doc["week"]
     rules = doc.get("rules", {})
@@ -404,7 +430,7 @@ def week_page(doc: dict, site: SiteConfig) -> str:
     sections = "\n".join(_tier_section(t, site, picks.get(t["id"], {}), week) for t in doc["tiers"])
     main = (
         f'<h1 class="title">Week of {_e(week)}</h1>\n<p class="muted">{meta}</p>\n'
-        f'<p class="small muted">{rules_line}</p>\n{corr}\n{sections}'
+        f'<p class="small muted">{rules_line}</p>\n{corr}\n{sections}{_agreement_section(doc)}'
     )
     return _layout(f"bakeoff.si, week of {week}", f"/weeks/{week}/", site, main, week=week)
 

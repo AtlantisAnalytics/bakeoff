@@ -488,6 +488,27 @@
                         "integer",
                         "null"
                       ]
+                    },
+                    "kv_capacity_tokens": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "KV cache capacity in tokens for the run's serving config (reported)."
+                    },
+                    "kv_cache_dtype": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "KV cache dtype the engine reports, e.g. auto (the model's dtype)."
+                    },
+                    "kv_fraction_at_max": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "Share of the KV pool one request of max_context_passed tokens needs (derived; an upper bound for sliding-window or hybrid models)."
                     }
                   },
                   "required": [
@@ -709,6 +730,61 @@
         }
       },
       "description": "Picks after this week: tier, then track."
+    },
+    "quality_agreement": {
+      "type": "array",
+      "description": "Same weights, quant and engine measured on several tiers this week: how often their item results agreed, per public suite (one run per tier).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "weights": {
+            "type": "string"
+          },
+          "quant": {
+            "type": "string"
+          },
+          "runtime": {
+            "type": "string"
+          },
+          "runs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suites": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "n": {
+                  "type": "integer"
+                },
+                "same_pass": {
+                  "type": "integer"
+                },
+                "same_output": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "n",
+                "same_output",
+                "same_pass"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "quant",
+          "runs",
+          "runtime",
+          "suites",
+          "weights"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [
