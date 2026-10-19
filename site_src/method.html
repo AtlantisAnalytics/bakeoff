@@ -53,6 +53,19 @@ hash, and a week records the hash it used.</p>
 </ul>
 <p>Third-party slices keep their authors' licenses and are attributed in the repository.</p>
 
+<h2>Measurement notes</h2>
+<p>Quality is measured on every host that runs the model. Floating-point rounding differs between cards, so
+the same weights can produce different text on different hosts and occasionally a different pass/fail. A
+verdict therefore compares a candidate with the current pick re-measured on the same host, item by item,
+and never compares scores across hosts. When a model runs on several hosts in a week, the week reports how
+often their pass/fail agreed.</p>
+<p>The memory figure is what the engine reserved, not what the model needs. vLLM claims a fixed share of the
+card at start-up and fills it with weights and KV cache. For fit, read the KV capacity and the share of it
+one request of each size needs.</p>
+<p>KV fit: the run records the KV cache's capacity in tokens for its serving config, and the share of it
+one request of each context size needs. That share assumes full-attention KV on every layer, so for
+sliding-window or hybrid models it is an upper bound.</p>
+
 <h2>Reproduce a week</h2>
 <p>The repository and the raw data become public at launch. Everything is in the repository. Each week's input, the raw bundles for every run, and the
 week's results sit together under <code>results/&lt;week&gt;/</code>.</p>
