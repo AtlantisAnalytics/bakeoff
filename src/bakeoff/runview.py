@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from bakeoff import safejson
+from bakeoff.hashing import sha256_hex
 
 
 class RunViewError(ValueError):
@@ -29,6 +30,7 @@ class RunView:
     size_vram: int | None
     harness: dict
     meta: dict = field(repr=False)
+    outputs: dict[str, dict[str, str]] = field(default_factory=dict, repr=False)
 
 
 def _obj(parent: object, key: str) -> dict:
@@ -41,12 +43,14 @@ def _value(parent: object, key: str):
     return v.get("value")
 
 
-def _read_items(path: Path, key: str) -> dict[str, bool]:
+def _read_items(path: Path, key: str) -> tuple[dict[str, bool], dict[str, str]]:
+    """Per-item pass, and the SHA-256 of each item's output (null hashes as empty)."""
     try:
         text = path.read_bytes().decode("utf-8")
     except (OSError, UnicodeDecodeError) as e:
         raise RunViewError(f"cannot read item records for {key}: {e}") from e
     out: dict[str, bool] = {}
+    outputs: dict[str, str] = {}
     for no, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
@@ -57,7 +61,9 @@ def _read_items(path: Path, key: str) -> dict[str, bool]:
         if not isinstance(rec, dict) or not isinstance(rec.get("id"), str):
             raise RunViewError(f"{path.name} line {no}: record has no id")
         out[rec["id"]] = rec.get("pass") is True
-    return out
+        output = rec.get("output")
+        outputs[rec["id"]] = sha256_hex((output if isinstance(output, str) else "").encode())
+    return out, outputs
 
 
 def load_run(path: Path) -> RunView:
@@ -79,6 +85,7 @@ def load_run(path: Path) -> RunView:
         raise RunViewError("bundle.json lacks quality.suites")
     suites: dict[str, dict] = {}
     items: dict[str, dict[str, bool]] = {}
+    outputs: dict[str, dict[str, str]] = {}
     for s in summaries:
         if not isinstance(s, dict) or not all(
             isinstance(s.get(k), str) for k in ("key", "track", "name")
@@ -88,7 +95,8 @@ def load_run(path: Path) -> RunView:
         if s.get("accuracy") is None:  # judge-scored: no per-item verdicts
             continue
         folder = "private" if s.get("split") == "private" else "quality"
-        items[s["key"]] = _read_items(path / folder / f"{s['track']}.{s['name']}.jsonl", s["key"])
+        records = path / folder / f"{s['track']}.{s['name']}.jsonl"
+        items[s["key"]], outputs[s["key"]] = _read_items(records, s["key"])
     speed = _obj(meta, "speed")
     fit = _obj(meta, "fit")
     decode = _obj(speed.get("short@1"), "decode_tps").get("median")
@@ -115,6 +123,7 @@ def load_run(path: Path) -> RunView:
             "version": _value(harness, "version"),
             "git_commit": _value(harness, "git_commit"),
         },
+        outputs=outputs,
         meta=meta,
     )
 

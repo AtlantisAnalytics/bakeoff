@@ -497,3 +497,81 @@ def test_driver_string_goes_through_the_identity_cleaner():
         identity=["lab-box-7"],  # scrub-ok
     )
     assert env["gpus"][0]["driver"] == {"value": None, "source": "not_captured"}
+
+
+# --- the harness commit from a git archive (export-subst) ---------------------------------
+
+HASH = "0123456789abcdef0123456789abcdef01234567"
+
+
+def _env_archive(tmp_path, content, run=None, repo=None):
+    """A harness with no git checkout whose `_commit` file holds `content` (None: no file)."""
+    repo = repo or tmp_path / "unpacked"
+    repo.mkdir(parents=True, exist_ok=True)
+    commit_file = tmp_path / "_commit"
+    files = dict(LINUX_FILES)
+    if content is not None:
+        files[str(commit_file)] = content
+    return capture_env(
+        CFG, None, None, run=run or nvidia_run(fx("nvidia_query_1gpu.csv")), read=fake_read(files),
+        platform="linux", repo_root=repo, identity=[], commit_file=commit_file,
+    )  # fmt: skip
+
+
+def test_archive_commit_used_without_git(tmp_path):
+    h = _env_archive(tmp_path, HASH + "\n")["harness"]
+    assert h["git_commit"] == {"value": HASH, "source": "reported"}
+    assert h["git_dirty"] == {"value": False, "source": "reported"}
+
+
+def test_archive_placeholder_ignored(tmp_path):
+    h = _env_archive(tmp_path, "$Format:%H$\n")["harness"]
+    assert h["git_commit"]["source"] == "not_captured"
+    assert h["git_dirty"]["source"] == "not_captured"
+
+
+def test_archive_commit_missing_file(tmp_path):
+    h = _env_archive(tmp_path, None)["harness"]
+    assert h["git_commit"]["source"] == "not_captured"
+    assert h["git_dirty"]["source"] == "not_captured"
+
+
+def test_archive_commit_strips_newline(tmp_path):
+    h = _env_archive(tmp_path, HASH + "\r\n")["harness"]
+    assert h["git_commit"] == {"value": HASH, "source": "reported"}
+
+
+def test_checkout_beats_archive_file(tmp_path):
+    repo = make_repo(tmp_path / "bakeoff")
+    run = nvidia_run(fx("nvidia_query_1gpu.csv"), root=repo, dirty=True)
+    h = _env_archive(tmp_path, "f" * 40 + "\n", run=run, repo=repo)["harness"]
+    assert h["git_commit"] == {"value": HASH, "source": "measured"}
+    assert h["git_dirty"] == {"value": True, "source": "measured"}
+
+
+def test_commit_file_ships_with_package():
+    import bakeoff
+
+    path = Path(bakeoff.__file__).parent / "_commit"
+    assert path.read_text(encoding="utf-8") == "$Format:%H$\n"
+
+
+def test_git_archive_substitutes_commit():
+    import io
+    import shutil
+    import subprocess
+    import tarfile
+
+    import pytest
+
+    root = Path(__file__).resolve().parents[1]
+    if shutil.which("git") is None or not (root / ".git").exists():
+        pytest.skip("needs a git checkout")
+    tar = subprocess.run(
+        ["git", "-C", str(root), "archive", "HEAD", "src/bakeoff/_commit"],
+        capture_output=True,
+        check=True,
+    ).stdout
+    with tarfile.open(fileobj=io.BytesIO(tar)) as t:
+        text = t.extractfile("src/bakeoff/_commit").read().decode()
+    assert re.fullmatch(r"[0-9a-f]{40}\n?", text)

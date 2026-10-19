@@ -37,6 +37,8 @@ def make_bundle(
     harness_version: str = "0.1.0",
     git_commit: str = "0123456789abcdef0123456789abcdef01234567",
     size_vram: int | None = 8_000_000_000,
+    fit_extra: dict | None = None,
+    outputs: dict[str, list[str | None]] | None = None,
 ) -> Path:
     """Write a bundle under `dir` (created) and return its directory.
 
@@ -61,6 +63,8 @@ def make_bundle(
         recs = []
         for i, ok in enumerate(results):
             rec = {"id": f"{name}-{i}", "pass": ok, "error": None}
+            if outputs and key in outputs:
+                rec["output"] = outputs[key][i]
             if fmt == "m2" and track == "structured":
                 rec["extractable"] = ok
             recs.append(rec)
@@ -131,6 +135,7 @@ def make_bundle(
         files["speed.jsonl"] = [{"cell": "short@1", "decode_tps": decode}]
     if fit:
         meta["fit"] = {"max_context_passed": max_context, "server_context": 65536}
+        meta["fit"].update(fit_extra or {})
         files["fit.jsonl"] = [{"step": max_context, "status": "pass"}]
     out = dir / run_id
     write_bundle(out, meta, files)
