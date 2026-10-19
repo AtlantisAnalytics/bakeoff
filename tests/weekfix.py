@@ -38,6 +38,7 @@ def make_bundle(
     git_commit: str = "0123456789abcdef0123456789abcdef01234567",
     size_vram: int | None = 8_000_000_000,
     fit_extra: dict | None = None,
+    outputs: dict[str, list[str | None]] | None = None,
 ) -> Path:
     """Write a bundle under `dir` (created) and return its directory.
 
@@ -62,6 +63,8 @@ def make_bundle(
         recs = []
         for i, ok in enumerate(results):
             rec = {"id": f"{name}-{i}", "pass": ok, "error": None}
+            if outputs and key in outputs:
+                rec["output"] = outputs[key][i]
             if fmt == "m2" and track == "structured":
                 rec["extractable"] = ok
             recs.append(rec)

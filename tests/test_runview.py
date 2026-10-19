@@ -101,3 +101,13 @@ def test_missing_item_file(tmp_path):
     (p / "quality" / "general.gsm8k.jsonl").unlink()
     with pytest.raises(RunViewError):
         load_run(p)
+
+
+def test_outputs_hashed(tmp_path):
+    from bakeoff.hashing import sha256_hex
+
+    outs = {"general/gsm8k": ["four", None, "x", "y"], "structured/json": ["{}", "[]"]}
+    run = load_run(_mk(tmp_path, outputs=outs))
+    assert run.outputs["general/gsm8k"]["gsm8k-0"] == sha256_hex(b"four")
+    assert run.outputs["general/gsm8k"]["gsm8k-1"] == sha256_hex(b"")
+    assert set(run.outputs) == {"general/gsm8k", "structured/json"}

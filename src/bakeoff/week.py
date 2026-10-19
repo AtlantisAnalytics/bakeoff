@@ -18,7 +18,7 @@ import json
 from importlib import resources
 
 from bakeoff.graders import validate_schema
-from bakeoff.runview import RunView
+from bakeoff.runview import RunView, model_key
 from bakeoff.verdicts import TierResult, Verdict
 from bakeoff.weekcfg import RunEntry, Tier, WeekInput
 
@@ -148,6 +148,41 @@ def _judges(judges: list[dict], tier_of: dict[str, str]) -> dict[str, list[dict]
     return by_tier
 
 
+def quality_agreement(runs: dict[str, tuple[RunView, RunEntry]]) -> list[dict]:
+    """How often the same weights, quant and engine agreed across tiers (one run per tier, its
+    lowest run_id), per public suite with item records in every run, over their shared item ids."""
+    groups: dict[tuple[str, str, str], dict[str, RunView]] = {}
+    for rid in sorted(runs):
+        view, entry = runs[rid]
+        groups.setdefault(model_key(view), {}).setdefault(entry.tier, view)
+    out = []
+    for key in sorted(groups):
+        views = sorted(groups[key].values(), key=lambda v: v.run_id)
+        if len(views) < 2:
+            continue
+        suites = {}
+        for sk in sorted(set.intersection(*(set(v.items) for v in views))):
+            if any(v.suites[sk].get("split") != "public" for v in views):
+                continue
+            ids = set.intersection(*(set(v.items[sk]) for v in views))
+            suites[sk] = {
+                "n": len(ids),
+                "same_pass": sum(len({v.items[sk][i] for v in views}) == 1 for i in ids),
+                "same_output": sum(len({v.outputs[sk].get(i) for v in views}) == 1 for i in ids),
+            }
+        weights, quant, runtime = key
+        out.append(
+            {
+                "weights": weights,
+                "quant": quant,
+                "runtime": runtime,
+                "runs": [v.run_id for v in views],
+                "suites": suites,
+            }
+        )
+    return out
+
+
 def build_week(
     inp: WeekInput,
     tiers: dict[str, Tier],
@@ -185,7 +220,7 @@ def build_week(
         )
         if res:
             picks_after[tid] = {t: dict(res.picks_after[t]) for t in sorted(res.picks_after)}
-    return {
+    doc = {
         "schema": SCHEMA_ID,
         "week": inp.week,
         "revision": revision,
@@ -199,3 +234,7 @@ def build_week(
         "tiers": out_tiers,
         "picks_after": picks_after,
     }
+    agreement = quality_agreement(runs)
+    if agreement:  # absent rather than empty, so weeks without it re-derive byte for byte
+        doc["quality_agreement"] = agreement
+    return doc

@@ -57,13 +57,13 @@ def judge_bundle(root, name, a, b):
     return out
 
 
-def write_week(root, name, week, at, runs, *, judges=(), extra=""):
+def write_week(root, name, week, at, runs, *, judges=(), extra="", tier_of=None):
     lines = [f'week = "{week}"', f'published_at = "{at}"', ""]
     for path in runs:
         lines += [
             "[[run]]",
             f'bundle = "{path.relative_to(root).as_posix()}"',
-            'tier = "24gb"',
+            f'tier = "{(tier_of or {}).get(path, "24gb")}"',
             'license = "Apache-2.0"',
             'source_url = "https://example.org/model"',
             "",
@@ -187,3 +187,17 @@ def test_rederive_missing_bundle_is_an_error(root, capsys):
     shutil.rmtree(next((root / "results" / W1 / "runs").iterdir()))
     assert cli.main(["rederive", W1, "--root", str(root)]) == 1
     assert "error:" in capsys.readouterr().err
+
+
+def test_rederive_with_agreement(root):
+    env12 = "1× RTX 3060 12 GB"
+    a = make_bundle(root / "runs", label="m", weights="m", envelope=env12, grades={GSM: g(6)},
+                    outputs={GSM: [f"o{i}" for i in range(10)]}, run_id="r-12")  # fmt: skip
+    b = make_bundle(root / "runs", label="m", weights="m", envelope=ENV24, grades={GSM: g(7)},
+                    outputs={GSM: [f"o{i}" for i in range(10)]}, run_id="r-24")  # fmt: skip
+    pub(write_week(root, "w.toml", W1, AT1, [a, b], tier_of={a: "12gb", b: "24gb"}), root)
+    doc = json.loads((root / "results" / W1 / "week.json").read_text(encoding="utf-8"))
+    counts = {"n": 10, "same_pass": 9, "same_output": 10}
+    assert doc["quality_agreement"][0]["suites"][GSM] == counts
+    shutil.rmtree(root / "runs")
+    assert rederive(root, W1) == []
