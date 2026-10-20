@@ -1,0 +1,8 @@
+week = "2026-10-26"
+published_at = "2026-10-20T02:01:24Z"
+
+[[run]]
+bundle = "runs/20261020T013209Z-qwen2-5-0-5b-instruct-e940cbea"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct"
