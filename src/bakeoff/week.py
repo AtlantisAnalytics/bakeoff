@@ -154,7 +154,8 @@ def _judges(judges: list[dict], tier_of: dict[str, str]) -> dict[str, list[dict]
 
 def quality_agreement(runs: dict[str, tuple[RunView, RunEntry]]) -> list[dict]:
     """How often the same weights, quant and engine agreed across tiers (one run per tier, its
-    lowest run_id), per public suite with item records in every run, over their shared item ids."""
+    lowest run_id), per public suite with item records in every run, over their shared item ids.
+    A model with no such suite gets no entry."""
     groups: dict[tuple[str, str, str], dict[str, RunView]] = {}
     for rid in sorted(runs):
         view, entry = runs[rid]
@@ -174,6 +175,8 @@ def quality_agreement(runs: dict[str, tuple[RunView, RunEntry]]) -> list[dict]:
                 "same_pass": sum(len({v.items[sk][i] for v in views}) == 1 for i in ids),
                 "same_output": sum(len({v.outputs[sk].get(i) for v in views}) == 1 for i in ids),
             }
+        if not suites:  # nothing public in common: nothing to report
+            continue
         weights, quant, runtime = key
         out.append(
             {
