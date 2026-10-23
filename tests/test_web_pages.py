@@ -440,7 +440,7 @@ def test_week_page_agreement_line(doc):
     h = week_page(d, SITE)
     assert "Same model, several cards" in h
     assert fmt_label(label) in h
-    assert "same model on 2 cards, pass/fail agreed on 90% (gsm8k) and 94% (ifeval) of items" in h
+    assert "same model on two cards, pass/fail agreed on 90% (GSM8K) and 94% (IFEval) of items" in h
     assert_balanced(h)
 
 
@@ -452,3 +452,44 @@ def fmt_label(label):
     from html import escape
 
     return escape(label, quote=True)
+
+
+def test_agreement_line_spells_small_counts_and_falls_back_to_slugs(doc):
+    d, _ = _with_agreement(doc)
+    d["quality_agreement"][0]["runs"] = [f"r{i}" for i in range(12)]
+    d["quality_agreement"][0]["suites"] = {
+        "structured/new-thing": {"n": 4, "same_pass": 3, "same_output": 3}
+    }
+    h = week_page(d, SITE)
+    assert "same model on 12 cards, pass/fail agreed on 75% (new-thing) of items" in h
+
+
+def _kv(doc, capacity, fraction):
+    d = copy.deepcopy(doc)
+    fit = d["tiers"][0]["runs"][0]["fit"]
+    fit["kv_capacity_tokens"], fit["kv_fraction_at_max"] = capacity, fraction
+    return d
+
+
+def test_week_page_shows_the_kv_pool_under_context(doc):
+    h = week_page(_kv(doc, 802240, 0.0408), SITE)
+    assert '<div class="small muted">KV pool 783K · 4.1% at max</div>' in h
+    assert_balanced(h)
+
+
+def test_week_page_kv_pool_without_a_fraction(doc):
+    h = week_page(_kv(doc, 802240, None), SITE)
+    assert '<div class="small muted">KV pool 783K</div>' in h
+
+
+def test_week_page_without_kv_fields_has_no_kv_line(doc):
+    assert "KV pool" not in week_page(doc, SITE)
+    assert "KV pool" not in week_page(_kv(doc, None, None), SITE)
+
+
+def test_method_page_states_the_kv_limits():
+    from pathlib import Path
+
+    text = (Path(__file__).parent.parent / "site_src" / "method.html").read_text()
+    assert "never quantized" in text and "cache_dtype" in text  # KV precision
+    assert "gives another pool" in text  # the capacity holds for one serving config

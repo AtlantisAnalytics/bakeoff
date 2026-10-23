@@ -425,3 +425,43 @@ def test_agreement_sort_tolerates_missing_model_fields(tmp_path):
                          source_url="https://example.org/m", license_url=None)  # fmt: skip
         runs[rid] = (load_run(path), entry)
     assert quality_agreement(runs) == []
+
+
+def _runs_private(tmp_path, private, specs):
+    """Like _runs, with the suites in `private` on the private split in every run."""
+    runs = {}
+    for rid, tier, grades in specs:
+        path = make_bundle(tmp_path, label="m", weights="m", envelope=ENV_A, grades=grades,
+                           private=private, run_id=rid)  # fmt: skip
+        entry = RunEntry(bundle=path, tier=tier, license="MIT",
+                         source_url="https://example.org/m", license_url=None)  # fmt: skip
+        runs[rid] = (load_run(path), entry)
+    return runs
+
+
+def test_agreement_counts_public_suites_only(tmp_path):
+    runs = _runs_private(tmp_path, (IFE,), [
+        ("r-a", "12gb", {GSM: [True, False], IFE: [True, True]}),
+        ("r-b", "24gb", {GSM: [True, True], IFE: [False, True]}),
+    ])  # fmt: skip
+    [entry] = quality_agreement(runs)
+    assert set(entry["suites"]) == {GSM}
+    assert entry["suites"][GSM]["same_pass"] == 1
+
+
+def test_agreement_entry_with_only_private_suites_is_dropped(tmp_path):
+    runs = _runs_private(tmp_path, (GSM,), [
+        ("r-a", "12gb", {GSM: [True, False]}),
+        ("r-b", "24gb", {GSM: [True, True]}),
+    ])  # fmt: skip
+    assert quality_agreement(runs) == []
+    doc = _doc(runs)
+    assert "quality_agreement" not in doc and validate_week(doc) == []
+
+
+def test_agreement_entry_without_shared_suites_is_dropped(tmp_path):
+    runs = _runs(tmp_path, [
+        ("r-a", "12gb", "m", {GSM: [True]}, None, ()),
+        ("r-b", "24gb", "m", {IFE: [True]}, None, ()),
+    ])  # fmt: skip
+    assert quality_agreement(runs) == []

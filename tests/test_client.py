@@ -358,18 +358,6 @@ def test_runtime_info_missing_endpoints():
         assert info == {"version": None, "context_length": None, "size_vram": None}
 
 
-def test_kv_cache_usage_both_names():
-    async def go(text):
-        fake = FakeOpenAI(extras={"/metrics": text})
-        async with make(fake) as c:
-            return await c.kv_cache_usage()
-
-    assert run(go('# HELP x\nvllm:gpu_cache_usage_perc{model_name="m"} 0.25\n')) == 0.25
-    assert run(go("vllm:kv_cache_usage_perc 0.5\n")) == 0.5
-    assert run(go("other 1\n")) is None
-    assert run(go("")) is None
-
-
 def test_fake_server_basics():
     fake = FakeOpenAI(extras={"/x": "text"})
 
@@ -454,16 +442,6 @@ def test_short_host_does_not_mangle_error_text():
     fake = FakeOpenAI(responder=lambda m: FakeReply(status=400, body="the hash h failed"))
     _, (r,) = run(_chat(fake))
     assert r.error == "the hash h failed"
-
-
-def test_non_finite_kv_metric_is_none():
-    fake = FakeOpenAI(extras={"/metrics": "vllm:gpu_cache_usage_perc nan\n"})
-
-    async def go():
-        async with make(fake) as c:
-            return await c.kv_cache_usage()
-
-    assert run(go()) is None
 
 
 CACHE_LINE = (

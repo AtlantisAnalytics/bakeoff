@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import math
 import re
 import time
 from dataclasses import dataclass
@@ -12,7 +11,6 @@ import httpx
 
 THINK_OPEN = "<think>"
 THINK_CLOSE = "</think>"
-KV_METRICS = ("vllm:gpu_cache_usage_perc", "vllm:kv_cache_usage_perc")
 CACHE_CONFIG_METRIC = "vllm:cache_config_info"
 _LABEL = re.compile(r'(\w+)="((?:[^"\\]|\\.)*)"')
 ERROR_BODY_MAX = 500
@@ -299,22 +297,6 @@ class EndpointClient:
         except (AttributeError, TypeError):
             return {"version": None, "context_length": None, "size_vram": None}
         return info
-
-    async def kv_cache_usage(self) -> float | None:
-        try:
-            r = await self._http.get(f"{self.root}/metrics")
-            if r.status_code != 200:
-                return None
-            for line in r.text.splitlines():
-                if line.startswith("#"):
-                    continue
-                for name in KV_METRICS:
-                    if re.match(rf"{re.escape(name)}(\{{.*\}})?\s", line):
-                        value = float(line.rsplit(None, 1)[-1])
-                        return value if math.isfinite(value) else None
-        except (httpx.HTTPError, ValueError):
-            return None
-        return None
 
     async def cache_config(self) -> dict[str, str] | None:
         """vLLM's `cache_config_info` labels (its CacheConfig, e.g. num_gpu_blocks, block_size)."""
