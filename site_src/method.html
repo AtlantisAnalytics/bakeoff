@@ -10,8 +10,9 @@ compared with other models in the same tier. Today's tiers are 12&nbsp;GB, 24&nb
 <h2>Engines</h2>
 <p>A model runs on the inference engine its format needs: vLLM for safetensors weights, ExLlamaV3
 (served by TabbyAPI) for EXL3 quantizations. Models on different engines compete for the same pick,
-and every result names its engine and version. Every engine keeps its KV cache at FP16, so
-differences come from the model and its quantization, not cache settings. We run only pinned
+and every result names its engine and version. Every engine keeps its KV cache unquantized, at the
+model's own precision (FP16 or BF16), so differences come from the model and its quantization, not
+cache settings. We run only pinned
 upstream engine releases.</p>
 
 <h2>Rules v1</h2>

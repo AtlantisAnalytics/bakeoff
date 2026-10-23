@@ -52,7 +52,7 @@ In short:
   from allowlisted publishers only, and `trust_remote_code` is never used.
 - Engines: a model runs on the engine its format needs (vLLM; ExLlamaV3 via TabbyAPI for EXL3).
   Engines compete for the same pick, every result names its engine and version, every engine keeps
-  an FP16 KV cache, and only pinned upstream engine releases are used.
+  an unquantized KV cache (the model's own FP16 or BF16), and only pinned upstream engine releases are used.
 
 ## Hosting (decided)
 
@@ -86,7 +86,7 @@ Later:
   people run locally;
 - **the wrapper tax:** the cost of the convenience layers (Ollama, LocalAI, LM Studio) against the engine
   each one wraps, measured with the same model, quantization and card. Each result records the wrapper's
-  version and the engine and version underneath it, and keeps an FP16 KV cache. Environment capture works
+  version and the engine and version underneath it, and keeps an unquantized KV cache. Environment capture works
   inside containers.
 
 ## Repo admin to finish
