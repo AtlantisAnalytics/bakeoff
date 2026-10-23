@@ -104,8 +104,10 @@ fit pass, through the same `/metrics` request `kv_cache_usage` uses today. It re
   - `capacity_tokens`: `num_gpu_blocks × block_size` (`reported`);
   - `block_size` (`reported`);
   - `cache_dtype` (`reported`), for example `"auto"`, which means the model dtype;
-  - when the runtime isn't vLLM, or the metric is missing or unparseable, all three are `null` with
-    `not_captured`.
+  - each field is `null` with `not_captured` when it can't be read: all three when the runtime isn't
+    vLLM or the metric is missing. `capacity_tokens` is also `null` when `num_gpu_blocks` or
+    `block_size` is unusable, while `block_size` and `cache_dtype` keep any value that was reported.
+    (Amended 2026-10-22 to match the code.)
 - **Each fit step that ran** (status pass or fail): gets `kv_fraction`, defined as
   `ceil(step / block_size) / num_gpu_blocks`, rounded to 4 decimals (`derived`). It is the share of the KV pool that one request of that context size needs.
   `null` when capacity isn't captured.
@@ -151,6 +153,9 @@ fit pass, through the same `/metrics` request `kv_cache_usage` uses today. It re
 
 - **Additive only:** `bundle_format` stays `"m1"`, the schema stays `week.v1.json`, and every new field is
   optional. Bundles published before this change still verify, re-derive and render.
+- **Re-deriving a week** compares a fresh `week.json` with the published one, so a week published before
+  this change would re-derive with the new fields and differ. No week had been published when it
+  shipped, so none is affected. (Amended 2026-10-22.)
 - **Verdicts and eligibility don't change.** The new fields are for display only.
 
 ## Testing
