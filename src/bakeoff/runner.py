@@ -181,21 +181,15 @@ REPORT_TIMEOUT_S = 10.0
 
 
 async def _runtime_reported(client: EndpointClient, runtime: str) -> dict:
-    got: dict = {"size_vram": None, "kv": None}
-
-    async def probe() -> None:
-        got["size_vram"] = (await client.runtime_info(runtime)).get("size_vram")
-        if runtime == "vllm":
-            got["kv"] = await client.kv_cache_usage()
-
+    # No live KV gauge: read after the run, the cache is idle and it always says 0.0. Fit's KV
+    # capacity and per-step fractions (fit.kv) are the KV facts.
+    size_vram = None
     try:
-        await asyncio.wait_for(probe(), REPORT_TIMEOUT_S)
+        info = await asyncio.wait_for(client.runtime_info(runtime), REPORT_TIMEOUT_S)
+        size_vram = info.get("size_vram")
     except Exception:  # noqa: BLE001 - memory facts are best effort
         pass
-    return {
-        "size_vram": field(got["size_vram"], "reported"),
-        "kv_cache_usage": field(got["kv"], "reported"),
-    }
+    return {"size_vram": field(size_vram, "reported")}
 
 
 async def _fit_probe(client: EndpointClient, runtime: str, first: dict) -> tuple[dict, str | None]:
@@ -283,7 +277,7 @@ async def execute_run(
         samples = sampler.stop()
 
     reported = (
-        {"size_vram": field(None, "reported"), "kv_cache_usage": field(None, "reported")}
+        {"size_vram": field(None, "reported")}
         if interrupted
         else await _runtime_reported(client, runtime_name)
     )

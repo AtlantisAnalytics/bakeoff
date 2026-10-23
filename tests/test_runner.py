@@ -479,3 +479,30 @@ def test_run_records_kv_capacity(tmp_path):
     ran = [s for s in meta["fit"]["steps"].values() if s["status"] in ("pass", "fail")]
     assert ran and all(s["kv_fraction"] == 0.256 for s in ran)
     assert verify_bundle(path, username="alice", denylist=None) == []
+
+
+def test_runtime_reported_carries_no_idle_kv_gauge(tmp_path):
+    """The live KV gauge is read after the run, when the cache is idle, so it was always 0.0."""
+    import dataclasses
+
+    cfg = make_cfg()
+    cfg = dataclasses.replace(cfg, model=dataclasses.replace(cfg.model, runtime="vllm"))
+    fake = FakeOpenAI(extras={"/metrics": "vllm:gpu_cache_usage_perc 0.0\n"})
+    path = go(cfg, fake, tmp_path, run=fake_nvidia, platform="linux")
+    meta = json.loads((path / "bundle.json").read_text())
+    assert list(meta["memory"]["runtime_reported"]) == ["size_vram"]
+    assert verify_bundle(path, username="alice", denylist=None) == []
+
+
+def test_interrupted_run_reports_only_size_vram(tmp_path, monkeypatch):
+    import bakeoff.runner as runner
+
+    async def boom(*a, **kw):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(runner, "run_fit", boom)
+    with pytest.raises(KeyboardInterrupt):
+        go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
+    (path,) = [p for p in tmp_path.rglob("bundle.json")]
+    meta = json.loads(path.read_text())
+    assert list(meta["memory"]["runtime_reported"]) == ["size_vram"]
