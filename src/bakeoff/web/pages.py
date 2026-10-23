@@ -267,16 +267,26 @@ def _one_verdict(track: str, v: dict, label_of: dict) -> str:
     return f'<div class="block">{"".join(out)}</div>'
 
 
+def _kv_line(fit: dict) -> str:
+    """Under the context figure: the KV pool, and the share one max-size request needs."""
+    capacity = fit.get("kv_capacity_tokens")
+    if capacity is None:
+        return ""
+    text = f"KV pool {fmt.kctx(capacity)}"
+    if fit.get("kv_fraction_at_max") is not None:
+        text += f" · {fmt.pct(fit['kv_fraction_at_max'])} at max"
+    return f'<div class="small muted">{_e(text)}</div>'
+
+
 def _speed_cells(run: dict) -> str:
     cell = run["speed"].get(_SPEED_CELL, {})
     decode = (cell.get("decode_tps") or {}).get("median")
     ttft = (cell.get("ttft_s") or {}).get("median")
     ctx = run["fit"].get("max_context_passed")
     vram = run["memory"].get("size_vram")
-    return "".join(
-        f'<td class="num">{_e(v)}</td>'
-        for v in (fmt.tps(decode), fmt.ms(ttft), fmt.kctx(ctx), fmt.gb(vram))
-    )
+    cells = [fmt.tps(decode), fmt.ms(ttft), fmt.kctx(ctx), fmt.gb(vram)]
+    extra = ["", "", _kv_line(run["fit"]), ""]
+    return "".join(f'<td class="num">{_e(v)}{x}</td>' for v, x in zip(cells, extra, strict=True))
 
 
 def _run_row(run: dict, site: SiteConfig, label_of: dict) -> str:
@@ -382,6 +392,19 @@ def _tier_section(tier: dict, site: SiteConfig, picks: dict, week: str) -> str:
     return "\n".join(p for p in out if p)
 
 
+_COUNT_WORDS = {
+    2: "two",
+    3: "three",
+    4: "four",
+    5: "five",
+    6: "six",
+    7: "seven",
+    8: "eight",
+    9: "nine",
+}
+_SUITE_NAMES = {"gsm8k": "GSM8K", "ifeval": "IFEval", "json": "JSON"}  # others show their slug
+
+
 def _agreement_section(doc: dict) -> str:
     """One line per model measured on several cards: how often their pass/fail agreed."""
     entries = doc.get("quality_agreement") or []
@@ -392,7 +415,8 @@ def _agreement_section(doc: dict) -> str:
     for a in entries:
         label = next((label_of[r] for r in a["runs"] if r in label_of), a["weights"])
         parts = [
-            f"{round(100 * c['same_pass'] / c['n'])}% ({key.split('/', 1)[-1]})"
+            f"{round(100 * c['same_pass'] / c['n'])}% "
+            f"({_SUITE_NAMES.get(key.split('/', 1)[-1], key.split('/', 1)[-1])})"
             for key, c in sorted(a["suites"].items())
             if c["n"]
         ]
@@ -400,7 +424,8 @@ def _agreement_section(doc: dict) -> str:
             continue
         agreed = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
         items.append(
-            f"<li>{_e(label)}: same model on {len(a['runs'])} cards, "
+            f"<li>{_e(label)}: same model on "
+            f"{_COUNT_WORDS.get(len(a['runs']), len(a['runs']))} cards, "
             f"pass/fail agreed on {_e(agreed)} of items.</li>"
         )
     if not items:
