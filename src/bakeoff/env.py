@@ -275,6 +275,13 @@ def make_cleaner(identity: Sequence[str]) -> Cleaner:
     return clean
 
 
+def _runtime_version(reported: str | None, model) -> dict:
+    """The version the endpoint reports, else the operator's (ModelConfig.runtime_version)."""
+    if reported is not None or not (model and model.runtime_version):
+        return field(reported, "reported")
+    return field(model.runtime_version, "operator")
+
+
 def capture_env(
     cfg: RunConfig | None,
     runtime: dict | None,
@@ -320,7 +327,7 @@ def capture_env(
         "gpus": gpus,
         "runtime": {
             "name": field(model.runtime if model else None, "operator"),
-            "version": field(clean((runtime or {}).get("version")), "reported"),
+            "version": _runtime_version(clean((runtime or {}).get("version")), model),
             "served_model": field(clean(served_model), "reported"),
         },
         "model": {

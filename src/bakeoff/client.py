@@ -283,6 +283,10 @@ class EndpointClient:
                 info["version"] = _str_or_none(p.get("build_info"))
                 n_ctx = (p.get("default_generation_settings") or {}).get("n_ctx", p.get("n_ctx"))
                 info["context_length"] = n_ctx if isinstance(n_ctx, int) else None
+            elif runtime == "exllamav3":  # TabbyAPI: the loaded model's card; no version
+                card = await self._get_json(f"{self.api_base}/model") or {}
+                n_ctx = (card.get("parameters") or {}).get("max_seq_len")
+                info["context_length"] = n_ctx if isinstance(n_ctx, int) else None
             elif runtime == "ollama":
                 v = await self._get_json(f"{self.root}/api/version")
                 info["version"] = _str_or_none((v or {}).get("version"))

@@ -493,3 +493,15 @@ def test_method_page_states_the_kv_limits():
     text = (Path(__file__).parent.parent / "site_src" / "method.html").read_text()
     assert "never quantized" in text and "cache_dtype" in text  # KV precision
     assert "gives another pool" in text  # the capacity holds for one serving config
+
+
+def test_method_page_kv_precision_is_the_models_own():
+    from pathlib import Path
+
+    text = (Path(__file__).parent.parent / "site_src" / "method.html").read_text()
+    engines = text.split("<h2>Engines</h2>")[1].split("<h2>")[0]
+    assert "unquantized" in engines and "16-bit" in engines
+    assert "ExLlamaV3 at FP16" in " ".join(engines.split())  # TabbyAPI stores FP16 even for BF16
+    assert "names its engine and version" not in " ".join(
+        engines.split()
+    )  # the page shows the engine

@@ -50,6 +50,10 @@ In short:
   repeated runs.
 - Every run records its environment by allowlist, with provenance, in a hashed bundle. Weights come
   from allowlisted publishers only, and `trust_remote_code` is never used.
+- Engines: a model runs on the engine its format needs (vLLM; ExLlamaV3 via TabbyAPI for EXL3).
+  Engines compete for the same pick, every result names its engine (its bundle records the version),
+  every engine keeps an unquantized 16-bit KV cache (vLLM at the model's FP16 or BF16, ExLlamaV3 at
+  FP16), and only pinned upstream engine releases are used.
 
 ## Hosting (decided)
 
@@ -83,7 +87,7 @@ Later:
   people run locally;
 - **the wrapper tax:** the cost of the convenience layers (Ollama, LocalAI, LM Studio) against the engine
   each one wraps, measured with the same model, quantization and card. Each result records the wrapper's
-  version and the engine and version underneath it, and keeps an FP16 KV cache. Environment capture works
+  version and the engine and version underneath it, and keeps an unquantized KV cache. Environment capture works
   inside containers.
 
 ## Repo admin to finish
