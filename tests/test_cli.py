@@ -340,3 +340,52 @@ def test_cli_publish_end_to_end(tmp_path, monkeypatch, capsys):
         cli.main(["publish", str(toml), "--root", str(r), "--denylist", str(tmp_path / "nope")])
         == 1
     )
+
+
+def test_run_to_publish_end_to_end(tmp_path, monkeypatch):
+    """A bundle the runner writes against a fake vLLM server publishes, and its KV pool and
+    verdict reach week.json and the week page."""
+    import dataclasses
+    import json
+
+    from fake_openai import FakeOpenAI, FakeReply, default_responder
+    from test_runner import fake_nvidia, go, make_cfg
+
+    from bakeoff.config import FitConfig
+
+    monkeypatch.setattr(cli, "DEFAULT_DENYLIST", tmp_path / "no-such-denylist")
+    r = _site_root(tmp_path, launched=True)
+    cfg = make_cfg()
+    cfg = dataclasses.replace(
+        cfg,
+        model=dataclasses.replace(cfg.model, runtime="vllm", envelope="1× RTX 3090 Ti 24 GB"),
+        fit=FitConfig(steps=[16384, 32768]),
+    )
+    cache = (
+        'vllm:cache_config_info{block_size="16",cache_dtype="auto",engine="0",'
+        'num_gpu_blocks="10000"} 1.0\n'
+    )
+
+    def responder(messages):  # needles answered; otherwise a few streamed words, so decode is timed
+        base = default_responder(messages)
+        words = base.content if base.content != "ok" else "one two three four five six"
+        return FakeReply(content=words, chunk_delay_s=0.002)
+
+    fake = FakeOpenAI(responder=responder, extras={"/metrics": cache})
+    bundle = go(cfg, fake, r / "runs", run=fake_nvidia, platform="linux")
+    toml = r / "w.toml"
+    toml.write_text(
+        'week = "2026-10-19"\npublished_at = "2026-10-19T07:00:00Z"\n\n[[run]]\n'
+        f'bundle = "{bundle.relative_to(r).as_posix()}"\ntier = "24gb"\nlicense = "Apache-2.0"\n'
+        'source_url = "https://example.org/m"\n',
+        encoding="utf-8",
+    )
+    assert cli.main(["publish", str(toml), "--root", str(r), "--no-username"]) == 0
+    doc = json.loads((r / "results" / "2026-10-19" / "week.json").read_text(encoding="utf-8"))
+    [run] = next(t for t in doc["tiers"] if t["id"] == "24gb")["runs"]
+    assert run["fit"]["kv_capacity_tokens"] == 160000
+    assert run["fit"]["kv_fraction_at_max"] == 0.2048
+    assert run["eligible"] and run["verdicts"], run["ineligible_reasons"]
+    page = (r / "site" / "weeks" / "2026-10-19" / "index.html").read_text(encoding="utf-8")
+    assert "KV pool 156K · 20.5% at max" in page
+    assert cli.main(["site", "--root", str(r), "--check"]) == 0
