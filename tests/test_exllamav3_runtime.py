@@ -12,7 +12,7 @@ from test_speed import reply, run_s
 from bakeoff.client import EndpointClient
 from bakeoff.config import RUNTIMES, SpeedConfig, load_config
 from bakeoff.env import capture_env
-from bakeoff.speed import FORCED_LENGTH
+from bakeoff.speed import FORCED_LENGTH, MAX_TOKENS
 
 VERSION = "exllamav3 1.6.2 (TabbyAPI 63860e6)"
 
@@ -34,11 +34,15 @@ def test_forced_length_per_runtime():
     assert FORCED_LENGTH == {
         "vllm": {"ignore_eos": True},
         "llamacpp": {"ignore_eos": True},
-        "exllamav3": {"ban_eos_token": True},
+        # TabbyAPI's ExLlamaV3 backend ignores ban_eos_token for stopping; min_tokens (passed to
+        # ExLlamaV3 as min_new_tokens) suppresses the stop tokens until max_tokens
+        "exllamav3": {"min_tokens": MAX_TOKENS, "ban_eos_token": True},
     }
     fake = FakeOpenAI(responder=reply())
     recs, summ = run_s(fake, SpeedConfig(concurrency=[1], repeats=1, warmup=1), "exllamav3")
-    assert fake.requests and all(b.get("ban_eos_token") is True for b in fake.requests)
+    assert fake.requests and all(
+        b.get("min_tokens") == b.get("max_tokens") == MAX_TOKENS for b in fake.requests
+    )
     assert all("ignore_eos" not in b for b in fake.requests)
     assert all(r["ignore_eos"] is True for r in recs)
     assert summ["short@1"]["ignore_eos"] is True

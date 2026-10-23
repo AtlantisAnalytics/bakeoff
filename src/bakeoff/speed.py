@@ -14,7 +14,9 @@ MAX_TOKENS = 256
 FORCED_LENGTH = {
     "vllm": {"ignore_eos": True},
     "llamacpp": {"ignore_eos": True},
-    "exllamav3": {"ban_eos_token": True},  # TabbyAPI's sampler field
+    # TabbyAPI: ban_eos_token alone doesn't stop ExLlamaV3 at EOS (its backend always adds the EOS
+    # stop conditions); min_tokens reaches ExLlamaV3 as min_new_tokens, which suppresses them.
+    "exllamav3": {"min_tokens": MAX_TOKENS, "ban_eos_token": True},
 }
 
 _SHORT_INSTRUCTION = (
