@@ -485,3 +485,11 @@ def test_week_page_kv_pool_without_a_fraction(doc):
 def test_week_page_without_kv_fields_has_no_kv_line(doc):
     assert "KV pool" not in week_page(doc, SITE)
     assert "KV pool" not in week_page(_kv(doc, None, None), SITE)
+
+
+def test_method_page_states_the_kv_limits():
+    from pathlib import Path
+
+    text = (Path(__file__).parent.parent / "site_src" / "method.html").read_text()
+    assert "never quantized" in text and "cache_dtype" in text  # KV precision
+    assert "gives another pool" in text  # the capacity holds for one serving config
