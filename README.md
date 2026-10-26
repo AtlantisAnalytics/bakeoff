@@ -27,7 +27,7 @@ Each memory tier gets a weekly verdict for each candidate: **replace / hold / wa
 | `scripts/` | Maintenance scripts: rebuilding the benchmark slices, locking suites, the repo scrub scan |
 | `examples/` | A sample `run.toml` with placeholder values only |
 | `site/` | The static site served at bakeoff.si, a Cloudflare Worker with static assets (`wrangler.jsonc`) |
-| `tiers.toml` | The memory tiers: id, display name and the hardware envelope that maps to each |
+| `tiers.toml` | The memory tiers: id, display name and the hardware envelope that maps to each. `coming = true` lists a tier that has no runs yet as "coming soon"; remove it once the tier's first runs publish |
 | `site.toml` | Site settings: the launch gate, base URL, repo URL and the sign-up form |
 | `site_src/` | Sources of the hand-written method and privacy pages, wrapped in the site layout into `site/`; `style.css` lives in `site/` |
 | `results/` | Published results, licensed CC BY 4.0 |

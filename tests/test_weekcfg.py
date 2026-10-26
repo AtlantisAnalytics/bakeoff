@@ -45,6 +45,7 @@ def write(tmp_path, text, name="week.toml"):
 def test_shipped_files_load(tiers):
     assert list(tiers) == ["12gb", "24gb", "36gb-unified"]
     assert tiers["12gb"].envelope == "1× RTX 3060 12 GB"
+    assert [t.coming for t in tiers.values()] == [False, False, True]  # the Mac: after M5
     site = load_site(ROOT / "site.toml")
     assert site.launched is False
     assert site.base_url == "https://bakeoff.si"
@@ -118,11 +119,17 @@ def tier_block(i, name="a", env="e"):
         (tier_block("Bad Id"), "slug"),
         ("", "tier"),
         (tier_block("a") + "oops = 1\n", "oops"),
+        (tier_block("a") + 'coming = "yes"\n', "coming"),
     ],
 )
 def test_tier_rejections(tmp_path, body, match):
     with pytest.raises(WeekInputError, match=match):
         load_tiers(write(tmp_path, body, "tiers.toml"))
+
+
+def test_tier_coming(tmp_path):
+    tiers = load_tiers(write(tmp_path, tier_block("a") + "coming = true\n", "tiers.toml"))
+    assert tiers["a"].coming is True
 
 
 SITE = (ROOT / "site.toml").read_text(encoding="utf-8")

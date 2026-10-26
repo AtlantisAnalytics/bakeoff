@@ -29,6 +29,7 @@ class Tier:
     id: str
     name: str
     envelope: str
+    coming: bool = False  # listed with no runs yet; the week page says "coming soon"
 
 
 @dataclass(frozen=True)
@@ -137,7 +138,7 @@ def load_tiers(path: Path) -> dict[str, Tier]:
     envelopes: set[str] = set()
     for i, t in enumerate(entries):
         where = f"tier[{i}]"
-        _check_keys(where, t, ("id", "name", "envelope"))
+        _check_keys(where, t, ("id", "name", "envelope"), ("coming",))
         tid = _text(f"{where}.id", t["id"])
         if not _SLUG.fullmatch(tid):
             raise WeekInputError(f"{where}.id must be a slug (lowercase a-z, 0-9, '-'): {tid!r}")
@@ -147,7 +148,10 @@ def load_tiers(path: Path) -> dict[str, Tier]:
             raise WeekInputError(f"duplicate tier id: {tid!r}")
         if env in envelopes:
             raise WeekInputError(f"duplicate envelope: {env!r}")
-        tiers[tid] = Tier(tid, name, env)
+        coming = t.get("coming", False)
+        if not isinstance(coming, bool):
+            raise WeekInputError(f"{where}.coming must be true or false")
+        tiers[tid] = Tier(tid, name, env, coming)
         envelopes.add(env)
     return tiers
 

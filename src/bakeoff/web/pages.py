@@ -366,6 +366,8 @@ def _tier_section(tier: dict, site: SiteConfig, picks: dict, week: str) -> str:
     if fits:
         rows = "".join(_run_row(r, site, label_of) for r in fits)
         out.append(f'<div class="table-wrap"><table>{_HEAD_ROW}{rows}</table></div>')
+    elif tier.get("coming") and not runs:
+        out.append("<p>Coming soon: this tier isn&#x27;t tested yet.</p>")
     else:
         out.append("<p>No run fit this tier this week.</p>")
     if misfits:

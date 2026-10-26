@@ -147,6 +147,19 @@ def test_rederive_with_a_tier_added_later(root):
     assert rederive(root, W2) == []
 
 
+def test_rederive_after_a_coming_tier_launches(root):
+    """`coming` is a fact of the week it was published in, not of today's tiers.toml."""
+    two_weeks(root)
+    doc = json.loads((root / "results" / W1 / "week.json").read_text(encoding="utf-8"))
+    assert next(t for t in doc["tiers"] if t["id"] == "36gb-unified")["coming"] is True
+    path = root / "tiers.toml"
+    text = path.read_text(encoding="utf-8")
+    assert "coming = true\n" in text
+    path.write_text(text.replace("coming = true\n", ""), encoding="utf-8")
+    assert rederive(root, W1) == []
+    assert rederive(root, W2) == []
+
+
 def test_rederive_correction(root):
     a, b = bundle(root, "base", 6, "runs"), bundle(root, "small", 4, "runs")
     pub(write_week(root, "w1.toml", W1, AT1, [a, b]), root)

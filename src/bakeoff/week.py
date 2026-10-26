@@ -225,6 +225,8 @@ def build_week(
                 "judge": judge_by_tier.get(tid, []),
             }
         )
+        if tier.coming:  # only when set, so weeks before the flag keep their bytes
+            out_tiers[-1]["coming"] = True
         if res:
             picks_after[tid] = {t: dict(res.picks_after[t]) for t in sorted(res.picks_after)}
     doc = {
