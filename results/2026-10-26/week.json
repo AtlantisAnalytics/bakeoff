@@ -1,0 +1,797 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": "b2f928c214bd3250150c88004fa321520b8eb88a",
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "12gb": {
+      "format": {
+        "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "12gb",
+        "track": "format",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "general": {
+        "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "12gb",
+        "track": "general",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "grounding": {
+        "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "12gb",
+        "track": "grounding",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "longctx": {
+        "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "12gb",
+        "track": "longctx",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "structured": {
+        "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "12gb",
+        "track": "structured",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      }
+    },
+    "24gb": {
+      "format": {
+        "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "general": {
+        "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "24gb",
+        "track": "general",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "grounding": {
+        "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "24gb",
+        "track": "grounding",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "longctx": {
+        "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "24gb",
+        "track": "longctx",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      },
+      "structured": {
+        "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+        "label": "Qwen2.5 0.5B Instruct",
+        "quant": "bf16",
+        "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+        "runtime": "vllm",
+        "since_week": "2026-10-26",
+        "tier": "24gb",
+        "track": "structured",
+        "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+      }
+    }
+  },
+  "published_at": "2026-10-26T14:46:06Z",
+  "quality_agreement": [
+    {
+      "quant": "bf16",
+      "runs": [
+        "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+        "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f"
+      ],
+      "runtime": "vllm",
+      "suites": {
+        "format/exact-reply": {
+          "n": 20,
+          "same_output": 19,
+          "same_pass": 20
+        },
+        "general/gsm8k": {
+          "n": 100,
+          "same_output": 32,
+          "same_pass": 90
+        },
+        "general/ifeval": {
+          "n": 100,
+          "same_output": 12,
+          "same_pass": 94
+        },
+        "grounding/context-only": {
+          "n": 30,
+          "same_output": 26,
+          "same_pass": 29
+        },
+        "longctx/needle": {
+          "n": 6,
+          "same_output": 6,
+          "same_pass": 6
+        },
+        "structured/json": {
+          "n": 30,
+          "same_output": 28,
+          "same_pass": 29
+        }
+      },
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    }
+  ],
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "none",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-10-26/runs/20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+          "bundle_sha256": "8fbc5b71a8a5486e774e75c39bee1dba617878fee8cd1327a19c77029411553c",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 802240,
+            "kv_fraction_at_max": 0.0408,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen2.5 0.5B Instruct",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+            "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.65,
+                "suites": [
+                  {
+                    "accuracy": 0.65,
+                    "ci95": [
+                      0.43285051021946463,
+                      0.8188104521320554
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 13,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.29,
+                "suites": [
+                  {
+                    "accuracy": 0.29,
+                    "ci95": [
+                      0.21014706973984146,
+                      0.38539074940007934
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 29,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.29,
+                    "ci95": [
+                      0.21014706973984146,
+                      0.38539074940007934
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 29,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.5666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.5666666666666667,
+                    "ci95": [
+                      0.3919700954540873,
+                      0.7262276256938489
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 17,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.7,
+                "suites": [
+                  {
+                    "accuracy": 0.7,
+                    "ci95": [
+                      0.5212387898833981,
+                      0.8333543735604105
+                    ],
+                    "extractable_accuracy": 0.7,
+                    "extractable_ci95": [
+                      0.5212387898833981,
+                      0.8333543735604105
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 21,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261024T160301Z-qwen2-5-0-5b-instruct-92bb5a6b",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 227.64250730408173,
+                "median": 227.3323828501313,
+                "min": 225.93099581812714,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 235.74865432195392,
+                "median": 235.44691275415872,
+                "min": 235.38218261921912,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 54771.582368484815,
+                "median": 52441.231042333355,
+                "min": 43905.31090539928,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.051428858000008404,
+                "median": 0.04305772300000399,
+                "min": 0.04122575799999595,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 723.521419787323,
+                "median": 716.5964338712711,
+                "min": 715.1266835117552,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 193.73825058234348,
+                "median": 193.47937545245816,
+                "min": 192.87893192004103,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 25875.309701558275,
+                "median": 21734.54991179715,
+                "min": 20210.642693513677,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.1117233150000061,
+                "median": 0.10390845399999193,
+                "min": 0.0872646560000021,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 232.42252179574513,
+                "median": 232.09922635770099,
+                "min": 231.8645840762399,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 237.6715068584064,
+                "median": 237.3962862406453,
+                "min": 237.2463866945035,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 6238.17471308068,
+                "median": 5547.788651441007,
+                "min": 5485.3221371081745,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.030262579999998707,
+                "median": 0.029921832000013637,
+                "min": 0.026610348000019712,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 809.7649760908115,
+                "median": 807.9823326835412,
+                "min": 807.4503888958105,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 211.9988874531207,
+                "median": 211.52735710042447,
+                "min": 211.2318280022969,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 3154.8945261745007,
+                "median": 2919.4616319138986,
+                "min": 2704.136837405856,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.06138742599995339,
+                "median": 0.056860670499986554,
+                "min": 0.052616655999997874,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "grounding": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "none",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-10-26/runs/20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+          "bundle_sha256": "f290abf9d9f8d03cc414bbc562466e15d9bd6013c234a32fed33b6578e1199c9",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 1754720,
+            "kv_fraction_at_max": 0.0187,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen2.5 0.5B Instruct",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct",
+            "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.65,
+                "suites": [
+                  {
+                    "accuracy": 0.65,
+                    "ci95": [
+                      0.43285051021946463,
+                      0.8188104521320554
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 13,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.31,
+                "suites": [
+                  {
+                    "accuracy": 0.37,
+                    "ci95": [
+                      0.28182212569509163,
+                      0.46779652424866885
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 37,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.25,
+                    "ci95": [
+                      0.1754509400372426,
+                      0.3430464637007583
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 25,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.5333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.5333333333333333,
+                    "ci95": [
+                      0.3614201328152505,
+                      0.6976787277587178
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 16,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.6666666666666666,
+                "suites": [
+                  {
+                    "accuracy": 0.6666666666666666,
+                    "ci95": [
+                      0.48779725813830266,
+                      0.807697044731538
+                    ],
+                    "extractable_accuracy": 0.6666666666666666,
+                    "extractable_ci95": [
+                      0.48779725813830266,
+                      0.807697044731538
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 20,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261024T160322Z-qwen2-5-0-5b-instruct-d18d3e2f",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 441.1907674703408,
+                "median": 440.6076764001567,
+                "min": 439.8846369548093,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 456.3264699147904,
+                "median": 456.0293357984837,
+                "min": 455.39614428406054,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 106835.70617735347,
+                "median": 105310.14513994491,
+                "min": 101687.4304023838,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.02220530099998541,
+                "median": 0.021441429000020662,
+                "min": 0.021135256000007985,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 1472.9414174346443,
+                "median": 1472.7192705690627,
+                "min": 1460.302881192415,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 391.29149925432387,
+                "median": 390.77003334640557,
+                "min": 389.29374836543633,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 55191.13977381393,
+                "median": 53297.737565613614,
+                "min": 47682.53382872419,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.04735486600000627,
+                "median": 0.04236602149998703,
+                "min": 0.04091236399997911,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 447.28018841454974,
+                "median": 446.96248832397737,
+                "min": 446.67751172911176,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 458.36673875673927,
+                "median": 458.11547083216306,
+                "min": 457.6984839226061,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 10661.321105951292,
+                "median": 10384.687615450299,
+                "min": 10102.294249273684,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.016431911000012178,
+                "median": 0.01598507400001381,
+                "min": 0.01557030300000406,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 1518.186808264007,
+                "median": 1516.0769627705788,
+                "min": 1515.1630138363093,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 395.5827284106721,
+                "median": 394.81752955718116,
+                "min": 394.2827272793042,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 6423.618111417708,
+                "median": 5949.761095661968,
+                "min": 5583.496958942889,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.029730472000011332,
+                "median": 0.027900290499985658,
+                "min": 0.025842133999987027,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "grounding": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-10-26"
+}
