@@ -1,0 +1,11 @@
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 90.75}], "pass": "baseline", "t": 3.2650000036937854e-06}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 101.65}], "pass": "quality", "t": 0.5335770390000079}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 150.7}], "pass": "speed", "t": 1.0753592360000113}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 238.23}], "pass": "speed", "t": 1.6137953140000008}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 259.45}], "pass": "speed", "t": 2.1455086760000057}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 261.72}], "pass": "speed", "t": 2.676633037000002}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 265.37}], "pass": "speed", "t": 3.2151547210000047}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 264.48}], "pass": "speed", "t": 3.7519745889999996}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 261.5}], "pass": "speed", "t": 4.284577377000005}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 260.95}], "pass": "fit:16384", "t": 4.815457866000003}
+{"gpus": [{"index": 0, "mem_used_mib": 23004, "power_w": 289.17}], "pass": "fit:16384", "t": 5.346326973000004}

@@ -1,0 +1,6 @@
+{"accepted": true, "depth": 0.1, "error": null, "expected_prompt_tokens": 1767, "finish_reason": "stop", "lines": 62, "prompt_tokens": 1782, "retrieved": true, "step": 4096, "ttft_s": 0.039922609999990755, "within_5pct": true}
+{"accepted": true, "depth": 0.5, "error": null, "expected_prompt_tokens": 1767, "finish_reason": "stop", "lines": 62, "prompt_tokens": 1782, "retrieved": true, "step": 4096, "ttft_s": 0.03813243800000521, "within_5pct": true}
+{"accepted": true, "depth": 0.9, "error": null, "expected_prompt_tokens": 1767, "finish_reason": "stop", "lines": 62, "prompt_tokens": 1782, "retrieved": true, "step": 4096, "ttft_s": 0.03045743900000275, "within_5pct": true}
+{"accepted": true, "depth": 0.1, "error": null, "expected_prompt_tokens": 14073, "finish_reason": "stop", "lines": 507, "prompt_tokens": 14123, "retrieved": true, "step": 16384, "ttft_s": 0.3804353689999971, "within_5pct": true}
+{"accepted": true, "depth": 0.5, "error": null, "expected_prompt_tokens": 14073, "finish_reason": "stop", "lines": 507, "prompt_tokens": 14123, "retrieved": true, "step": 16384, "ttft_s": 0.374299009000012, "within_5pct": true}
+{"accepted": true, "depth": 0.9, "error": null, "expected_prompt_tokens": 14073, "finish_reason": "stop", "lines": 507, "prompt_tokens": 14123, "retrieved": true, "step": 16384, "ttft_s": 0.25736203099999955, "within_5pct": true}
