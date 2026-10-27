@@ -14,7 +14,7 @@ from bakeoff.web.pages import (
     week_page,
     wrap_static,
 )
-from bakeoff.week import build_week
+from bakeoff.week import build_week, validate_week
 from bakeoff.weekcfg import RunEntry, SiteConfig, Tier, WeekInput
 
 RULES = {**RULES_V1, "resamples": 200}
@@ -303,7 +303,7 @@ def test_stylesheet_has_tokens_and_wrapper():
 # pick status: not re-measured, initial picks, outranked labels
 
 
-def _doc_for(tmp, specs, picks):
+def _doc_for(tmp, specs, picks, *, coming=False):
     """specs: (run_id, weights, grades, kw); picks: {track: pick dict}."""
     made = []
     for rid, weights, grades, kw in specs:
@@ -319,7 +319,7 @@ def _doc_for(tmp, specs, picks):
         entry = RunEntry(path, "24gb", "Apache-2.0", "https://example.org/" + weights, None)
         made.append((load_run(path), entry))
     runs = {v.run_id: (v, e) for v, e in made}
-    tiers = {"24gb": Tier("24gb", "24 GB", ENV)}
+    tiers = {"24gb": Tier("24gb", "24 GB", ENV, coming=coming)}
     res = {"24gb": assess_tier(WEEK, "24gb", [v for v, _ in made], picks, [], RULES)}
     inp = WeekInput(WEEK, AT, [e for _, e in made], [], [], None, b"")
     return build_week(
@@ -351,6 +351,27 @@ def test_not_remeasured_pick_is_named_for_tier_without_runs(tmp_path):
     h = week_page(d, SITE)
     assert NOT_REMEASURED in h
     assert "No run fit this tier this week." in h
+
+
+COMING = "Coming soon: this tier isn&#x27;t tested yet."
+
+
+def test_coming_tier_without_runs(tmp_path):
+    d = _doc_for(tmp_path, [], {}, coming=True)
+    assert d["tiers"][0]["coming"] is True and validate_week(d) == []
+    h = week_page(d, SITE)
+    assert COMING in h and "No run fit this tier this week." not in h
+    assert_balanced(h)
+
+
+def test_coming_tier_with_runs_shows_them(tmp_path):
+    d = _doc_for(tmp_path, [("r-cand", "big", {GSM: g(40)}, {})], {}, coming=True)
+    h = week_page(d, SITE)
+    assert COMING not in h and "r-cand" in h
+
+
+def test_a_tier_is_only_coming_when_marked(tmp_path):
+    assert "coming" not in _doc_for(tmp_path, [], {})["tiers"][0]
 
 
 def test_ineligible_control_is_marked_as_the_pick(tmp_path):

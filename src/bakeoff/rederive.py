@@ -108,6 +108,9 @@ def _tiers_toml(root: Path, stored: dict) -> str:
     except WeekInputError as e:
         raise RederiveError(f"tiers.toml: {e}") from e
     wanted = [t.get("id") for t in stored.get("tiers", []) if isinstance(t, dict)]
+    coming = {
+        t.get("id") for t in stored.get("tiers", []) if isinstance(t, dict) and t.get("coming")
+    }
     missing = [t for t in wanted if t not in tiers]
     if missing:
         raise RederiveError(f"the stored week lists tiers not in tiers.toml: {missing}")
@@ -119,6 +122,7 @@ def _tiers_toml(root: Path, stored: dict) -> str:
                 f"id = {_q(tier.id, 'id')}",
                 f"name = {_q(tier.name, 'name')}",
                 f"envelope = {_q(tier.envelope, 'envelope')}",
+                *(["coming = true"] if tid in coming else []),
                 "",
             ]
     return "\n".join(lines)

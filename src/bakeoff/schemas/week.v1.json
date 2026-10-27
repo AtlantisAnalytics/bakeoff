@@ -123,6 +123,11 @@
           "envelope": {
             "type": "string"
           },
+          "coming": {
+            "enum": [
+              true
+            ]
+          },
           "pick_status": {
             "type": "object",
             "additionalProperties": {
