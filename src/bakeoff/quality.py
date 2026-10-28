@@ -11,6 +11,10 @@ from bakeoff.hashing import canonical_json, sha256_hex
 from bakeoff.stats import wilson
 from bakeoff.suites import Suite
 
+# Requests in flight at once (2026-10-27: one at a time, a 306-item pass took 2.5 h on a 3B model).
+# Records, grading, the error budget and progress still go in item order.
+QUALITY_CONCURRENCY = 8
+
 
 @dataclass
 class QualityResult:
@@ -68,7 +72,8 @@ async def run_quality(
     suites: list[Suite],
     on_progress: Callable[[str, int, int], None] | None = None,
 ) -> QualityResult:
-    """Run each suite's items sequentially, in suite order.
+    """Run each suite's items, up to QUALITY_CONCURRENCY requests at once, recording them in
+    suite and item order.
 
     An errored request is a fail (counted in `n`); so are truncated answers. One ErrorBudget is
     shared across all suites. On AbortRun, the exception gains a `partial` attribute holding the
@@ -77,12 +82,20 @@ async def run_quality(
     """
     budget = ErrorBudget("quality")
     records: dict[str, list[dict]] = {}
+    gate = asyncio.Semaphore(QUALITY_CONCURRENCY)
+
+    async def ask(suite: Suite, item):
+        async with gate:
+            return await client.chat(item.messages, suite.max_tokens, temperature=0.0, seed=0)
+
+    pending: list[asyncio.Task] = []
     try:
         for suite in suites:
             recs = records.setdefault(suite.key, [])
             total = len(suite.items)
-            for item in suite.items:
-                r = await client.chat(item.messages, suite.max_tokens, temperature=0.0, seed=0)
+            pending = [asyncio.create_task(ask(suite, item)) for item in suite.items]
+            for item, task in zip(suite.items, pending, strict=True):
+                r = await task
                 if r.error is not None:
                     passed, score, reason = False, 0.0, "error"
                     extractable = False
@@ -122,4 +135,8 @@ async def run_quality(
     except (asyncio.CancelledError, KeyboardInterrupt) as exc:
         exc.partial = _build(suites, records)  # type: ignore[attr-defined]
         raise
+    finally:  # an abort or a cancel sends nothing more
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
     return _build(suites, records)
