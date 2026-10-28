@@ -204,7 +204,7 @@ subset, and Q4_K_M quantization instead of the original weights. Expect the same
 match. An earlier run with a 1024-token output cap truncated 4 IFEval items and scored 79%; raising
 the cap to 4096 tokens removed every truncation (0 of 100) and moved the score to 81%.
 
-Other suites for the same run: `format/exact-reply` 85%, `grounding/context-only` 97%,
+Other suites for the same run, at their version 1: `format/exact-reply` 85%, `grounding/context-only` 97%,
 `longctx/needle` 6/6, `structured/json` 40% (all 18 failures were the
 model wrapping its JSON in `<json>` tags, which the strict grader rejects, not a grader bug). The
 largest context that passed the fit pass was 32768 tokens, with the server reporting a 64000-token

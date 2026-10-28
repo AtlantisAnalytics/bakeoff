@@ -1,20 +1,30 @@
-{"id": "exact-01", "prompt": "Reply with exactly: Zebra-Quartz_42", "expected": "Zebra-Quartz_42", "reference": "Zebra-Quartz_42"}
-{"id": "exact-02", "prompt": "Reply with exactly: aBc-DeF", "expected": "aBc-DeF", "reference": "aBc-DeF"}
-{"id": "exact-03", "prompt": "Reply with exactly: Hello, World!", "expected": "Hello, World!", "reference": "Hello, World!"}
-{"id": "exact-04", "prompt": "Reply with exactly: 007", "expected": "007", "reference": "007"}
-{"id": "exact-05", "prompt": "Reply with exactly: x-ray-9", "expected": "x-ray-9", "reference": "x-ray-9"}
-{"id": "exact-06", "prompt": "Reply with exactly: ALL CAPS here", "expected": "ALL CAPS here", "reference": "ALL CAPS here"}
-{"id": "exact-07", "prompt": "Reply with exactly: MiXeD cAsE 123", "expected": "MiXeD cAsE 123", "reference": "MiXeD cAsE 123"}
-{"id": "exact-08", "prompt": "Reply with exactly: a;b;c", "expected": "a;b;c", "reference": "a;b;c"}
-{"id": "exact-09", "prompt": "Reply with exactly: [done]", "expected": "[done]", "reference": "[done]"}
-{"id": "exact-10", "prompt": "Reply with exactly: ref/2026/10-13", "expected": "ref/2026/10-13", "reference": "ref/2026/10-13"}
-{"id": "exact-11", "prompt": "Reply with exactly: it's fine", "expected": "it's fine", "reference": "it's fine"}
-{"id": "exact-12", "prompt": "Reply with exactly: 100%", "expected": "100%", "reference": "100%"}
-{"id": "exact-13", "prompt": "Reply with only the uppercase word YES", "expected": "YES", "reference": "YES"}
-{"id": "exact-14", "prompt": "Reply with only the lowercase word no", "expected": "no", "reference": "no"}
-{"id": "exact-15", "prompt": "What is 7 plus 5? Reply with only the number.", "expected": "12", "reference": "12"}
-{"id": "exact-16", "prompt": "Write the first three letters of the alphabet in uppercase, separated by hyphens. Reply with only that.", "expected": "A-B-C", "reference": "A-B-C"}
-{"id": "exact-17", "prompt": "Spell the word cat backwards in uppercase. Reply with only the result.", "expected": "TAC", "reference": "TAC"}
-{"id": "exact-18", "prompt": "Write the digits 1 to 5 separated by single spaces. Reply with only that.", "expected": "1 2 3 4 5", "reference": "1 2 3 4 5"}
-{"id": "exact-19", "prompt": "Reply with only the word TRUE if 10 is greater than 9, otherwise reply with only the word FALSE.", "expected": "TRUE", "reference": "TRUE"}
-{"id": "exact-20", "prompt": "Rewrite the date 2026-01-05 as DD/MM/YYYY. Reply with only the date.", "expected": "05/01/2026", "reference": "05/01/2026"}
+{"id": "exact-01", "prompt": "Sort these words alphabetically, ignoring case, and reply with them joined by commas with no spaces, keeping each word's case: pear, Apple, fig, banana, cherry", "expected": "Apple,banana,cherry,fig,pear", "reference": "Apple,banana,cherry,fig,pear"}
+{"id": "exact-02", "prompt": "From the words cedar, ash, birch, oak, elm and maple, drop every word with fewer than four letters, sort the rest by length and then alphabetically, and reply with them joined by slashes.", "expected": "birch/cedar/maple", "reference": "birch/cedar/maple"}
+{"id": "exact-03", "prompt": "Reply with the sum of the digits of 4708, then a hyphen, then the number of letters in the word harbour.", "expected": "19-7", "reference": "19-7"}
+{"id": "exact-04", "prompt": "Write the date March 5, 2026 in ISO 8601 form (YYYY-MM-DD). Reply with the date only.", "expected": "2026-03-05", "reference": "2026-03-05"}
+{"id": "exact-05", "prompt": "Reply with exactly three lines: the word alpha, then the number 42, then the word omega.", "expected": "alpha\n42\nomega", "reference": "alpha\n42\nomega"}
+{"id": "exact-06", "prompt": "Reply with the word lantern spelled backwards, in upper case.", "expected": "NRETNAL", "reference": "NRETNAL"}
+{"id": "exact-07", "prompt": "Reply with the word ready in upper case, wrapped in square brackets.", "expected": "[READY]", "reference": "[READY]"}
+{"id": "exact-08", "prompt": "How many words are in the phrase 'the quick brown fox jumps'? Reply with the number written as a lower-case English word.", "expected": "five", "reference": "five"}
+{"id": "exact-09", "prompt": "Reply with the initials of Ada King Lovelace in upper case, each followed by a period, with no spaces.", "expected": "A.K.L.", "reference": "A.K.L."}
+{"id": "exact-10", "prompt": "Reply with the numbers 1 to 15 separated by commas with no spaces, but write Fizz for multiples of 3, Buzz for multiples of 5 and FizzBuzz for multiples of both.", "expected": "1,2,Fizz,4,Buzz,Fizz,7,8,Fizz,Buzz,11,Fizz,13,14,FizzBuzz", "reference": "1,2,Fizz,4,Buzz,Fizz,7,8,Fizz,Buzz,11,Fizz,13,14,FizzBuzz"}
+{"id": "exact-11", "prompt": "Reply with a CSV that has the header line id,qty and then one line per item, ordered by id from lowest to highest: item 3 has qty 10, item 1 has qty 4, item 2 has qty 7. No other text.", "expected": "id,qty\n1,4\n2,7\n3,10", "reference": "id,qty\n1,4\n2,7\n3,10"}
+{"id": "exact-12", "prompt": "Reply with the distinct numbers in this list in descending order, separated by single spaces: 4 9 2 9 4 7", "expected": "9 7 4 2", "reference": "9 7 4 2"}
+{"id": "exact-13", "prompt": "Take the first letter of each of these words, in reverse word order, and reply with them as one lower-case string: Violet Indigo Blue Green Yellow Orange Red", "expected": "roygbiv", "reference": "roygbiv"}
+{"id": "exact-14", "prompt": "Convert the phrase user account id to camelCase.", "expected": "userAccountId", "reference": "userAccountId"}
+{"id": "exact-15", "prompt": "How many vowels (a, e, i, o, u) are in the word education? Reply with the number only.", "expected": "5", "reference": "5"}
+{"id": "exact-16", "prompt": "Convert 3:07 PM to 24-hour time in the form HH:MM.", "expected": "15:07", "reference": "15:07"}
+{"id": "exact-17", "prompt": "Write the decimal number 255 in hexadecimal, in lower case, with the prefix 0x.", "expected": "0xff", "reference": "0xff"}
+{"id": "exact-18", "prompt": "Reply with the date 10 days after 2026-02-25, in the form YYYY-MM-DD.", "expected": "2026-03-07", "reference": "2026-03-07"}
+{"id": "exact-19", "prompt": "Which day of the week is 2026-11-02? Reply with the English name in lower case.", "expected": "monday", "reference": "monday"}
+{"id": "exact-20", "prompt": "Interleave the characters of abc and 123, starting with abc, and reply with the single resulting string.", "expected": "a1b2c3", "reference": "a1b2c3"}
+{"id": "exact-21", "prompt": "Reply with these settings as key=value pairs sorted by key, separated by semicolons, with no spaces: port is 80, host is web1, debug is off", "expected": "debug=off;host=web1;port=80", "reference": "debug=off;host=web1;port=80"}
+{"id": "exact-22", "prompt": "Rewrite in title case, capitalising the first letter of every word: the old man and the sea", "expected": "The Old Man And The Sea", "reference": "The Old Man And The Sea"}
+{"id": "exact-23", "prompt": "Reply with exactly the text between the two vertical bars, nothing else: |Keep it short.|", "expected": "Keep it short.", "reference": "Keep it short."}
+{"id": "exact-24", "prompt": "Reply with the words from this list that contain the letter r, in their original order, joined by commas with no spaces: pear, fig, cherry, plum, apricot, lime", "expected": "pear,cherry,apricot", "reference": "pear,cherry,apricot"}
+{"id": "exact-25", "prompt": "Write the year 2026 in Roman numerals, in upper case.", "expected": "MMXXVI", "reference": "MMXXVI"}
+{"id": "exact-26", "prompt": "Reply with the JSON object {\"b\": 2, \"a\": 1, \"c\": [3, 1]} with its keys sorted and no spaces anywhere.", "expected": "{\"a\":1,\"b\":2,\"c\":[3,1]}", "reference": "{\"a\":1,\"b\":2,\"c\":[3,1]}"}
+{"id": "exact-27", "prompt": "Swap these two words and join them with an ampersand, no spaces: salt pepper", "expected": "pepper&salt", "reference": "pepper&salt"}
+{"id": "exact-28", "prompt": "Write 0.375 as a fraction in lowest terms, in the form numerator/denominator.", "expected": "3/8", "reference": "3/8"}
+{"id": "exact-29", "prompt": "Reply with the words alpha, beta and gamma in reverse alphabetical order, one per line, in upper case.", "expected": "GAMMA\nBETA\nALPHA", "reference": "GAMMA\nBETA\nALPHA"}
+{"id": "exact-30", "prompt": "Round 3.14159 to two decimal places and reply with the number followed by the letters rad, with no space between them.", "expected": "3.14rad", "reference": "3.14rad"}

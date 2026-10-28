@@ -54,6 +54,41 @@ def test_load_generated_suite(tmp_path):
     assert load_suite(d).hash == s.hash
 
 
+VAULTS = ('track = "longctx"\nlicense = "CC0-1.0"\nname = "needle"\nversion = 2\n'
+          'split = "public"\ngrader = "grounding"\nmax_tokens = 32\nsystem = "S"\n'
+          '[generator]\nname = "vaults"\nlines = [40]\ndepths = [0.1, 0.9]\n'
+          'kinds = ["distractors", "changed", "absent"]\nseed = 5\n')
+
+
+def test_load_vaults_suite(tmp_path):
+    d = tmp_path / "vaults"
+    d.mkdir()
+    (d / "manifest.toml").write_text(VAULTS)
+    s = load_suite(d)
+    assert [i.id for i in s.items] == [
+        "vaults-40-10-distractors", "vaults-40-10-changed", "vaults-40-10-absent",
+        "vaults-40-90-distractors", "vaults-40-90-changed", "vaults-40-90-absent",
+    ]
+    assert s.items[0].messages[0] == {"role": "system", "content": "S"}
+    assert s.items[2].expected["answerable"] is False
+    assert load_suite(d).hash == s.hash
+
+
+@pytest.mark.parametrize(("old", "new"), [
+    ('kinds = ["distractors", "changed", "absent"]', 'kinds = ["bogus"]'),
+    ('kinds = ["distractors", "changed", "absent"]', "kinds = []"),
+    ('kinds = ["distractors", "changed", "absent"]\n', ""),
+    ("depths = [0.1, 0.9]", "depths = [0.0]"),  # "changed" needs room before the notice
+    ("lines = [40]", "lines = [0]"),
+])
+def test_bad_vaults_generator_raises(tmp_path, old, new):
+    d = tmp_path / "vaults"
+    d.mkdir()
+    (d / "manifest.toml").write_text(VAULTS.replace(old, new))
+    with pytest.raises(SuiteError):
+        load_suite(d)
+
+
 def test_hash_changes_with_item(tmp_path):
     d = _copy(tmp_path)
     before = load_suite(d).hash

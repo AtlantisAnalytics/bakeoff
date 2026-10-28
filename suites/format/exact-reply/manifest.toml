@@ -1,6 +1,6 @@
 track = "format"
 name = "exact-reply"
-version = 1
+version = 2
 split = "public"
 license = "CC-BY-4.0"
 grader = "exact"

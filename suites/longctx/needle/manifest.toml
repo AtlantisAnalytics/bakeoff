@@ -1,13 +1,18 @@
 track = "longctx"
 name = "needle"
-version = 1
+version = 2
 split = "public"
 license = "CC-BY-4.0"
-grader = "needle"
-max_tokens = 2048
+grader = "grounding"
+max_tokens = 4096  # gpt-oss 20B ran out at 2048 on the 500-line items
+system = "Answer only from the text. If the answer is not in the text, reply exactly: NOT IN CONTEXT"
 
+# Eight vaults with look-alike codes in a log of depot records; see bakeoff.needle.vault_messages.
+# 500 lines is about 11.5K tokens (the fit test measures 22.6 a line), so the longest item fits
+# the 16K minimum context with room for the reply.
 [generator]
-name = "needle"
-lines = [100, 250]
+name = "vaults"
+lines = [120, 280, 500]
 depths = [0.1, 0.5, 0.9]
+kinds = ["distractors", "changed", "absent"]
 seed = 7
