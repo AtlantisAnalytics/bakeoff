@@ -215,3 +215,56 @@ def test_truncated_json_not_extractable():
     suite = replace(suite, items=[replace(suite.items[0], expected={"type": "object"})])
     res = run_q(fake, [suite])
     assert res.records["general/j"][0]["extractable"] is False
+
+
+# --- 2026-10-27: real models took ~25 s an answer one at a time, so a 306-item quality pass
+# outran Athena's 90-minute cap. Requests now overlap; grading, budget and order do not change.
+
+
+class OverlapClient:
+    """Answers OK-42 (fails the items in `fail`) after a short wait, counting requests in flight."""
+
+    def __init__(self, fail=(), slow_first=True):
+        self.fail, self.slow_first = set(fail), slow_first
+        self.in_flight, self.peak, self.calls = 0, 0, []
+
+    async def chat(self, messages, max_tokens, temperature=None, seed=None):
+        from bakeoff.client import ChatResult
+
+        prompt = messages[-1]["content"]
+        self.calls.append(prompt)
+        self.in_flight += 1
+        self.peak = max(self.peak, self.in_flight)
+        slow = self.slow_first and prompt.endswith("-0")  # a slow first answer holds up nothing
+        await asyncio.sleep(0.01 if slow else 0.001)
+        self.in_flight -= 1
+        if prompt in self.fail:
+            return ChatResult(status=500, error="HTTP 500")
+        return ChatResult(content="OK-42", finish_reason="stop")
+
+
+def test_requests_overlap_up_to_the_limit_and_records_keep_item_order():
+    from bakeoff.quality import QUALITY_CONCURRENCY
+
+    client = OverlapClient()
+    seen = []
+    res = asyncio.run(
+        run_quality(
+            client,
+            [make_suite("a", n=20), make_suite("b", n=3)],
+            on_progress=lambda k, d, t: seen.append((k, d)),
+        )
+    )
+    assert QUALITY_CONCURRENCY == 8 and client.peak == QUALITY_CONCURRENCY
+    assert [r["id"] for r in res.records["general/a"]] == [f"i{k}" for k in range(20)]
+    assert seen[:3] == [("general/a", 1), ("general/a", 2), ("general/a", 3)]
+    assert seen[-1] == ("general/b", 3) and [s["passed"] for s in res.suites] == [20, 3]
+
+
+def test_abort_records_items_in_order_and_sends_no_more_requests():
+    client = OverlapClient(fail={f"PROMPT-s-{k}" for k in range(40)}, slow_first=False)
+    with pytest.raises(AbortRun) as ei:
+        asyncio.run(run_quality(client, [make_suite(n=40)]))
+    recs = ei.value.partial.records["general/s"]
+    assert [r["id"] for r in recs] == [f"i{k}" for k in range(10)]  # as one at a time
+    assert len(client.calls) < 40  # the rest were never sent
