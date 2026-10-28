@@ -1,0 +1,20 @@
+week = "2026-11-02"
+published_at = "2026-10-28T11:40:40Z"
+
+[[run]]
+bundle = "runs/20261028T071307Z-qwen3-8-27b-exl3-515b51aa"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.8-27B-exl3"
+
+[[run]]
+bundle = "runs/20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-12B-it-exl3"
+
+[[run]]
+bundle = "runs/20261028T070949Z-granite-4-2-3b-494c0af8"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-3b"

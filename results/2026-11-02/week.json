@@ -1,0 +1,1073 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": "e78d85a4f840da670d5b9e2d599cf1fc0d46cc94",
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "12gb": {
+      "format": {
+        "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "format",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "general": {
+        "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "general",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "grounding": {
+        "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "grounding",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "longctx": {
+        "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "longctx",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "structured": {
+        "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "structured",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      }
+    },
+    "24gb": {
+      "format": {
+        "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      },
+      "general": {
+        "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "general",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      },
+      "grounding": {
+        "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "grounding",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      },
+      "longctx": {
+        "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "longctx",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      },
+      "structured": {
+        "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "structured",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      }
+    }
+  },
+  "published_at": "2026-10-28T11:40:40Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "none",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-02/runs/20261028T070949Z-granite-4-2-3b-494c0af8",
+          "bundle_sha256": "57058e810461eee250df31afff693335b84149a38f9c972194bc6b6d95dde64d",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 44784,
+            "kv_fraction_at_max": 0.7317,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 3B",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-3b",
+            "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8388698745050667,
+                      1.0
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 20,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.8400000000000001,
+                "suites": [
+                  {
+                    "accuracy": 0.89,
+                    "ci95": [
+                      0.8136853697209698,
+                      0.9374586804477487
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 89,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.79,
+                    "ci95": [
+                      0.7001985069803768,
+                      0.8583445046835422
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 79,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261028T070949Z-granite-4-2-3b-494c0af8",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 43.6663540009024,
+                "median": 43.65958196825802,
+                "min": 43.58149114411398,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 43.96569640917223,
+                "median": 43.94638916633805,
+                "min": 43.86180425830055,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 29924.61774210123,
+                "median": 29788.46415151017,
+                "min": 28475.315281071755,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.06317752699987977,
+                "median": 0.060392505999971036,
+                "min": 0.06011772700003348,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 141.58773256928347,
+                "median": 140.67778392261673,
+                "min": 140.40992403082848,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 35.95698224075981,
+                "median": 35.76571477983744,
+                "min": 35.61971521573656,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 18407.918093849574,
+                "median": 13011.257330466553,
+                "min": 11579.436116101073,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.15536162399985187,
+                "median": 0.13827484850003202,
+                "min": 0.0977296829998977,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 45.58651364406213,
+                "median": 45.51521875238982,
+                "min": 45.42314622886818,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 45.73463235684984,
+                "median": 45.6597463449177,
+                "min": 45.575105761125236,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 3249.007484882337,
+                "median": 3220.7669459908334,
+                "min": 3166.936515026942,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.04073337099998753,
+                "median": 0.04005257200014967,
+                "min": 0.03970443299999715,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 154.76353663594958,
+                "median": 154.46084111335043,
+                "min": 153.59432614111532,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 39.04942818596971,
+                "median": 38.985349579657175,
+                "min": 38.75597615271492,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2268.456531619839,
+                "median": 1537.3565638282114,
+                "min": 1449.9256868145258,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.08897007699988535,
+                "median": 0.08391086300002826,
+                "min": 0.05686686000012742,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "grounding": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "none",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-02/runs/20261028T071307Z-qwen3-8-27b-exl3-515b51aa",
+          "bundle_sha256": "b7939305e129058e24976b2b61f9a03e0019c36f19103a4b9e00598b27fdde3e",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 16384,
+            "server_context": 16384
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.8 27B EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Qwen3.8-27B-exl3",
+            "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8388698745050667,
+                      1.0
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 20,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.885,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.79,
+                    "ci95": [
+                      0.7001985069803768,
+                      0.8583445046835422
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 79,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261028T071307Z-qwen3-8-27b-exl3-515b51aa",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 45.60792490600448,
+                "median": 45.57666246499943,
+                "min": 45.50778261930458,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 46.753022713049,
+                "median": 46.720823036013215,
+                "min": 46.66472296810591,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 14830.035487392966,
+                "median": 14677.67998535733,
+                "min": 14637.280788862288,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.16095885799995813,
+                "median": 0.1605158309998842,
+                "min": 0.1588667810001425,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 152.30059611609354,
+                "median": 151.5438156834675,
+                "min": 150.82641360146937,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.04879216468532,
+                "median": 40.89387800886759,
+                "min": 40.11676216778029,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 5856.425042029055,
+                "median": 4646.1873418002,
+                "min": 4207.256776133016,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.5599848370000018,
+                "median": 0.50708248549995,
+                "min": 0.4022932049999781,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 44.64799807050653,
+                "median": 44.61790183620958,
+                "min": 42.76799816062077,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 47.04039490183378,
+                "median": 47.009447148467636,
+                "min": 46.95101923241909,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 616.8758134571056,
+                "median": 616.5842696566473,
+                "min": 348.003563599654,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.554592022000179,
+                "median": 0.31301479700005075,
+                "min": 0.3128668619999644,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 140.69809774774566,
+                "median": 140.47692731700081,
+                "min": 140.19663746801473,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.43646370460163,
+                "median": 41.417893709718285,
+                "min": 41.24462404893341,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 172.4289914697962,
+                "median": 172.26918279664687,
+                "min": 168.76208270382384,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.1436218190001455,
+                "median": 1.1203396735000979,
+                "min": 1.1193013330000667,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                0.0,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.04,
+              "diff_ci95": [
+                -0.09,
+                0.009999999999999998
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "grounding": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                0.0,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                0.0,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "structured": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                0.0,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-02/runs/20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+          "bundle_sha256": "7e0170c0aee23efd56182f078ed25feb9801097c428d3ecdeb31a53924c7455a",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 16384,
+            "server_context": 16384
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-6bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/gemma-4-12B-it-exl3",
+            "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8388698745050667,
+                      1.0
+                    ],
+                    "hash": "9d0241facf46a449b9505200613457e9d15075188de933aae2dd7b2cfd8a036e",
+                    "key": "format/exact-reply",
+                    "n": 20,
+                    "passed": 20,
+                    "version": 1
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.925,
+                "suites": [
+                  {
+                    "accuracy": 0.97,
+                    "ci95": [
+                      0.915479219195973,
+                      0.9897456617765851
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 97,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.88,
+                    "ci95": [
+                      0.8018773199709163,
+                      0.9300066263473222
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 88,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "3e4af0ff96b89b6fd6af4b30d842d4c1e69b27e29108e028de29f8b6256e349e",
+                    "key": "grounding/context-only",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 1
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.6096569663469354,
+                      0.9999999999999999
+                    ],
+                    "hash": "1c630bdb251f9db6f5230a6272a06462613a2759af6617bf0554ef9a29f7a4fd",
+                    "key": "longctx/needle",
+                    "n": 6,
+                    "passed": 6,
+                    "version": 1
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "2eda5321fb6c6e4c0453e21b4ee384914441930d13fe74039d85eb14004ab880",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 1
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261028T074044Z-gemma-4-12b-it-exl3-dc9c035a",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 60.53018969610162,
+                "median": 60.474789052371825,
+                "min": 60.418718779995295,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 64.28158393466073,
+                "median": 64.2384704049505,
+                "min": 64.18394101425461,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 8686.107646762446,
+                "median": 8646.166319261514,
+                "min": 8620.749460799867,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.2643621659999553,
+                "median": 0.2635850289998416,
+                "min": 0.2623729860001731,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 189.81894161406632,
+                "median": 188.14748948876553,
+                "min": 187.82902573557607,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 57.435485878787595,
+                "median": 57.36412086896243,
+                "min": 54.43564558718404,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 3086.4419652227202,
+                "median": 2382.824845794351,
+                "min": 2255.793010571192,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.0102877300000728,
+                "median": 0.9564364549999027,
+                "min": 0.7383906860000025,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 63.78830365165629,
+                "median": 63.766352750385266,
+                "min": 63.63303666122597,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 66.17946024535587,
+                "median": 66.14350702741696,
+                "min": 66.01847614199515,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 957.0093096413686,
+                "median": 953.2137960567703,
+                "min": 946.967343001082,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.16051239900025394,
+                "median": 0.1594605540003613,
+                "min": 0.15882813100006388,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 218.31332284003773,
+                "median": 217.98925135407427,
+                "min": 217.57131639030692,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 61.39887430379252,
+                "median": 61.298854261375055,
+                "min": 61.171185738706065,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 284.04547211454684,
+                "median": 283.1606717205765,
+                "min": 282.66052868822055,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.5377475260002029,
+                "median": 0.5367977094999787,
+                "min": 0.5351255870000386,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "grounding": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "coming": true,
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-11-02"
+}
