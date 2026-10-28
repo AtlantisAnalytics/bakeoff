@@ -1,0 +1,59 @@
+{
+  "24gb": {
+    "format": {
+      "bundle_sha256": "a3c878145edf98133c2da3d276b2b8b79c97b04671e124bfdf631a89b77316ea",
+      "label": "Granite 4.2 8B FP8",
+      "quant": "compressed-tensors",
+      "run_id": "20261028T155751Z-granite-4-2-8b-fp8-ec37dc30",
+      "runtime": "vllm",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "format",
+      "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+    },
+    "general": {
+      "bundle_sha256": "34057713619b5c2a745c7e55ba5533c4952afe9bc9c0de560443325b6a9e3e06",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T153850Z-gemma-4-12b-it-exl3-092f3e7d",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "general",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    },
+    "grounding": {
+      "bundle_sha256": "a3c878145edf98133c2da3d276b2b8b79c97b04671e124bfdf631a89b77316ea",
+      "label": "Granite 4.2 8B FP8",
+      "quant": "compressed-tensors",
+      "run_id": "20261028T155751Z-granite-4-2-8b-fp8-ec37dc30",
+      "runtime": "vllm",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "grounding",
+      "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+    },
+    "longctx": {
+      "bundle_sha256": "a3c878145edf98133c2da3d276b2b8b79c97b04671e124bfdf631a89b77316ea",
+      "label": "Granite 4.2 8B FP8",
+      "quant": "compressed-tensors",
+      "run_id": "20261028T155751Z-granite-4-2-8b-fp8-ec37dc30",
+      "runtime": "vllm",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "longctx",
+      "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+    },
+    "structured": {
+      "bundle_sha256": "a3c878145edf98133c2da3d276b2b8b79c97b04671e124bfdf631a89b77316ea",
+      "label": "Granite 4.2 8B FP8",
+      "quant": "compressed-tensors",
+      "run_id": "20261028T155751Z-granite-4-2-8b-fp8-ec37dc30",
+      "runtime": "vllm",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "structured",
+      "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+    }
+  }
+}
