@@ -1,0 +1,59 @@
+{
+  "24gb": {
+    "format": {
+      "bundle_sha256": "f18eb35db72437e6ef72f14492676becf85c97448934590158a2d849973ef9ae",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "format",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    },
+    "general": {
+      "bundle_sha256": "f18eb35db72437e6ef72f14492676becf85c97448934590158a2d849973ef9ae",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "general",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    },
+    "grounding": {
+      "bundle_sha256": "f18eb35db72437e6ef72f14492676becf85c97448934590158a2d849973ef9ae",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "grounding",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    },
+    "longctx": {
+      "bundle_sha256": "f18eb35db72437e6ef72f14492676becf85c97448934590158a2d849973ef9ae",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "longctx",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    },
+    "structured": {
+      "bundle_sha256": "f18eb35db72437e6ef72f14492676becf85c97448934590158a2d849973ef9ae",
+      "label": "Gemma 4 12B IT EXL3",
+      "quant": "exl3-6bpw",
+      "run_id": "20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "structured",
+      "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+    }
+  }
+}

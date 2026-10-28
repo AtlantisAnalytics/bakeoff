@@ -1,0 +1,14 @@
+week = "2026-11-02"
+published_at = "2026-10-28T14:36:20Z"
+
+[[run]]
+bundle = "runs/20261028T132223Z-qwen3-8-27b-exl3-777cee2c"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.8-27B-exl3"
+
+[[run]]
+bundle = "runs/20261028T135309Z-gemma-4-12b-it-exl3-a65ddc8e"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-12B-it-exl3"
