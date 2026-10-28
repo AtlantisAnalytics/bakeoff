@@ -1,0 +1,59 @@
+{
+  "24gb": {
+    "format": {
+      "bundle_sha256": "b24813ec4825e57ea1ee9544a7bfb575b98b05a106e00b65c15649b0f84f9723",
+      "label": "Qwen3 0.6B exl3",
+      "quant": "exl3-4bpw",
+      "run_id": "20261028T034432Z-qwen3-0-6b-exl3-4acebaf3",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "format",
+      "weights": "hf:turboderp/Qwen3-0.6B-exl3@c24eb896c739f9dea5801dea865866d940d139e6"
+    },
+    "general": {
+      "bundle_sha256": "b24813ec4825e57ea1ee9544a7bfb575b98b05a106e00b65c15649b0f84f9723",
+      "label": "Qwen3 0.6B exl3",
+      "quant": "exl3-4bpw",
+      "run_id": "20261028T034432Z-qwen3-0-6b-exl3-4acebaf3",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "general",
+      "weights": "hf:turboderp/Qwen3-0.6B-exl3@c24eb896c739f9dea5801dea865866d940d139e6"
+    },
+    "grounding": {
+      "bundle_sha256": "b24813ec4825e57ea1ee9544a7bfb575b98b05a106e00b65c15649b0f84f9723",
+      "label": "Qwen3 0.6B exl3",
+      "quant": "exl3-4bpw",
+      "run_id": "20261028T034432Z-qwen3-0-6b-exl3-4acebaf3",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "grounding",
+      "weights": "hf:turboderp/Qwen3-0.6B-exl3@c24eb896c739f9dea5801dea865866d940d139e6"
+    },
+    "longctx": {
+      "bundle_sha256": "1d60ab502d59553c68a3d311ba68477c0d2e2d82a1297247f76adbb50eb5f5b3",
+      "label": "Qwen2.5 0.5B Instruct",
+      "quant": "bf16",
+      "run_id": "20261028T034101Z-qwen2-5-0-5b-instruct-6fbc1614",
+      "runtime": "vllm",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "longctx",
+      "weights": "hf:Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775"
+    },
+    "structured": {
+      "bundle_sha256": "b24813ec4825e57ea1ee9544a7bfb575b98b05a106e00b65c15649b0f84f9723",
+      "label": "Qwen3 0.6B exl3",
+      "quant": "exl3-4bpw",
+      "run_id": "20261028T034432Z-qwen3-0-6b-exl3-4acebaf3",
+      "runtime": "exllamav3",
+      "since_week": "2026-11-02",
+      "tier": "24gb",
+      "track": "structured",
+      "weights": "hf:turboderp/Qwen3-0.6B-exl3@c24eb896c739f9dea5801dea865866d940d139e6"
+    }
+  }
+}
