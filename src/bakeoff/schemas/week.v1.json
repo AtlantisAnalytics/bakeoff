@@ -69,6 +69,9 @@
         },
         "ci": {
           "type": "number"
+        },
+        "saturated_score": {
+          "type": "number"
         }
       },
       "required": [
@@ -77,6 +80,7 @@
         "min_context",
         "min_decode_tps",
         "resamples",
+        "saturated_score",
         "speed_ratio",
         "version"
       ],
@@ -135,10 +139,11 @@
               "enum": [
                 "re-measured",
                 "not_re-measured",
-                "none"
+                "none",
+                "saturated"
               ]
             },
-            "description": "Per track: was the current pick re-measured this week."
+            "description": "Per track: was the current pick re-measured this week. none: no pick before this week, so an initial pick was chosen. saturated: no pick before this week, and the best score reached rules.saturated_score, so no pick was chosen."
           },
           "runs": {
             "type": "array",

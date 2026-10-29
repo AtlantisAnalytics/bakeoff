@@ -54,6 +54,7 @@ def test_rules_v1_values():
         "context_cap": 32768,
         "resamples": 10000,
         "ci": 0.95,
+        "saturated_score": 1.0,
     }
     assert issubclass(VerdictError, ValueError)
 
@@ -278,6 +279,44 @@ def test_initial_pick(tmp_path):
     assert res.picks_after["general"]["run_id"] == "run-b"
     assert res.picks_after["general"]["since_week"] == WEEK
     assert res.picks_after["general"]["bundle_sha256"] == b.bundle_sha256
+
+
+def test_no_initial_pick_when_the_best_score_is_100(tmp_path):
+    # A suite that every top model aces can't rank them: naming one by decode speed would freeze a
+    # pick that no later run can replace (the CI's lower bound can't clear 0 at the ceiling).
+    a = run(tmp_path, "run-a", "A", {GSM: g(100)}, decode=30.0)
+    b = run(tmp_path, "run-b", "B", {GSM: g(100)}, decode=50.0)
+    c = run(tmp_path, "run-c", "C", {GSM: g(90)})
+    res = assess([a, b, c], {})
+    assert res.pick_status == {"general": "saturated"}
+    assert res.picks_after == {}
+    assert res.pick_tracks == {}
+    assert res.verdicts == {"run-a": {}, "run-b": {}, "run-c": {}}
+
+
+def test_saturation_is_per_track(tmp_path):
+    jsn = "structured/json"
+    a = run(tmp_path, "run-a", "A", {GSM: g(80), jsn: g(100)})
+    b = run(tmp_path, "run-b", "B", {GSM: g(70), jsn: g(95)})
+    res = assess([a, b], {})
+    assert res.pick_status == {"general": "none", "structured": "saturated"}
+    assert set(res.picks_after) == {"general"}
+    assert res.picks_after["general"]["run_id"] == "run-a"
+    assert set(res.verdicts["run-a"]) == set(res.verdicts["run-b"]) == {"general"}
+
+
+def test_a_single_run_at_100_is_not_picked(tmp_path):
+    a = run(tmp_path, "run-a", "A", {GSM: g(100)})
+    res = assess([a], {})
+    assert res.pick_status == {"general": "saturated"}
+    assert res.picks_after == {}
+
+
+def test_just_below_100_is_picked(tmp_path):
+    a = run(tmp_path, "run-a", "A", {GSM: g(99)})
+    res = assess([a], {})
+    assert res.pick_status == {"general": "none"}
+    assert res.picks_after["general"]["run_id"] == "run-a"
 
 
 @pytest.mark.parametrize(
