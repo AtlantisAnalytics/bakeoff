@@ -63,8 +63,11 @@ def test_vaults_distractors_kind():
     lines = msgs[0]["content"].split("\n")
     town = re.search(r"current access code for the (.+?) vault\?", lines[-1]).group(1)
     codes = dict(STATEMENT.fullmatch(ln).groups() for ln in _vault_lines(msgs))
-    assert expected == {"answerable": True, "must_include": [codes[town]],
-                        "must_not_include": sorted(c for n, c in codes.items() if n != town)}
+    assert expected == {
+        "answerable": True,
+        "must_include": [codes[town]],
+        "must_not_include": sorted(c for n, c in codes.items() if n != town),
+    }
     assert f"{town} annex" in codes  # a near-name distractor
     at = next(i for i, ln in enumerate(lines) if ln.startswith(f"The access code for the {town} v"))
     assert abs(at / (len(lines) - 1) - 0.5) < 0.05
@@ -75,8 +78,9 @@ def test_vaults_changed_kind_asks_for_the_new_code():
     text = msgs[0]["content"]
     town = re.search(r"current access code for the (.+?) vault\?", text).group(1)
     old = dict(STATEMENT.fullmatch(ln).groups() for ln in _vault_lines(msgs))[town]
-    new = re.search(rf"the access code for the {town} vault was changed to ([A-Z]+-\d{{4}})\.",
-                    text).group(1)
+    new = re.search(
+        rf"the access code for the {town} vault was changed to ([A-Z]+-\d{{4}})\.", text
+    ).group(1)
     assert text.index(old) < text.index(new) and old != new
     assert expected["answerable"] and expected["must_include"] == [new]
     assert old in expected["must_not_include"] and len(expected["must_not_include"]) == 8
