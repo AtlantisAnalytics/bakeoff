@@ -52,8 +52,10 @@ def needle_messages(n_lines: int, depth: float, seed: int) -> tuple[list[dict], 
 # when only "<town> annex" is there (the answer is NOT IN CONTEXT).
 
 VAULT_KINDS = ("distractors", "changed", "absent")
-VAULT_QUESTION = ("\n\nWhat is the current access code for the {town} vault? Reply with the code "
-                  "only, or with NOT IN CONTEXT if the text does not give it.")
+VAULT_QUESTION = (
+    "\n\nWhat is the current access code for the {town} vault? Reply with the code "
+    "only, or with NOT IN CONTEXT if the text does not give it."
+)
 
 
 def vault_messages(n_lines: int, depth: float, kind: str, seed: int) -> tuple[list[dict], dict]:
@@ -86,8 +88,11 @@ def vault_messages(n_lines: int, depth: float, kind: str, seed: int) -> tuple[li
     for i in range(n_lines + 1):
         if i in slots:
             s = slots[i]
-            out.append(s if s.startswith("Notice:") else
-                       f"The access code for the {s} vault is {code_of[s]}.")
+            out.append(
+                s
+                if s.startswith("Notice:")
+                else f"The access code for the {s} vault is {code_of[s]}."
+            )
         if i < n_lines:
             out.append(lines[i])
     content = "\n".join(out) + VAULT_QUESTION.format(town=town)
