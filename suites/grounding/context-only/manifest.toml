@@ -1,6 +1,6 @@
 track = "grounding"
 name = "context-only"
-version = 1
+version = 2
 split = "public"
 license = "CC-BY-4.0"
 grader = "grounding"

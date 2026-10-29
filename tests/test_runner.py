@@ -276,7 +276,7 @@ def test_interrupt_in_speed_keeps_partial_records(tmp_path):
 
 
 def test_interrupt_in_fit_keeps_partial_records(tmp_path):
-    fake = FakeOpenAI(responder=_cancel_when("access code", after=6 + 2 + 1))
+    fake = FakeOpenAI(responder=_cancel_when("access code", after=27 + 2 + 1))  # 27 longctx items
     with pytest.raises(asyncio.CancelledError):
         go(make_cfg(), fake, tmp_path, run=fake_nvidia, platform="linux")
     path = next(tmp_path.glob("*"))

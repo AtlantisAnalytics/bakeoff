@@ -76,13 +76,20 @@ hash, and a week records the hash it used.</p>
 <ul class="flat">
   <li><strong>General:</strong> a GSM8K slice (MIT), an IFEval slice (Apache-2.0) and open-ended
     prompts (CC BY 4.0; judge-scored, information only).</li>
-  <li><strong>Format:</strong> exact-reply instructions (CC BY 4.0).</li>
-  <li><strong>Grounding:</strong> answering from the supplied context only (CC BY 4.0).</li>
-  <li><strong>Long context:</strong> a needle-in-a-haystack test (CC BY 4.0).</li>
-  <li><strong>Structured output:</strong> JSON tasks (CC BY 4.0), scored two ways. <em>Strict</em>
-    means the whole answer is valid JSON that matches the schema. <em>Extractable</em> means the
-    JSON can be pulled out of surrounding text. Older bundles did not record extractable, and show
-    "not measured".</li>
+  <li><strong>Format:</strong> replies that must match exactly while following several rules at
+    once, such as sort, reverse, change case, join and convert (CC BY 4.0).</li>
+  <li><strong>Grounding:</strong> questions about an incident log, a release register and a
+    policy with an amendment. Some answers need the corrected value or two facts chained together.
+    Others are not in the document even though the same detail is given for something else, and
+    the answer must say so (CC BY 4.0).</li>
+  <li><strong>Long context:</strong> eight vaults with look-alike codes hidden in up to about
+    11,500 tokens of records. The question asks for one vault's code, for a code that a later
+    notice changed, or for a vault that isn't there (CC BY 4.0).</li>
+  <li><strong>Structured output:</strong> JSON extraction with nested objects, arrays of records,
+    enums, null for what the text leaves out, and values to normalise (CC BY 4.0). Every value is
+    checked. It is scored two ways. <em>Strict</em> means the whole answer is valid JSON that
+    matches the schema and the values. <em>Extractable</em> means that JSON can be pulled out of
+    surrounding text. Older bundles did not record extractable, and show "not measured".</li>
 </ul>
 <p>Third-party slices keep their authors' licenses and are attributed in the repository.</p>
 

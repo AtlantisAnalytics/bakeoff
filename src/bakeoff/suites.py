@@ -10,7 +10,7 @@ from typing import Any
 import bakeoff
 from bakeoff.graders import GRADERS
 from bakeoff.hashing import canonical_json, sha256_hex
-from bakeoff.needle import needle_messages
+from bakeoff.needle import VAULT_KINDS, needle_messages, vault_messages
 
 SPLITS = ("public", "private")
 _IDENT = re.compile(r"[a-z0-9][a-z0-9-]*")
@@ -71,7 +71,7 @@ def _with_system(msgs: list[dict], system: str) -> list[dict]:
 
 
 def _generate(gen: dict, system: str, where: Path) -> list[Item]:
-    if gen.get("name") != "needle":
+    if gen.get("name") not in ("needle", "vaults"):
         raise SuiteError(f"{where}: unknown generator {gen.get('name')!r}")
     lines, depths, seed = gen.get("lines"), gen.get("depths"), gen.get("seed")
     if not isinstance(lines, list) or not lines or not all(_is_int(n) and n > 0 for n in lines):
@@ -84,11 +84,29 @@ def _generate(gen: dict, system: str, where: Path) -> list[Item]:
         raise SuiteError(f"{where}: generator depths must be a non-empty list of numbers in [0, 1]")
     if not _is_int(seed):
         raise SuiteError(f"{where}: generator seed must be an int")
+    if gen["name"] == "vaults":
+        return _generate_vaults(gen, system, where)
     items = []
     for n in lines:
         for depth in depths:
             msgs, key = needle_messages(n, depth, seed)
             items.append(Item(f"needle-{n}-{round(depth * 100)}", _with_system(msgs, system), key))
+    return items
+
+
+def _generate_vaults(gen: dict, system: str, where: Path) -> list[Item]:
+    kinds = gen.get("kinds")
+    if not isinstance(kinds, list) or not kinds or not all(k in VAULT_KINDS for k in kinds):
+        raise SuiteError(f"{where}: generator kinds must be a non-empty list of {VAULT_KINDS}")
+    if "changed" in kinds and any(round(d * n) < 1 for n in gen["lines"] for d in gen["depths"]):
+        raise SuiteError(f"{where}: a changed vault needs a line before its notice (depth > 0)")
+    items = []
+    for n in gen["lines"]:
+        for depth in gen["depths"]:
+            for kind in kinds:
+                msgs, expected = vault_messages(n, depth, kind, gen["seed"])
+                item_id = f"vaults-{n}-{round(depth * 100)}-{kind}"
+                items.append(Item(item_id, _with_system(msgs, system), expected))
     return items
 
 

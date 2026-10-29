@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -394,6 +395,15 @@ def _phrases(expected: dict, key: str) -> list[str]:
     return items
 
 
+_DASHES = dict.fromkeys(map(ord, "\u2010\u2011\u2012\u2013\u2014\u2015\u2212"), "-")
+
+
+def _fold(s: str) -> str:
+    """Lower case, with Unicode spaces and dashes as their ASCII forms: gpt-oss writes "Mira\u202f
+    Svensson" and "2026\u201105\u201126", which must match "Mira Svensson" and "2026-05-26"."""
+    return unicodedata.normalize("NFKC", s).translate(_DASHES).lower()
+
+
 @register("grounding")
 def _grounding(output: str, expected: Any, options: dict) -> Grade:
     if not isinstance(expected, dict) or not isinstance(expected.get("answerable"), bool):
@@ -403,15 +413,15 @@ def _grounding(output: str, expected: Any, options: dict) -> Grade:
     marker = options.get("refusal", "NOT IN CONTEXT")
     if not isinstance(marker, str) or not marker:
         raise BadExpected("refusal marker must be a non-empty str")
-    text = output.lower()
-    refused = marker.lower() in text
-    forbidden = [s for s in must_not if s.lower() in text]
+    text = _fold(output)
+    refused = _fold(marker) in text
+    forbidden = [s for s in must_not if _fold(s) in text]
     if forbidden:
         return _result(False, f"forbidden present: {forbidden}")
     if expected["answerable"]:
         if refused:
             return _result(False, "refused an answerable item")
-        missing = [s for s in must_include if s.lower() not in text]
+        missing = [s for s in must_include if _fold(s) not in text]
         if missing:
             return _result(False, f"missing: {missing}")
         return _result(True, "grounded")

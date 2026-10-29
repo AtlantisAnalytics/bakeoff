@@ -78,6 +78,13 @@ CASES = [
     ("grounding", "NOT IN CONTEXT", {**U, "must_not_include": ["42"]}, {}, True),
     ("grounding", "NOT IN CONTEXT, maybe 42", {**U, "must_not_include": ["42"]}, {}, False),
     ("grounding", "UNKNOWN", U, {"refusal": "unknown"}, True),
+    # gpt-oss writes a narrow no-break space and non-breaking hyphens (calibration, 2026-10-28)
+    ("grounding", "Mira Svensson, due 2026‑05‑26.",
+     {"answerable": True, "must_include": ["Mira Svensson", "2026-05-26"], "must_not_include": []},
+     {}, True),
+    ("grounding", "SEV-1, raised from SEV‑2", {"answerable": True, "must_include": ["SEV-1"],
+                                  "must_not_include": ["SEV-2"]}, {}, False),
+    ("grounding", "NOT IN CONTEXT", U, {}, True),
 ]
 
 
