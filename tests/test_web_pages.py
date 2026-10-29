@@ -405,6 +405,23 @@ def test_initial_pick_wording(tmp_path):
     assert "Becomes the pick next week" not in h
 
 
+def test_saturated_track_wording(tmp_path):
+    d = _doc_for(
+        tmp_path,
+        [("r-a", "alpha", {GSM: g(50)}, {}), ("r-b", "beta", {GSM: g(40)}, {})],
+        {},
+    )
+    assert validate_week(d) == []
+    assert d["tiers"][0]["pick_status"] == {"general": "saturated"}
+    assert d["picks_after"] == {"24gb": {}}
+    h = week_page(d, SITE)
+    note = "general: No pick yet — the top score is 100%, so this suite can&#x27;t rank the models"
+    assert note in h
+    assert "Now the pick" not in h
+    assert "initial pick chosen" not in h
+    assert_balanced(h)
+
+
 def test_replace_new_pick_keeps_becomes_wording(doc):
     h = week_page(doc, SITE)
     assert "Becomes the pick next week" in h

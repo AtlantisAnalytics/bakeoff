@@ -171,7 +171,10 @@ Each run in a tier is assessed separately for each track it has scores in.
      `less_context` or `suite_hash_mismatch`.
 7. **No current pick (first week, or a new track).** The eligible run with the highest track score
    becomes the `initial_pick`. Ties go to higher short@1 decode, then to the lower `run_id` in
-   byte order.
+   byte order. If that best score reaches `saturated_score` (1.0, i.e. 100%), no pick is named:
+   `pick_status` is `saturated`, no run gets a verdict in the track, and `picks_after` has no entry,
+   so the next week starts again from no pick. (Amended 2026-10-29, before launch: a pick named
+   at 100% by speed alone could never be replaced, since no CI can clear 0 against it.)
 8. **More than one replace.** Among the final `replace` verdicts in a tier × track, the highest track
    score becomes the new pick, with the same tie-breaks. The others keep `replace` and get
    `outranked_by: <run_id>`.

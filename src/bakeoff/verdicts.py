@@ -20,6 +20,10 @@ Contract (see the spec, "Verdict rules (rules v1)"):
   against it. Overrides there are refused, so the initial pick is always computed. A computed
   ``replace`` against the initial pick (only possible if a bundle's track score disagrees with its
   item records) raises ``VerdictError`` rather than publishing two picks.
+* Saturated track: with no current pick, if the best score reaches ``saturated_score`` (100%),
+  the track is ``saturated`` instead: no pick, no verdicts and no ``picks_after`` entry, so a
+  later week starts from no pick again. A pick named there by decode speed alone could never be
+  replaced, because no run's CI can clear 0 against a perfect score.
 * Re-runs of the pick: an eligible run with the pick's model_key that is not the control is still
   assessed, but never becomes the new pick (it is not a challenger), so ``since_week`` holds.
 * Ranking (rules 7 and 8): higher track score, then higher short@1 decode, then lower run_id
@@ -43,6 +47,7 @@ RULES_V1 = {
     "context_cap": 32768,
     "resamples": 10000,
     "ci": 0.95,
+    "saturated_score": 1.0,
 }
 
 OVERRIDABLE = ("replace", "hold", "watch")
@@ -237,8 +242,11 @@ def assess_tier(
     for t in tracks:
         scored = [r for r in eligible if _has_score(r, t)]
         if t not in picks:
-            pick_status[t] = "none"
             first = _best(scored, t)  # t came from a scored eligible run, so scored is non-empty
+            if first.tracks[t] >= rules["saturated_score"]:
+                pick_status[t] = "saturated"
+                continue
+            pick_status[t] = "none"
             verdicts[first.run_id][t] = Verdict(
                 computed="initial_pick", final="initial_pick", new_pick=True
             )

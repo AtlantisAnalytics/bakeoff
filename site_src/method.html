@@ -39,6 +39,10 @@ upstream engine releases.</p>
   <li><strong>New picks.</strong> With no pick yet, the best eligible run becomes the initial pick.
     If several runs replace the pick, the highest score wins (ties go to faster decode, then to the
     lower run id) and the others are shown as outranked.</li>
+  <li><strong>No pick at 100%.</strong> If a track has no pick yet and its best score is 100%,
+    no pick is named that week. A perfect score shows the suite is too easy to rank those models,
+    and a pick chosen on speed alone could never be replaced, because no run can beat 100%. The
+    track gets its first pick in a later week whose best score is below 100%.</li>
   <li><strong>Overrides.</strong> The owner can override a verdict. The page then shows what the
     rules computed, what the owner decided and why.</li>
 </ol>

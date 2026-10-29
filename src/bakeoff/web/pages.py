@@ -306,7 +306,8 @@ _HEAD_ROW = (
 
 
 def _pick_status(status: dict, picks: dict, week: str) -> str:
-    """One note per track whose pick was not re-measured, or that had no pick before this week.
+    """One note per track whose pick was not re-measured, or that had no pick before this week
+    (with an initial pick chosen, or none because the top score was 100%).
 
     ``picks`` is the tier's ``picks_after``: a pick that was not re-measured carries forward
     unchanged, so it names the current pick. Should an override have replaced it anyway, its
@@ -327,6 +328,10 @@ def _pick_status(status: dict, picks: dict, week: str) -> str:
                 notes.append(f"{track}: the previous pick was not re-measured this week")
         elif s == "none":
             notes.append(f"{track}: No previous pick — initial pick chosen this week")
+        elif s == "saturated":
+            notes.append(
+                f"{track}: No pick yet — the top score is 100%, so this suite can't rank the models"
+            )
     return "\n".join(f'<p class="small muted">{_e(n)}.</p>' for n in notes)
 
 
