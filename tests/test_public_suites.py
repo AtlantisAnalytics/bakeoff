@@ -1,5 +1,8 @@
+import importlib.util
 import re
 from pathlib import Path
+
+import pytest
 
 from bakeoff.graders import grade
 from bakeoff.ifeval import SUPPORTED
@@ -49,5 +52,39 @@ def test_gsm8k_expected_grades_itself():
         assert r.passed, (i.id, r)
 
 
-def test_make_slices_script_present():
-    assert (ROOT / "scripts" / "make_slices.py").is_file()
+def _make_slices():
+    spec = importlib.util.spec_from_file_location(
+        "make_slices", ROOT / "scripts" / "make_slices.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_make_slices_is_deterministic(tmp_path):
+    """The same rows give byte-identical suites: the sample depends on the seed and the pool."""
+    ms = _make_slices()
+    rows = [{"question": f"What is {i} + 1?", "answer": f"... #### {i + 1}"} for i in range(300)]
+    pool, dropped = ms.gsm8k_items(rows)
+    for out in (tmp_path / "a", tmp_path / "b"):
+        ms.write_suite(out, "gsm8k", "MIT", pool, dropped, 100)
+    for f in ("manifest.toml", "items.jsonl", "ATTRIBUTION.md"):
+        a = (tmp_path / "a" / "general" / "gsm8k" / f).read_bytes()
+        assert a == (tmp_path / "b" / "general" / "gsm8k" / f).read_bytes(), f
+    assert (
+        len((tmp_path / "a" / "general" / "gsm8k" / "items.jsonl").read_text().splitlines()) == 100
+    )
+
+
+def test_make_slices_reproduces_the_committed_slices(tmp_path):
+    """From the pinned sources (cached by a first `make_slices.py` run), the committed slices
+    regenerate byte for byte. Skipped without the cache: CI does not download."""
+    ms = _make_slices()
+    cache = ROOT / "runs" / ".cache" / "slices"
+    if not all((cache / ms.SOURCES[n]["file"]).is_file() for n in ("gsm8k", "ifeval")):
+        pytest.skip("no cached sources; run scripts/make_slices.py once")
+    assert ms.main(["--cache", str(cache), "--out", str(tmp_path)]) == 0
+    for name in ("gsm8k", "ifeval"):
+        for f in ("manifest.toml", "items.jsonl", "ATTRIBUTION.md"):
+            made = (tmp_path / "general" / name / f).read_bytes()
+            assert made == (suites_root() / "general" / name / f).read_bytes(), (name, f)
