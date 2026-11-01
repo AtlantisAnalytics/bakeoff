@@ -301,7 +301,7 @@ def _pmset_thermal(text: str | None) -> int | None:
         return None
     if "No thermal warning level has been recorded" in text:
         return 0
-    m = re.search(r"thermal warning level\D*(\d+)", text, re.I)
+    m = re.search(r"thermal warning level[^\d\n]*(\d+)", text, re.I)
     return int(m.group(1)) if m else None
 
 

@@ -821,6 +821,17 @@ def test_mac_power_state_low_power_mode_lines():
     assert mac_power_state(none)["low_power_mode"] == {"value": None, "source": "not_captured"}
 
 
+def test_mac_thermal_level_does_not_cross_lines():
+    table = {
+        **MAC_TABLE,
+        ("pmset", "-g", "therm"): "Thermal warning level\nCPU_Speed_Limit = 100\n",
+    }
+    assert mac_power_state(fake_run(table))["thermal_warning"] == {
+        "value": None,
+        "source": "not_captured",
+    }
+
+
 def test_mac_power_state_all_missing():
     state = mac_power_state(lambda argv: None)
     assert all(v == {"value": None, "source": "not_captured"} for v in state.values())

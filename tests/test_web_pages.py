@@ -563,14 +563,12 @@ def test_method_page_states_override_and_picks_update_rules():
 def test_method_page_states_mac_tier_method():
     from pathlib import Path
 
-    text = " ".join(
-        (Path(__file__).parent.parent / "site_src" / "method.html")
-        .read_text(encoding="utf-8")
-        .split()
-    )
-    for phrase in (
-        "largest standard GGUF quant that fits, plus Q4_K_M",
-        "whole-chip package power (CPU + GPU + ANE)",
-        "raised to 32 GB",
-    ):
-        assert phrase in text
+    root = Path(__file__).parent.parent
+    for rel in ("site_src/method.html", "site/method/index.html"):
+        text = " ".join((root / rel).read_text(encoding="utf-8").split())
+        for phrase in (
+            "largest standard GGUF quant that fits, plus Q4_K_M",
+            "whole-chip package power (CPU + GPU + ANE)",
+            "raised to 32 GB",
+        ):
+            assert phrase in text, (rel, phrase)
