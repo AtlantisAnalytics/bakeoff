@@ -89,7 +89,11 @@ class PowerStream:
             return
 
     def start(self) -> bool:
-        """True when powermetrics is running; False when it is not permitted or exits at once."""
+        """True when powermetrics is running; False when it is not permitted or exits at once.
+
+        Blocks for up to START_GRACE_S before the run starts, on purpose: that is how an
+        immediate sudo refusal is noticed.
+        """
         try:
             self._proc = self._popen(
                 POWERMETRICS_ARGV,
@@ -119,10 +123,19 @@ class PowerStream:
 
     def stop(self) -> None:
         proc = self._proc
-        if proc is None or proc.poll() is not None:
+        if proc is None:
             return
-        proc.terminate()
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(STOP_TIMEOUT_S)
+            except subprocess.TimeoutExpired:
+                proc.kill()
         try:
-            proc.wait(STOP_TIMEOUT_S)
+            proc.wait(STOP_TIMEOUT_S)  # reap, so no zombie is left
         except subprocess.TimeoutExpired:
-            proc.kill()
+            pass
+        if proc.stdout is not None:
+            proc.stdout.close()
+        if self._thread is not None:
+            self._thread.join(1.0)

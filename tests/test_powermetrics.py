@@ -55,6 +55,7 @@ class FakeProc:
         self.stdout = _Pipe(list(chunks))
         self.returncode = returncode
         self.terminated = False
+        self.waited = False
 
     def poll(self):
         return self.returncode
@@ -67,12 +68,17 @@ class FakeProc:
         self.returncode = -9
 
     def wait(self, timeout=None):
+        self.waited = True
         return self.returncode
 
 
 class _Pipe:
     def __init__(self, chunks):
         self._chunks = chunks
+        self.closed = False
+
+    def close(self):
+        self.closed = True
 
     def read1(self, n):
         return self._chunks.pop(0) if self._chunks else b""
@@ -106,3 +112,20 @@ def test_power_stale_reading_not_reused():
     assert ps.latest() == 2.5
     now[0] = 103.0
     assert ps.latest() is None
+
+
+def test_stop_reaps_and_closes_even_when_already_exited():
+    proc = FakeProc(returncode=1)
+    ps = PowerStream(popen=lambda *a, **k: proc)
+    assert ps.start() is False
+    ps.stop()
+    assert proc.waited and proc.stdout.closed
+
+
+def test_stop_closes_stdout_of_running_process(monkeypatch):
+    monkeypatch.setattr("bakeoff.powermetrics.START_GRACE_S", 0.1)
+    proc = FakeProc()
+    ps = PowerStream(popen=lambda *a, **k: proc)
+    assert ps.start() is True
+    ps.stop()
+    assert proc.terminated and proc.waited and proc.stdout.closed

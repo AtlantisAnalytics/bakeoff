@@ -247,10 +247,10 @@ async def execute_run(
     fit_out: tuple[list[dict], dict] | None = None
     status, reason = "complete", None
     interrupted: BaseException | None = None
-    if power is not None:
-        power.start()  # False (not permitted) just leaves power unrecorded
-    sampler.start()
     try:
+        if power is not None:
+            power.start()  # False (not permitted) just leaves power unrecorded
+        sampler.start()
         if "quality" in wanted:
             sampler.mark("quality")
             try:
@@ -279,9 +279,11 @@ async def execute_run(
         status, reason = "incomplete", "interrupted"
         interrupted = exc
     finally:
-        samples = sampler.stop()
-        if power is not None:
-            power.stop()
+        try:
+            samples = sampler.stop()
+        finally:  # powermetrics runs as root: it must never outlive the run
+            if power is not None:
+                power.stop()
 
     reported = (
         {"size_vram": field(None, "reported")}
