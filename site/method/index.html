@@ -113,6 +113,10 @@ often their pass/fail agreed.</p>
 <p>Quality prompts go to the engine eight at a time, each at temperature 0 with a fixed seed. Like a different
 card, batching on the server can change an occasional token. The candidate and the pick it is compared with
 are always measured the same way.</p>
+<p>The Mac tier tests each model at the largest standard GGUF quant that fits, plus Q4_K_M.
+NVIDIA power is GPU board power, while Mac power is whole-chip package power (CPU + GPU + ANE). So tokens
+per joule is not a like-for-like comparison across them. The GPU wired-memory limit is raised to 32 GB
+for runs.</p>
 <p>The memory figure is what the engine reserved, not what the model needs. vLLM claims a fixed share of the
 card at start-up and fills it with weights and KV cache. For fit, read the KV capacity and the share of it
 one request of each size needs.</p>

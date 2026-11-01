@@ -11,5 +11,5 @@ envelope = "1× RTX 3090 Ti 24 GB"
 [[tier]]
 id = "36gb-unified"
 name = "36 GB unified"
-envelope = "Apple M4 Max 36 GB unified"
+envelope = "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)"
 coming = true

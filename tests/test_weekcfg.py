@@ -189,3 +189,11 @@ def test_override_tier_must_match_its_runs_tier(tmp_path, tiers):
     text = GOOD.replace('tier = "24gb"\ntrack', 'tier = "12gb"\ntrack')
     with pytest.raises(WeekInputError, match=r"override\[0\]\.tier '12gb'.*run .*'24gb'"):
         load_week(write(tmp_path, text), tiers)
+
+
+def test_tiers_envelope_36gb():
+    root = Path(__file__).resolve().parent.parent
+    tiers = load_tiers(root / "tiers.toml")
+    assert tiers["36gb-unified"].envelope == (
+        "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)"
+    )

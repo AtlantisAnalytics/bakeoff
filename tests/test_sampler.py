@@ -268,3 +268,26 @@ def test_label_and_time_are_snapshotted_before_the_read():
     rec = s.sample_once()
     assert rec["pass"] == "baseline"
     assert rec["t"] < before + 0.04
+
+
+def test_peaks_over_baseline():
+    s = Sampler(
+        "darwin",
+        feed(
+            GOOD_VM.format(active=10, wired=20, comp=30),
+            GOOD_VM.format(active=100, wired=20, comp=30),
+        ),
+        baseline_mem_bytes=40 * 16384,
+    )
+    s.sample_once()
+    s.mark("quality")
+    s.sample_once()
+    p = s.peaks()
+    assert p["baseline"]["mem_over_baseline_bytes"] == 20 * 16384
+    assert p["quality"]["mem_over_baseline_bytes"] == 110 * 16384
+
+
+def test_no_baseline_no_over_baseline_key():
+    s = Sampler("darwin", feed(GOOD_VM.format(active=10, wired=20, comp=30)))
+    s.sample_once()
+    assert "mem_over_baseline_bytes" not in s.peaks()["baseline"]

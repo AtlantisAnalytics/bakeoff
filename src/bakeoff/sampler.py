@@ -54,11 +54,13 @@ class Sampler:
         run: Runner,
         interval_s: float = 0.5,
         power: PowerStream | None = None,
+        baseline_mem_bytes: int | None = None,
     ):
         self.platform = platform
         self._run = run
         self._interval = interval_s
         self._power = power
+        self._baseline_mem = baseline_mem_bytes
         self._samples: list[dict] = []
         self._lock = threading.Lock()
         self._pass = "baseline"
@@ -134,10 +136,14 @@ class Sampler:
     def _peak(self, rows: list[dict]) -> dict:
         if self.platform == "darwin":
             watts = [r["power_w"] for r in rows if r.get("power_w") is not None]
-            return {
-                "mem_used_bytes": max(r["mem_used_bytes"] for r in rows),
+            peak = max(r["mem_used_bytes"] for r in rows)
+            out = {
+                "mem_used_bytes": peak,
                 "power_w_mean": sum(watts) / len(watts) if watts else None,
             }
+            if self._baseline_mem is not None:
+                out["mem_over_baseline_bytes"] = peak - self._baseline_mem
+            return out
         per_gpu: dict[int, int] = {}
         for r in rows:
             for g in r["gpus"]:

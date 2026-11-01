@@ -19,6 +19,7 @@ from bakeoff.env import (
     capture_env,
     detect_platform,
     field,
+    mac_power_state,
     parse_cuda_version,
     parse_link_query,
     parse_nvidia_query,
@@ -380,7 +381,7 @@ def test_only_allowlisted_commands_run(tmp_path):
     }
     mac = fake_run({("sw_vers",): "15.6.1\n", ("sysctl",): fx("sysctl_darwin.txt")})
     capture_env(CFG, None, None, run=mac, read=fake_read({}), platform="darwin", repo_root=repo)
-    assert {c[0] for c in mac.calls} <= {"nvidia-smi", "sw_vers", "sysctl", "git"}
+    assert {c[0] for c in mac.calls} <= {"nvidia-smi", "sw_vers", "sysctl", "pmset", "git"}
 
 
 def test_unknown_platform_is_not_linux():
@@ -778,3 +779,69 @@ def test_malformed_row_pairs_are_not_captured():
     env = capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
     check_shape(env)
     assert env["gpu_links"][0]["path"] == {"value": None, "source": "not_captured"}
+
+
+MAC_TABLE = {
+    ("sw_vers", "-productVersion"): fx("sw_vers.txt"),
+    ("sysctl", "-n", "machdep.cpu.brand_string"): fx("sysctl_darwin.txt"),
+    ("sysctl", "-n", "iogpu.wired_limit_mb"): "32768\n",
+    ("pmset", "-g", "batt"): fx("pmset_batt.txt"),
+    ("pmset", "-g", "therm"): fx("pmset_therm.txt"),
+    ("pmset", "-g"): fx("pmset_g.txt"),
+}
+
+
+def test_mac_power_state_fixtures():
+    state = mac_power_state(fake_run(MAC_TABLE))
+    assert state == {
+        "power_source": {"value": "AC Power", "source": "measured"},
+        "low_power_mode": {"value": False, "source": "measured"},
+        "thermal_warning": {"value": 0, "source": "measured"},
+        "gpu_wired_limit_mb": {"value": 32768, "source": "measured"},
+    }
+
+
+def test_mac_power_state_battery():
+    table = {
+        **MAC_TABLE,
+        ("pmset", "-g", "batt"): "Now drawing from 'Battery Power'\n -InternalBattery-0\n",
+        ("pmset", "-g", "therm"): "CPU_Scheduler_Limit = 80\n",
+    }
+    state = mac_power_state(fake_run(table))
+    assert state["power_source"]["value"] == "Battery Power"
+    assert state["thermal_warning"] == {"value": None, "source": "not_captured"}
+
+
+def test_mac_power_state_low_power_mode_lines():
+    on = fake_run({**MAC_TABLE, ("pmset", "-g"): " powermode            1\n"})
+    assert mac_power_state(on)["low_power_mode"]["value"] is True
+    legacy = fake_run({**MAC_TABLE, ("pmset", "-g"): " lowpowermode         1\n powermode 0\n"})
+    assert mac_power_state(legacy)["low_power_mode"]["value"] is True
+    none = fake_run({**MAC_TABLE, ("pmset", "-g"): " sleep 0\n"})
+    assert mac_power_state(none)["low_power_mode"] == {"value": None, "source": "not_captured"}
+
+
+def test_mac_power_state_all_missing():
+    state = mac_power_state(lambda argv: None)
+    assert all(v == {"value": None, "source": "not_captured"} for v in state.values())
+
+
+def test_env_darwin_has_power_state():
+    env = capture_env(
+        CFG, None, "m", run=fake_run(MAC_TABLE), read=fake_read({}), platform="darwin"
+    )
+    check_shape(env)
+    assert env["host"]["power_state"]["power_source"]["value"] == "AC Power"
+    assert env["host"]["power_state"]["gpu_wired_limit_mb"]["value"] == 32768
+
+
+def test_env_linux_has_no_power_state():
+    env = capture_env(
+        CFG,
+        None,
+        None,
+        run=nvidia_run(fx("nvidia_query_1gpu.csv")),
+        read=fake_read(LINUX_FILES),
+        platform="linux",
+    )
+    assert "power_state" not in env["host"]

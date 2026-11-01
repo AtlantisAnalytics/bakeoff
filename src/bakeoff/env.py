@@ -296,6 +296,40 @@ def _mac_host(
     }
 
 
+def _pmset_thermal(text: str | None) -> int | None:
+    if text is None:
+        return None
+    if "No thermal warning level has been recorded" in text:
+        return 0
+    m = re.search(r"thermal warning level\D*(\d+)", text, re.I)
+    return int(m.group(1)) if m else None
+
+
+def mac_thermal_warning(run: Runner) -> dict:
+    return field(_pmset_thermal(run(["pmset", "-g", "therm"])), "measured")
+
+
+def _low_power_mode(text: str | None) -> bool | None:
+    """lowpowermode if listed, else powermode (0 automatic, 1 low power, 2 high power)."""
+    for key in ("lowpowermode", "powermode"):
+        m = re.search(rf"^\s*{key}\s+(\d+)\s*$", text or "", re.M)
+        if m:
+            return int(m.group(1)) == 1
+    return None
+
+
+def mac_power_state(run: Runner) -> dict:
+    """Power source, Low Power Mode, thermal warning and GPU wired-memory limit."""
+    src = re.search(r"Now drawing from '([^']+)'", run(["pmset", "-g", "batt"]) or "")
+    limit = _int_or_none(run(["sysctl", "-n", "iogpu.wired_limit_mb"]) or "")
+    return {
+        "power_source": field(src.group(1) if src else None, "measured"),
+        "low_power_mode": field(_low_power_mode(run(["pmset", "-g"])), "measured"),
+        "thermal_warning": mac_thermal_warning(run),
+        "gpu_wired_limit_mb": field(limit, "measured"),
+    }
+
+
 def _nvidia_gpus(
     run: Runner, read: Reader, clean: Cleaner, linux: bool
 ) -> tuple[list[dict], list[dict]]:
@@ -433,6 +467,7 @@ def capture_env(
     sysctl = _mac_sysctl(run) if mac else (None, None, None)
     if mac:
         host = _mac_host(run, sysctl, clean)
+        host["power_state"] = mac_power_state(run)
     elif platform.startswith("linux"):
         host = _linux_host(read, clean)
     else:
