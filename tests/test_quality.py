@@ -58,7 +58,7 @@ def test_scores_and_ci():
     assert s["ci95"] == list(wilson(3, 4))
     assert set(s) == {
         "key", "track", "name", "version", "split", "hash",
-        "n", "passed", "errors", "truncated", "accuracy", "ci95",
+        "n", "items_total", "passed", "errors", "truncated", "accuracy", "ci95",
     }  # fmt: skip
     assert s["key"] == "general/s" and s["hash"] == "hash-s"
     rec = res.records["general/s"][0]
@@ -144,6 +144,7 @@ def test_errors_separate_and_abort():
     assert len(recs) == 10  # the aborting item is recorded
     assert all(r["error"] and r["pass"] is False and r["reason"] == "error" for r in recs)
     assert partial.suites[0]["errors"] == 10 and partial.suites[0]["n"] == 10
+    assert partial.suites[0]["items_total"] == 30  # a partial summary says how much it covers
 
 
 def test_errors_below_budget_count_as_fails():
@@ -153,6 +154,7 @@ def test_errors_below_budget_count_as_fails():
     res = run_q(FakeOpenAI(responder=reply_for(r)), [make_suite(n=10)])
     (s,) = res.suites
     assert s["errors"] == 1 and s["n"] == 10 and s["passed"] == 9 and s["accuracy"] == 0.9
+    assert s["items_total"] == 10
     rec = res.records["general/s"][0]
     assert rec["error"] and rec["pass"] is False and rec["reason"] == "error"
 
