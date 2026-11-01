@@ -11,6 +11,7 @@ import threading
 import time
 
 from bakeoff.env import Runner, nvidia_argv, parse_vm_stat
+from bakeoff.powermetrics import PowerStream
 
 SAMPLER_NVIDIA_ARGV = [
     "nvidia-smi",
@@ -47,10 +48,17 @@ def _power(text: str) -> float | None:
 
 
 class Sampler:
-    def __init__(self, platform: str, run: Runner, interval_s: float = 0.5):
+    def __init__(
+        self,
+        platform: str,
+        run: Runner,
+        interval_s: float = 0.5,
+        power: PowerStream | None = None,
+    ):
         self.platform = platform
         self._run = run
         self._interval = interval_s
+        self._power = power
         self._samples: list[dict] = []
         self._lock = threading.Lock()
         self._pass = "baseline"
@@ -74,7 +82,10 @@ class Sampler:
             return None if gpus is None else {"gpus": gpus}
         if self.platform == "darwin":
             used = parse_vm_stat(self._run(DARWIN_ARGV) or "")
-            return None if used is None else {"mem_used_bytes": used}
+            if used is None:
+                return None
+            watts = self._power.latest() if self._power is not None else None
+            return {"mem_used_bytes": used, "power_w": watts}
         return None
 
     def sample_once(self) -> dict | None:
@@ -122,7 +133,11 @@ class Sampler:
 
     def _peak(self, rows: list[dict]) -> dict:
         if self.platform == "darwin":
-            return {"mem_used_bytes": max(r["mem_used_bytes"] for r in rows)}
+            watts = [r["power_w"] for r in rows if r.get("power_w") is not None]
+            return {
+                "mem_used_bytes": max(r["mem_used_bytes"] for r in rows),
+                "power_w_mean": sum(watts) / len(watts) if watts else None,
+            }
         per_gpu: dict[int, int] = {}
         for r in rows:
             for g in r["gpus"]:

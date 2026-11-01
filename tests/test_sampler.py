@@ -154,8 +154,34 @@ def test_darwin_peaks():
     s.sample_once()
     assert s.sample_once() is None
     p = s.peaks()
-    assert p["baseline"] == {"mem_used_bytes": 60 * 16384}
-    assert p["quality"] == {"mem_used_bytes": 150 * 16384}
+    assert p["baseline"] == {"mem_used_bytes": 60 * 16384, "power_w_mean": None}
+    assert p["quality"] == {"mem_used_bytes": 150 * 16384, "power_w_mean": None}
+
+
+class FakePower:
+    def __init__(self, *values):
+        self._it = iter(values)
+
+    def latest(self, max_age_s=2.0):
+        return next(self._it)
+
+
+def test_darwin_sampler_records_power():
+    vm = GOOD_VM.format(active=10, wired=20, comp=30)
+    s = Sampler("darwin", feed(vm, vm, vm), power=FakePower(2.0, 4.0, None))
+    assert s.sample_once()["power_w"] == 2.0
+    s.sample_once()
+    s.sample_once()
+    p = s.peaks()["baseline"]
+    assert p["power_w_mean"] == 3.0
+
+
+def test_darwin_peak_power_mean_none_without_power():
+    vm = GOOD_VM.format(active=10, wired=20, comp=30)
+    s = Sampler("darwin", feed(vm, vm), power=FakePower(None, None))
+    s.sample_once()
+    s.sample_once()
+    assert s.peaks()["baseline"]["power_w_mean"] is None
 
 
 def test_darwin_command():

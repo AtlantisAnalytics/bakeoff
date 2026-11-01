@@ -19,6 +19,7 @@ from bakeoff.env import Runner, capture_env, default_run, detect_platform, field
 from bakeoff.errors import AbortRun
 from bakeoff.fit import run_fit
 from bakeoff.hashing import canonical_json
+from bakeoff.powermetrics import PowerStream
 from bakeoff.quality import QualityResult, run_quality
 from bakeoff.sampler import Sampler
 from bakeoff.speed import run_speed
@@ -238,12 +239,16 @@ async def execute_run(
         started, cfg.model.label, salt, "-".join(sorted(wanted)) if wanted != set(PASSES) else ""
     )
 
-    sampler = Sampler(detect_platform(run, platform), run, interval_s=sample_interval_s)
+    sampler_platform = detect_platform(run, platform)
+    power = PowerStream() if sampler_platform == "darwin" else None
+    sampler = Sampler(sampler_platform, run, interval_s=sample_interval_s, power=power)
     quality = QualityResult()
     speed_out: tuple[list[dict], dict] | None = None
     fit_out: tuple[list[dict], dict] | None = None
     status, reason = "complete", None
     interrupted: BaseException | None = None
+    if power is not None:
+        power.start()  # False (not permitted) just leaves power unrecorded
     sampler.start()
     try:
         if "quality" in wanted:
@@ -275,6 +280,8 @@ async def execute_run(
         interrupted = exc
     finally:
         samples = sampler.stop()
+        if power is not None:
+            power.stop()
 
     reported = (
         {"size_vram": field(None, "reported")}
