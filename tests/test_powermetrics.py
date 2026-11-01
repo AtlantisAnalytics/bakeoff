@@ -14,8 +14,11 @@ def plist_bytes(combined_mw: float) -> bytes:
 
 
 def test_argv_is_exact():
+    # -k: ignore any cached sudo ticket, so a contributor's Mac never silently starts a root
+    # powermetrics; -n: never prompt. The command and its args (the sudoers match) are unchanged.
     assert POWERMETRICS_ARGV == [
         "sudo",
+        "-k",
         "-n",
         "/usr/bin/powermetrics",
         "--samplers",

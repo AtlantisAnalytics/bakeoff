@@ -1,8 +1,10 @@
 """Measured power on macOS: stream powermetrics plists and keep the latest reading.
 
-The sudoers line on the lab Mac permits exactly POWERMETRICS_ARGV, so the argv must match it byte
-for byte. powermetrics writes one plist per interval, separated by NUL bytes. Nothing here raises
-into the run: if the stream is not permitted or dies, power is simply None.
+The sudoers line on the lab Mac permits exactly the command in POWERMETRICS_ARGV (everything after
+the sudo options), so it must match byte for byte. `-k` makes sudo ignore a cached ticket, so on a
+contributor's Mac without that sudoers line it never silently starts a root powermetrics; `-n` means
+it never prompts. powermetrics writes one plist per interval, separated by NUL bytes. Nothing here
+raises into the run: if the stream is not permitted or dies, power is simply None.
 """
 
 import math
@@ -14,6 +16,7 @@ from collections.abc import Callable
 
 POWERMETRICS_ARGV = [
     "sudo",
+    "-k",
     "-n",
     "/usr/bin/powermetrics",
     "--samplers",
