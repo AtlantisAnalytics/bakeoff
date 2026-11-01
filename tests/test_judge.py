@@ -471,6 +471,37 @@ def test_unexpected_exception_charges_worst_and_stops(bundles, tmp_path):
     )
 
 
+class InterruptingClient(RaisingClient):
+    async def chat(self, *a, **kw):
+        self.n += 1
+        if self.n == self.on_call:
+            raise KeyboardInterrupt  # the request may already be billed
+        return await self.inner.chat(*a, **kw)
+
+
+@pytest.mark.parametrize("on_call", [3, 4])  # an item's first call; its second, after one is paid
+def test_interrupt_charges_the_call_in_flight_and_keeps_the_partial_item(
+    bundles, tmp_path, on_call
+):
+    a, b = bundles
+    fake = judge_fake(prompt_tokens=10, completion_tokens=10)
+
+    async def inner():
+        async with EndpointClient(URL, "judge-m", transport=fake.transport, backoff_s=()) as c:
+            rc = InterruptingClient(c, on_call)
+            return await run_judge(a, b, rc, "judge-m", PRICES, 100.0, False, tmp_path)
+
+    with pytest.raises(KeyboardInterrupt):
+        asyncio.run(inner())
+    (out,) = [p for p in tmp_path.iterdir() if (p / "bundle.json").is_file()]
+    meta = json.loads((out / "bundle.json").read_text())
+    assert meta["status_reason"] == "interrupted"
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert len(recs) == 2 and recs[1]["result"] is None  # the interrupted item, counted nowhere
+    assert recs[1]["cost_usd"] > recs[0]["cost_usd"] / 2  # the in-flight call at its worst case
+    assert sum(r["cost_usd"] for r in recs) == pytest.approx(meta["cost_usd"])
+
+
 def test_cli_exit_2_on_unexpected_error(bundles, tmp_path, monkeypatch):
     a, b = bundles
     cfg = tmp_path / "j.toml"
