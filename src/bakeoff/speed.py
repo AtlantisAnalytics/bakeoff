@@ -56,6 +56,7 @@ def _record(shape: str, c: int, rnd: int, r: ChatResult, ignore_eos: bool) -> di
         "total_s": r.total_s,
         "ignore_eos": ignore_eos,
         "error": r.error,
+        "attempts": r.attempts,
     }
 
 
