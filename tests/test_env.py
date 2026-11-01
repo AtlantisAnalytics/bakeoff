@@ -801,6 +801,12 @@ def test_mac_power_state_fixtures():
     }
 
 
+def test_mac_fixtures_carry_no_device_identifier():
+    # this repo is public: the battery line keeps its shape with a dummy id, never the real one
+    ids = re.findall(r"\(id=(\d+)\)", fx("pmset_batt.txt"))
+    assert ids == ["1234567"]
+
+
 def test_mac_power_state_battery():
     table = {
         **MAC_TABLE,
