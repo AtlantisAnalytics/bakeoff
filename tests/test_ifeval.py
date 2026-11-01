@@ -121,3 +121,21 @@ def test_check_unknown_id_raises():
 
     with pytest.raises(BadExpected):
         check("nope:unknown", {}, "x")
+
+
+@pytest.mark.parametrize(
+    ("iid", "kwargs"),
+    [
+        ("keywords:existence", {"keywords": [" cat"]}),
+        ("keywords:existence", {"keywords": ["   "]}),  # would match any reply with a space
+        ("keywords:frequency", {"keyword": "cat ", "frequency": 1, "relation": "at least"}),
+        ("detectable_content:postscript", {"postscript_marker": " P.S."}),
+        ("startend:end_checker", {"end_phrase": "Thanks. "}),
+    ],
+)
+def test_padded_string_kwargs_are_bad_expected(iid, kwargs):
+    """Surrounding whitespace in an instruction argument is a suite-data error, not a pattern."""
+    from bakeoff.graders import BadExpected
+
+    with pytest.raises(BadExpected):
+        check(iid, kwargs, "a cat. P.S. Thanks.")
