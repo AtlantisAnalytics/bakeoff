@@ -8,6 +8,7 @@ from weekfix import make_bundle
 
 import bakeoff.publish as pub
 from bakeoff.bundle import verify_bundle, write_bundle
+from bakeoff.hashing import sha256_hex
 from bakeoff.publish import PublishError, publish, week_docs, write_picks
 from bakeoff.week import validate_week
 
@@ -41,6 +42,9 @@ def bundle(root, weights, k=6, *, sub="runs", envelope=ENV24, **kw):
     )
 
 
+CHAT = "general/chat"  # judge-scored
+
+
 def judge_bundle(root, name, a, b, counts=(3, 1, 1)):
     meta = {
         "bundle_format": "judge-m1",
@@ -48,7 +52,7 @@ def judge_bundle(root, name, a, b, counts=(3, 1, 1)):
         "status_reason": None,
         "a": a,
         "b": b,
-        "suite": {"key": "general/chat", "hash": "c" * 64},
+        "suite": {"key": CHAT, "hash": sha256_hex(CHAT.encode())},  # make_bundle's default hash
         "judge_model": "judge-x",
         "counts": {"a": counts[0], "b": counts[1], "tie": counts[2]},
         "call_errors": 0,
@@ -118,6 +122,7 @@ def test_happy_path(root):
     out = run(toml, root)
     assert out == root / "results" / W1
     assert (out / "week.toml").read_bytes() == toml.read_bytes()
+    assert (out / "tiers.toml").read_bytes() == (root / "tiers.toml").read_bytes()
     doc = doc_of(root)
     assert validate_week(doc) == []
     assert doc["revision"] == 1 and doc["published_at"] == AT1 and doc["corrections"] == []
@@ -139,7 +144,7 @@ def test_happy_path(root):
 
 
 def test_judge_bundle_is_copied_and_mapped(root):
-    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    a, b = bundle(root, "base", 6, judge=(CHAT,)), bundle(root, "small", 4, judge=(CHAT,))
     j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
     out = run(week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), root)
     assert sha(out / "judge" / "judge-chat-1") == sha(j)
@@ -308,6 +313,20 @@ def test_refuses_judge_naming_run_outside_week(root):
     refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), "not in this week")
 
 
+def test_refuses_judge_on_a_suite_the_runs_do_not_have(root):
+    """A judge's records come from its suite: only a public suite both runs carry is published."""
+    a, b = bundle(root, "base", 6, judge=(CHAT,)), bundle(root, "small", 4)
+    j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), "not a public suite")
+
+
+def test_refuses_judge_whose_suite_hash_differs(root):
+    a = bundle(root, "base", 6, judge=(CHAT,), suite_hashes={CHAT: "e" * 64})
+    b = bundle(root, "small", 4, judge=(CHAT,))
+    j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
+    refused(root, week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), "not a public suite")
+
+
 def test_refuses_existing_week_without_correction(root):
     a = bundle(root, "base", 6)
     toml = week_toml(root, [(a, "24gb")])
@@ -461,7 +480,7 @@ def test_correction_refuses_changed_bundle_for_same_run_id(root):
 
 
 def test_correction_refuses_changed_judge_bundle(root):
-    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    a, b = bundle(root, "base", 6, judge=(CHAT,)), bundle(root, "small", 4, judge=(CHAT,))
     j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
     run(week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), root)
     shutil.rmtree(j)

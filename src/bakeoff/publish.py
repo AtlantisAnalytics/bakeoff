@@ -10,6 +10,7 @@ Results layout::
 
     results/picks.json            the latest week's picks_after (derived, never hand state)
     results/<week>/week.toml      the input, byte for byte
+    results/<week>/tiers.toml     the tiers.toml it was published with, byte for byte
     results/<week>/week.json
     results/<week>/runs/<run_id>/ byte-identical bundle copies
     results/<week>/judge/<id>/    judge bundles; <id> is the bundle's directory name
@@ -23,7 +24,8 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
   private-suite outputs are never published, and their public form is not decided yet.
 * Each run's ``config.model.envelope`` equals its tier's envelope exactly; a run's directory name
   equals its ``run_id`` (overrides name runs by directory name), so run_ids are unique.
-* A judge bundle's ``a`` and ``b`` are two different runs of this week.
+* A judge bundle's ``a`` and ``b`` are two different runs of this week, and its suite is a
+  public suite of both, at the same hash.
 * Bundle paths in ``week.toml`` are relative (the file is published as given).
 * Published bundles are immutable: a run_id already published in any week, or a judge bundle
   already in this week, must carry the same ``bundle_sha256``.
@@ -189,7 +191,9 @@ def _count(meta: dict, key: str, where: str) -> int:
     return v
 
 
-def _judge_entry(meta: dict, name: str, run_by_sha: dict[str, str]) -> dict:
+def _judge_entry(
+    meta: dict, name: str, run_by_sha: dict[str, str], views: dict[str, RunView]
+) -> dict:
     if meta.get("bundle_format") != JUDGE_FORMAT:
         raise PublishError(f"judge bundle {name}: bundle_format must be {JUDGE_FORMAT!r}")
     for side in ("a", "b"):
@@ -201,6 +205,16 @@ def _judge_entry(meta: dict, name: str, run_by_sha: dict[str, str]) -> dict:
             )
     if meta["a"] == meta["b"]:
         raise PublishError(f"judge bundle {name}: a and b are the same run")
+    # its records come from this suite: it must be a public suite of both runs, at the same hash
+    suite = meta.get("suite") if isinstance(meta.get("suite"), dict) else {}
+    key = suite.get("key")
+    for side in ("a", "b"):
+        s = views[run_by_sha[meta[side]]].suites.get(key) if isinstance(key, str) else None
+        if not s or s.get("split") != "public" or s.get("hash") != suite.get("hash"):
+            raise PublishError(
+                f"judge bundle {name}: suite {key!r} is not a public suite of run {side} "
+                "at the judge's hash"
+            )
     counts = meta.get("counts")
     if not isinstance(counts, dict):
         raise PublishError(f"judge bundle {name}: counts must be an object")
@@ -262,6 +276,7 @@ def publish(
     results = root / "results"
     try:
         tiers = load_tiers(root / "tiers.toml")
+        tiers_bytes = (root / "tiers.toml").read_bytes()
         inp = load_week(Path(week_toml), tiers)
     except WeekInputError as e:
         raise PublishError(f"week input: {e}") from e
@@ -363,7 +378,7 @@ def publish(
         jid = _segment(path.name, "judge bundle directory name")
         if jid in judge_src:
             raise PublishError(f"duplicate judge bundle directory name {jid}")
-        judges.append(_judge_entry(meta, jid, run_by_sha))
+        judges.append(_judge_entry(meta, jid, run_by_sha, {r: v for r, (v, _) in runs.items()}))
         sha = meta["bundle_sha256"]
         judge_src[jid] = (_published_copy(final / "judge" / jid, sha, f"judge {jid}") or path, sha)
 
@@ -435,6 +450,7 @@ def publish(
             src, sha = judge_src[jid]
             _stage_bundle(src, staging / "judge" / jid, sha, "judge bundle", *vargs)
         (staging / "week.toml").write_bytes(inp.source_bytes)
+        (staging / "tiers.toml").write_bytes(tiers_bytes)  # rederive reads it, not today's
         (staging / "week.json").write_bytes(_dumps(doc))
         toml_strings = list(iter_strings(tomllib.loads(inp.source_bytes.decode("utf-8"))))
         _scan(staging / "week.toml", toml_strings, terms, username)

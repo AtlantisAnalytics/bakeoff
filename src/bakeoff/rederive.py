@@ -45,10 +45,11 @@ class RederiveError(Exception):
 
 
 def _q(v: object, where: str) -> str:
-    """A TOML basic string. JSON string escapes are a subset of TOML's."""
+    """A TOML basic string. JSON string escapes are a subset of TOML's; JSON leaves DEL raw, which
+    TOML forbids."""
     if not isinstance(v, str):
         raise RederiveError(f"week.toml {where} is not a string")
-    return json.dumps(v, ensure_ascii=False)
+    return json.dumps(v, ensure_ascii=False).replace("\x7f", "\\u007f")
 
 
 def _dumps(obj: object) -> bytes:
@@ -102,29 +103,29 @@ def _remapped_week_toml(data: dict, week_dir: Path, tmp: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _tiers_toml(root: Path, stored: dict) -> str:
-    try:
-        tiers = load_tiers(root / "tiers.toml")
-    except WeekInputError as e:
-        raise RederiveError(f"tiers.toml: {e}") from e
-    wanted = [t.get("id") for t in stored.get("tiers", []) if isinstance(t, dict)]
-    coming = {
-        t.get("id") for t in stored.get("tiers", []) if isinstance(t, dict) and t.get("coming")
-    }
-    missing = [t for t in wanted if t not in tiers]
-    if missing:
-        raise RederiveError(f"the stored week lists tiers not in tiers.toml: {missing}")
+def _tiers_toml(week_dir: Path, stored: dict) -> str:
+    """The tiers the week was published with: its own ``tiers.toml`` copy, never today's file (a
+    tier renamed, reordered, removed or launched since must not change an old week). A week
+    published before that copy existed takes them from its ``week.json``."""
+    if (week_dir / "tiers.toml").is_file():
+        text = (week_dir / "tiers.toml").read_text(encoding="utf-8")
+        try:
+            load_tiers(week_dir / "tiers.toml")
+        except WeekInputError as e:
+            raise RederiveError(f"tiers.toml: {e}") from e
+        return text
     lines = []
-    for tid, tier in tiers.items():
-        if tid in wanted:
-            lines += [
-                "[[tier]]",
-                f"id = {_q(tier.id, 'id')}",
-                f"name = {_q(tier.name, 'name')}",
-                f"envelope = {_q(tier.envelope, 'envelope')}",
-                *(["coming = true"] if tid in coming else []),
-                "",
-            ]
+    for i, t in enumerate(stored.get("tiers", [])):
+        if not isinstance(t, dict):
+            raise RederiveError(f"the stored week.json tiers[{i}] is not an object")
+        lines += [
+            "[[tier]]",
+            f"id = {_q(t.get('id'), f'tiers[{i}].id')}",
+            f"name = {_q(t.get('name'), f'tiers[{i}].name')}",
+            f"envelope = {_q(t.get('envelope'), f'tiers[{i}].envelope')}",
+            *(["coming = true"] if t.get("coming") is True else []),
+            "",
+        ]
     return "\n".join(lines)
 
 
@@ -189,7 +190,7 @@ def rederive(root: Path, week: str) -> list[str]:
 
     with tempfile.TemporaryDirectory(prefix="bakeoff-rederive-") as t:
         tmp = Path(t)
-        (tmp / "tiers.toml").write_text(_tiers_toml(root, stored), encoding="utf-8")
+        (tmp / "tiers.toml").write_text(_tiers_toml(week_dir, stored), encoding="utf-8")
         if (root / "site.toml").is_file():
             shutil.copyfile(root / "site.toml", tmp / "site.toml")
         for d in sorted(results.iterdir()) if results.is_dir() else []:
