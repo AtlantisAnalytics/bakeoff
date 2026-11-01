@@ -314,6 +314,12 @@ async def execute_run(
         else await _runtime_reported(client, runtime_name)
     )
     peaks = sampler.peaks()
+    # system-wide on the Mac (llama.cpp reports no usage of its own): its own source, beside peaks
+    over_baseline = {
+        name: p["mem_over_baseline_bytes"]
+        for name, p in peaks.items()
+        if "mem_over_baseline_bytes" in p
+    }
     files: dict[str, list[dict]] = {}
     for key, recs in quality.records.items():
         suite = next(s for s in suites if s.key == key)
@@ -348,6 +354,11 @@ async def execute_run(
             **(
                 {"mem_baseline_bytes": field(mem_baseline, "measured (system-wide)")}
                 if mem_baseline is not None
+                else {}
+            ),
+            **(
+                {"mem_over_baseline_bytes": field(over_baseline, "measured (system-wide)")}
+                if over_baseline
                 else {}
             ),
         },

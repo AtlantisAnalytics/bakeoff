@@ -566,7 +566,14 @@ def test_runner_records_thermal_end_and_baseline(tmp_path, monkeypatch):
         "value": 1000,
         "source": "measured (system-wide)",
     }
-    assert meta["memory"]["peaks"]["value"]["baseline"]["mem_over_baseline_bytes"] > 0
+    peaks = meta["memory"]["peaks"]["value"]
+    assert peaks["baseline"]["mem_over_baseline_bytes"] > 0
+    # peaks carry one source for the whole dict ("measured"); the over-baseline figure is
+    # system-wide (llama.cpp reports no usage of its own), so it gets a sibling with that source
+    assert meta["memory"]["mem_over_baseline_bytes"] == {
+        "value": {k: v["mem_over_baseline_bytes"] for k, v in peaks.items()},
+        "source": "measured (system-wide)",
+    }
     assert verify_bundle(path, username="alice", denylist=None) == []
 
 
@@ -575,3 +582,4 @@ def test_no_thermal_end_off_darwin(tmp_path):
     meta = json.loads((path / "bundle.json").read_text())
     assert "thermal_warning_end" not in meta["env"]["host"]
     assert "mem_baseline_bytes" not in meta["memory"]
+    assert "mem_over_baseline_bytes" not in meta["memory"]
