@@ -1,0 +1,812 @@
+{
+  "$id": "https://bakeoff.si/api/v1/schema/week.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One published week. Floats are unrounded. Fields are only ever added within v1.",
+  "properties": {
+    "corrections": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "type": "string"
+          },
+          "published_at": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "note",
+          "published_at",
+          "revision"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "harness": {
+      "description": "Distinct harness versions across runs.",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "git_commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "git_commit",
+          "version"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "picks_after": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "additionalProperties": false,
+          "description": "A pick as it stands after this week.",
+          "properties": {
+            "bundle_sha256": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "quant": {
+              "type": "string"
+            },
+            "run_id": {
+              "type": "string"
+            },
+            "runtime": {
+              "type": "string"
+            },
+            "since_week": {
+              "type": "string"
+            },
+            "tier": {
+              "type": "string"
+            },
+            "track": {
+              "type": "string"
+            },
+            "weights": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "bundle_sha256",
+            "label",
+            "quant",
+            "run_id",
+            "runtime",
+            "since_week",
+            "tier",
+            "track",
+            "weights"
+          ],
+          "type": "object"
+        },
+        "type": "object"
+      },
+      "description": "Picks after this week: tier, then track.",
+      "type": "object"
+    },
+    "published_at": {
+      "description": "UTC timestamp from week.toml.",
+      "type": "string"
+    },
+    "quality_agreement": {
+      "description": "Same weights, quant and engine measured on several tiers this week: how often their item results agreed, per public suite (one run per tier).",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "quant": {
+            "type": "string"
+          },
+          "runs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "runtime": {
+            "type": "string"
+          },
+          "suites": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "n": {
+                  "type": "integer"
+                },
+                "same_output": {
+                  "type": "integer"
+                },
+                "same_pass": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "n",
+                "same_output",
+                "same_pass"
+              ],
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "weights": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "quant",
+          "runs",
+          "runtime",
+          "suites",
+          "weights"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "description": "1 for the first publication.",
+      "type": "integer"
+    },
+    "rules": {
+      "additionalProperties": false,
+      "description": "Verdict rules and every threshold used.",
+      "properties": {
+        "ci": {
+          "type": "number"
+        },
+        "context_cap": {
+          "type": "integer"
+        },
+        "min_context": {
+          "type": "integer"
+        },
+        "min_decode_tps": {
+          "type": "number"
+        },
+        "resamples": {
+          "type": "integer"
+        },
+        "saturated_score": {
+          "type": "number"
+        },
+        "speed_ratio": {
+          "type": "number"
+        },
+        "version": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ci",
+        "context_cap",
+        "min_context",
+        "min_decode_tps",
+        "resamples",
+        "saturated_score",
+        "speed_ratio",
+        "version"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "enum": [
+        "bakeoff.week.v1"
+      ],
+      "type": "string"
+    },
+    "tiers": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "coming": {
+            "enum": [
+              true
+            ]
+          },
+          "envelope": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "judge": {
+            "items": {
+              "additionalProperties": false,
+              "description": "Pairwise judge counts; informational, never used in a verdict.",
+              "properties": {
+                "a": {
+                  "description": "run_id",
+                  "type": "string"
+                },
+                "b": {
+                  "description": "run_id",
+                  "type": "string"
+                },
+                "bundle_sha256": {
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "integer"
+                },
+                "judge_model": {
+                  "type": "string"
+                },
+                "losses": {
+                  "description": "b wins",
+                  "type": "integer"
+                },
+                "ties": {
+                  "type": "integer"
+                },
+                "wins": {
+                  "description": "a wins",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "a",
+                "b",
+                "bundle_sha256",
+                "errors",
+                "judge_model",
+                "losses",
+                "ties",
+                "wins"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pick_status": {
+            "additionalProperties": {
+              "enum": [
+                "re-measured",
+                "not_re-measured",
+                "none",
+                "saturated"
+              ],
+              "type": "string"
+            },
+            "description": "Per track: was the current pick re-measured this week. none: no pick before this week, so an initial pick was chosen. saturated: no pick before this week, and the best score reached rules.saturated_score, so no pick was chosen.",
+            "type": "object"
+          },
+          "runs": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "bundle_path": {
+                  "description": "Path relative to the repo root.",
+                  "type": "string"
+                },
+                "bundle_sha256": {
+                  "type": "string"
+                },
+                "eligible": {
+                  "type": "boolean"
+                },
+                "fit": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "kv_cache_dtype": {
+                      "description": "KV cache dtype the engine reports, e.g. auto (the model's dtype).",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "kv_capacity_tokens": {
+                      "description": "KV cache capacity in tokens for the run's serving config (reported).",
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "kv_fraction_at_max": {
+                      "description": "Share of the KV pool one request of max_context_passed tokens needs (derived; an upper bound for sliding-window or hybrid models).",
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "max_context_passed": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "server_context": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "max_context_passed",
+                    "server_context"
+                  ],
+                  "type": "object"
+                },
+                "ineligible_reasons": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "memory": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "size_vram": {
+                      "description": "Runtime-reported model size in VRAM, bytes.",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "model": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "description": "SPDX id or 'other'.",
+                      "type": "string"
+                    },
+                    "license_url": {
+                      "type": "string"
+                    },
+                    "quant": {
+                      "type": "string"
+                    },
+                    "runtime": {
+                      "type": "string"
+                    },
+                    "source_url": {
+                      "type": "string"
+                    },
+                    "weights": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "weights",
+                    "quant",
+                    "runtime",
+                    "license",
+                    "source_url"
+                  ],
+                  "type": "object"
+                },
+                "pick_tracks": {
+                  "description": "Tracks for which this run is the re-measured pick.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "quality": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "tracks": {
+                      "additionalProperties": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "score": {
+                            "description": "Mean of the track's suite accuracies; null when none is scored.",
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "suites": {
+                            "items": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "accuracy": {
+                                  "description": "passed / n, unrounded; null for judge-scored suites.",
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "ci95": {
+                                  "description": "[low, high] 95% interval.",
+                                  "items": {
+                                    "type": "number"
+                                  },
+                                  "type": [
+                                    "array",
+                                    "null"
+                                  ]
+                                },
+                                "extractable_accuracy": {
+                                  "description": "Share of items whose JSON can be extracted; informational.",
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "extractable_ci95": {
+                                  "description": "[low, high] 95% interval.",
+                                  "items": {
+                                    "type": "number"
+                                  },
+                                  "type": [
+                                    "array",
+                                    "null"
+                                  ]
+                                },
+                                "hash": {
+                                  "description": "Content hash of the suite.",
+                                  "type": "string"
+                                },
+                                "key": {
+                                  "description": "Suite key, track/name.",
+                                  "type": "string"
+                                },
+                                "n": {
+                                  "description": "Items in the suite.",
+                                  "type": "integer"
+                                },
+                                "passed": {
+                                  "description": "Items passed; null for judge-scored suites.",
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                },
+                                "version": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "version",
+                                "hash",
+                                "n",
+                                "passed",
+                                "accuracy",
+                                "ci95"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "score",
+                          "suites"
+                        ],
+                        "type": "object"
+                      },
+                      "description": "Scores by track.",
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "tracks"
+                  ],
+                  "type": "object"
+                },
+                "role": {
+                  "description": "pick: this run is the control that re-measured the current pick.",
+                  "enum": [
+                    "pick",
+                    "candidate"
+                  ],
+                  "type": "string"
+                },
+                "run_id": {
+                  "type": "string"
+                },
+                "speed": {
+                  "additionalProperties": {
+                    "additionalProperties": false,
+                    "description": "Speed measurements for one cell, for example short@1.",
+                    "properties": {
+                      "aggregate_tps": {
+                        "additionalProperties": false,
+                        "description": "Median, minimum, maximum and sample count of one measurement.",
+                        "properties": {
+                          "max": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "median": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "min": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "n": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "max",
+                          "median",
+                          "min",
+                          "n"
+                        ],
+                        "type": "object"
+                      },
+                      "decode_tps": {
+                        "additionalProperties": false,
+                        "description": "Median, minimum, maximum and sample count of one measurement.",
+                        "properties": {
+                          "max": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "median": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "min": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "n": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "max",
+                          "median",
+                          "min",
+                          "n"
+                        ],
+                        "type": "object"
+                      },
+                      "prefill_tps": {
+                        "additionalProperties": false,
+                        "description": "Median, minimum, maximum and sample count of one measurement.",
+                        "properties": {
+                          "max": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "median": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "min": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "n": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "max",
+                          "median",
+                          "min",
+                          "n"
+                        ],
+                        "type": "object"
+                      },
+                      "ttft_s": {
+                        "additionalProperties": false,
+                        "description": "Median, minimum, maximum and sample count of one measurement.",
+                        "properties": {
+                          "max": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "median": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "min": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "n": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "max",
+                          "median",
+                          "min",
+                          "n"
+                        ],
+                        "type": "object"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "description": "Speed cells by name; every cell the bundle reports.",
+                  "type": "object"
+                },
+                "verdicts": {
+                  "additionalProperties": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "computed": {
+                        "enum": [
+                          "replace",
+                          "hold",
+                          "watch",
+                          "initial_pick"
+                        ],
+                        "type": "string"
+                      },
+                      "diff": {
+                        "description": "Observed score difference against the pick; null when not comparable.",
+                        "type": [
+                          "number",
+                          "null"
+                        ]
+                      },
+                      "diff_ci95": {
+                        "description": "[low, high] 95% interval.",
+                        "items": {
+                          "type": "number"
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "final": {
+                        "enum": [
+                          "replace",
+                          "hold",
+                          "watch",
+                          "initial_pick"
+                        ],
+                        "type": "string"
+                      },
+                      "new_pick": {
+                        "description": "True when this run becomes the pick for the track.",
+                        "type": "boolean"
+                      },
+                      "outranked_by": {
+                        "description": "run_id of the replace verdict that won instead.",
+                        "type": "string"
+                      },
+                      "override_reason": {
+                        "description": "Present only when an override set the final verdict.",
+                        "type": "string"
+                      },
+                      "reasons": {
+                        "description": "Machine-readable reasons.",
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "computed",
+                      "final",
+                      "diff",
+                      "diff_ci95",
+                      "reasons",
+                      "new_pick"
+                    ],
+                    "type": "object"
+                  },
+                  "description": "Verdict by track; empty for the pick's control run and ineligible runs.",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "bundle_path",
+                "bundle_sha256",
+                "eligible",
+                "fit",
+                "ineligible_reasons",
+                "memory",
+                "model",
+                "pick_tracks",
+                "quality",
+                "role",
+                "run_id",
+                "speed",
+                "verdicts"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "envelope",
+          "id",
+          "judge",
+          "name",
+          "pick_status",
+          "runs"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "week": {
+      "description": "ISO date of the Monday.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "corrections",
+    "harness",
+    "picks_after",
+    "published_at",
+    "revision",
+    "rules",
+    "schema",
+    "tiers",
+    "week"
+  ],
+  "title": "bakeoff week document, v1",
+  "type": "object"
+}

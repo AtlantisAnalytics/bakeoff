@@ -47,7 +47,7 @@ def test_shipped_files_load(tiers):
     assert tiers["12gb"].envelope == "1× RTX 3060 12 GB"
     assert [t.coming for t in tiers.values()] == [False, False, True]  # the Mac: after M5
     site = load_site(ROOT / "site.toml")
-    assert site.launched is False
+    assert site.launched is True  # launched at M5, 2026-11-02
     assert site.base_url == "https://bakeoff.si"
     assert site.newsletter_action == ""
     assert site.email_field == "email"
@@ -141,9 +141,9 @@ SITE = (ROOT / "site.toml").read_text(encoding="utf-8")
         (SITE.replace("https://bakeoff.si", "http://bakeoff.si"), "base_url"),
         (SITE.replace("https://github.com", "ftp://github.com"), "repo_url"),
         (SITE.replace('action = ""', 'action = "http://x.org/f"'), "action"),
-        (SITE.replace("launched = false", 'launched = "no"'), "launched"),
+        (SITE.replace("launched = true", 'launched = "no"'), "launched"),
         (SITE + "extra = 1\n", "extra"),
-        (SITE.replace("launched = false\n", ""), "launched"),
+        (SITE.replace("launched = true\n", ""), "launched"),
     ],
 )
 def test_site_rejections(tmp_path, text, match):

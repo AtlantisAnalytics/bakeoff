@@ -1,4 +1,4 @@
-launched = false
+launched = true
 base_url = "https://bakeoff.si"
 repo_url = "https://github.com/AtlantisAnalytics/bakeoff"
 

@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
@@ -36,7 +37,7 @@ def g(k, n=10):
 
 def set_site(root, *, launched, action=""):
     text = (REPO / "site.toml").read_text(encoding="utf-8")
-    text = text.replace("launched = false", f"launched = {str(launched).lower()}")
+    text = re.sub(r"(?m)^launched = (true|false)$", f"launched = {str(launched).lower()}", text)
     text = text.replace('action = ""', f'action = "{action}"')
     (root / "site.toml").write_text(text, encoding="utf-8")
 
@@ -45,8 +46,8 @@ def set_site(root, *, launched, action=""):
 def root(tmp_path):
     r = tmp_path / "root"
     r.mkdir()
-    for name in ("tiers.toml", "site.toml"):
-        shutil.copy(REPO / name, r / name)
+    shutil.copy(REPO / "tiers.toml", r / "tiers.toml")
+    set_site(r, launched=False)
     shutil.copytree(REPO / "site_src", r / "site_src")
     (r / "site").mkdir()
     for name in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):

@@ -265,6 +265,7 @@ def test_public_suite_text_survives_any_error(monkeypatch):
 
 
 def _site_root(tmp_path, launched=False):
+    import re
     import shutil
     from pathlib import Path
 
@@ -275,9 +276,9 @@ def _site_root(tmp_path, launched=False):
         shutil.copy(repo / name, r / name)
     shutil.copytree(repo / "site_src", r / "site_src")
     shutil.copytree(repo / "site", r / "site")
-    if launched:
-        t = (r / "site.toml").read_text(encoding="utf-8")
-        (r / "site.toml").write_text(t.replace("launched = false", "launched = true"))
+    t = (r / "site.toml").read_text(encoding="utf-8")
+    t = re.sub(r"(?m)^launched = (true|false)$", f"launched = {str(launched).lower()}", t)
+    (r / "site.toml").write_text(t, encoding="utf-8")
     return r
 
 
