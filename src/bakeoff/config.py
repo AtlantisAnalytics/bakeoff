@@ -33,6 +33,8 @@ class ModelConfig:
     # recorded with source "operator".
     runtime_version: str = ""
     envelope: str = ""
+    # How the model is split across GPUs, e.g. "tp=2" or "pp=3"; empty for one GPU.
+    parallel: str = ""
 
 
 @dataclass(frozen=True)
