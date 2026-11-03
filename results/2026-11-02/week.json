@@ -1,0 +1,1276 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": "53c90d554644f166ed7a9878b48d09c1241eb788",
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "12gb": {
+      "format": {
+        "bundle_sha256": "8fb1ab0c1867928b4278044f9446a9deab21836842a76c0096578921093943dd",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261031T160911Z-granite-4-2-3b-a8bc41e5",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "format",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "general": {
+        "bundle_sha256": "8fb1ab0c1867928b4278044f9446a9deab21836842a76c0096578921093943dd",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261031T160911Z-granite-4-2-3b-a8bc41e5",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "general",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "longctx": {
+        "bundle_sha256": "8fb1ab0c1867928b4278044f9446a9deab21836842a76c0096578921093943dd",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261031T160911Z-granite-4-2-3b-a8bc41e5",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "longctx",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "structured": {
+        "bundle_sha256": "8fb1ab0c1867928b4278044f9446a9deab21836842a76c0096578921093943dd",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261031T160911Z-granite-4-2-3b-a8bc41e5",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "structured",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      }
+    },
+    "24gb": {
+      "format": {
+        "bundle_sha256": "78ab44b60e4200ba0969201354875b475fb31078c4b00dc952ec46ee025ee058",
+        "label": "Qwen3.8 27B EXL3",
+        "quant": "exl3-4bpw",
+        "run_id": "20261031T160519Z-qwen3-8-27b-exl3-939898fc",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
+      },
+      "general": {
+        "bundle_sha256": "19e13b2987b8412cd4197c665757c177be566b31b866247d12e1a3a7868ecb0a",
+        "label": "Gemma 4 12B IT EXL3",
+        "quant": "exl3-6bpw",
+        "run_id": "20261031T164045Z-gemma-4-12b-it-exl3-0a3b143c",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "general",
+        "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+      },
+      "longctx": {
+        "bundle_sha256": "74da54b9d05f99c1c10089a172684d7edc4f91adb303e266071a83db533f01a0",
+        "label": "Granite 4.2 8B FP8",
+        "quant": "fp8",
+        "run_id": "20261031T170054Z-granite-4-2-8b-fp8-efbd0734",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "longctx",
+        "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+      }
+    }
+  },
+  "published_at": "2026-11-02T15:00:00Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "saturated_score": 1.0,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [],
+      "name": "12 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "saturated",
+        "longctx": "none",
+        "structured": "none"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-02/runs/20261031T160911Z-granite-4-2-3b-a8bc41e5",
+          "bundle_sha256": "8fb1ab0c1867928b4278044f9446a9deab21836842a76c0096578921093943dd",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 44784,
+            "kv_fraction_at_max": 0.7317,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 3B",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-3b",
+            "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.815,
+                "suites": [
+                  {
+                    "accuracy": 0.84,
+                    "ci95": [
+                      0.7557955544110557,
+                      0.8990479765052628
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 84,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.79,
+                    "ci95": [
+                      0.7001985069803768,
+                      0.8583445046835422
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 79,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7407407407407407,
+                "suites": [
+                  {
+                    "accuracy": 0.7407407407407407,
+                    "ci95": [
+                      0.553210695973843,
+                      0.8682979157713322
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 20,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "extractable_accuracy": 0.9666666666666667,
+                    "extractable_ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261031T160911Z-granite-4-2-3b-a8bc41e5",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 43.560478846788804,
+                "median": 43.45426337069989,
+                "min": 43.38453480832297,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 43.87253558973861,
+                "median": 43.80346206640136,
+                "min": 43.70131292959724,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 27850.691683404257,
+                "median": 27677.474497524476,
+                "min": 25775.86684537766,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.06979396699989593,
+                "median": 0.06499870499965255,
+                "min": 0.0645944459997736,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 140.4523296298927,
+                "median": 139.99864999192462,
+                "min": 139.55853449328873,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 35.690823007127676,
+                "median": 35.55531634929777,
+                "min": 35.43605709993165,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 16896.001952339662,
+                "median": 12606.932129876624,
+                "min": 11129.654348447104,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.161640239999997,
+                "median": 0.14272659950006528,
+                "min": 0.10647489299981316,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 45.46401295583621,
+                "median": 45.394406272903325,
+                "min": 45.31390967275159,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 45.62543640494943,
+                "median": 45.553404738945076,
+                "min": 45.47186192580008,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 3115.096964880152,
+                "median": 3098.2735627221477,
+                "min": 3060.896173455204,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.04214451999996527,
+                "median": 0.04163609099987298,
+                "min": 0.04141123099998367,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 154.09688825927566,
+                "median": 153.43748212604527,
+                "min": 152.91776347672766,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 38.8891031102354,
+                "median": 38.70562049409074,
+                "min": 38.561794433345334,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2416.77905625189,
+                "median": 1610.629490075959,
+                "min": 1476.8724352638142,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.08734674499964967,
+                "median": 0.08009298799993303,
+                "min": 0.053376828000182286,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "structured": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "none",
+        "general": "none",
+        "grounding": "saturated",
+        "longctx": "none",
+        "structured": "saturated"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-02/runs/20261031T160519Z-qwen3-8-27b-exl3-939898fc",
+          "bundle_sha256": "78ab44b60e4200ba0969201354875b475fb31078c4b00dc952ec46ee025ee058",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.8 27B EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Qwen3.8-27B-exl3",
+            "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.875,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.77,
+                    "ci95": [
+                      0.6784543514317231,
+                      0.841568452531236
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 77,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8888888888888888,
+                "suites": [
+                  {
+                    "accuracy": 0.8888888888888888,
+                    "ci95": [
+                      0.7194181745602705,
+                      0.9614803521050127
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261031T160519Z-qwen3-8-27b-exl3-939898fc",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 45.70526897066046,
+                "median": 45.69026557473071,
+                "min": 45.65811158567432,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 46.862428972524306,
+                "median": 46.851294166675494,
+                "min": 46.82399767494356,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 14757.700481669066,
+                "median": 14709.802200118114,
+                "min": 14636.780464944499,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.16096435999997993,
+                "median": 0.16016530799993234,
+                "min": 0.1596454680000079,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 152.68084755643508,
+                "median": 151.5181761841851,
+                "min": 147.41491468020993,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.13053918814438,
+                "median": 40.94598629862482,
+                "min": 40.24378542603218,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 5924.542482107599,
+                "median": 4645.208094532643,
+                "min": 3176.8236936321196,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.74162126300007,
+                "median": 0.5071893759999284,
+                "min": 0.39766783800018857,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 44.813819904249996,
+                "median": 44.8023644515055,
+                "min": 44.80084953722995,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 47.2507221427926,
+                "median": 47.228070797830334,
+                "min": 47.22132577782165,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 614.8814781384118,
+                "median": 614.5324447864124,
+                "min": 611.1838428681906,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.31578059899993605,
+                "median": 0.31405990300004305,
+                "min": 0.3138816289999795,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 140.86704825124423,
+                "median": 140.3567824506711,
+                "min": 139.77793256263934,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.49645489422978,
+                "median": 41.45430349536443,
+                "min": 39.61187053976237,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 224.15618656740696,
+                "median": 171.93743164207237,
+                "min": 164.48880099259716,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.1733321590002106,
+                "median": 1.1225014540000302,
+                "min": 0.8610067960000833,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.05,
+              "diff_ci95": [
+                -0.09999999999999999,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                -0.14814814814814814,
+                0.14814814814814814
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-02/runs/20261031T164045Z-gemma-4-12b-it-exl3-0a3b143c",
+          "bundle_sha256": "19e13b2987b8412cd4197c665757c177be566b31b866247d12e1a3a7868ecb0a",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-6bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/gemma-4-12B-it-exl3",
+            "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.925,
+                "suites": [
+                  {
+                    "accuracy": 0.97,
+                    "ci95": [
+                      0.915479219195973,
+                      0.9897456617765851
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 97,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.88,
+                    "ci95": [
+                      0.8018773199709163,
+                      0.9300066263473222
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 88,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.95,
+                "suites": [
+                  {
+                    "accuracy": 0.95,
+                    "ci95": [
+                      0.834958291820748,
+                      0.9861796228538989
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 38,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7037037037037037,
+                "suites": [
+                  {
+                    "accuracy": 0.7037037037037037,
+                    "ci95": [
+                      0.515189666191624,
+                      0.8414714668235244
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 19,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261031T164045Z-gemma-4-12b-it-exl3-0a3b143c",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 60.7173875172602,
+                "median": 60.63903573757185,
+                "min": 60.449444353164544,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 64.26222649593295,
+                "median": 64.2560996591211,
+                "min": 64.24626497347535,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 9184.379320501594,
+                "median": 9020.714160244486,
+                "min": 8553.232666712807,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.2664489659996434,
+                "median": 0.25264075099994443,
+                "min": 0.24813870599973598,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 188.81491345330178,
+                "median": 188.73377290150572,
+                "min": 187.10471562756786,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 57.40600521591032,
+                "median": 57.18989049411821,
+                "min": 54.230462950855525,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 3075.968651411117,
+                "median": 2361.1428980437663,
+                "min": 2242.7446158695607,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.0161656320001384,
+                "median": 0.9652105494997159,
+                "min": 0.7409048200001962,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 63.65879656901738,
+                "median": 63.63531881041807,
+                "min": 63.58436337081626,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 66.0816708750153,
+                "median": 66.06981695185553,
+                "min": 66.00055977016176,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 943.4911903972663,
+                "median": 934.9344027571519,
+                "min": 930.4057024272777,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.1633695919999809,
+                "median": 0.16257825100001355,
+                "min": 0.16110378299981676,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 217.33318935888838,
+                "median": 215.5308407486331,
+                "min": 215.4351552873919,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 61.22868968711126,
+                "median": 60.95949692479343,
+                "min": 59.17847506589387,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 357.6466313307731,
+                "median": 277.8888564118662,
+                "min": 260.6385528285742,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.5831831030000103,
+                "median": 0.5469841629997063,
+                "min": 0.4250005079998118,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.16666666666666666,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.18518518518518517,
+              "diff_ci95": [
+                -0.4074074074074074,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-02/runs/20261031T170054Z-granite-4-2-8b-fp8-efbd0734",
+          "bundle_sha256": "74da54b9d05f99c1c10089a172684d7edc4f91adb303e266071a83db533f01a0",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 79856,
+            "kv_fraction_at_max": 0.8207,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 8B FP8",
+            "license": "Apache-2.0",
+            "quant": "fp8",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b-fp8",
+            "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.775,
+                "suites": [
+                  {
+                    "accuracy": 0.93,
+                    "ci95": [
+                      0.8625032899347025,
+                      0.965681175635936
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 93,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.62,
+                    "ci95": [
+                      0.5220957382071033,
+                      0.7090255079986562
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 62,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8888888888888888,
+                "suites": [
+                  {
+                    "accuracy": 0.8888888888888888,
+                    "ci95": [
+                      0.7194181745602705,
+                      0.9614803521050127
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261031T170054Z-granite-4-2-8b-fp8-efbd0734",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 82.77837498173012,
+                "median": 82.75975909116043,
+                "min": 82.70929891545546,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 83.27566463621645,
+                "median": 83.25574009908081,
+                "min": 83.24928952997422,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 59371.598983526106,
+                "median": 59028.41977320539,
+                "min": 56063.23234623596,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.03208876699954999,
+                "median": 0.030476844999611785,
+                "min": 0.030300682999950368,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 300.1783669236677,
+                "median": 300.0283789049732,
+                "min": 299.93022135117525,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 76.22755092535364,
+                "median": 76.18340551460076,
+                "min": 76.08465355666327,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 37268.535772929725,
+                "median": 31485.761631149035,
+                "min": 26305.996202502058,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.06838745000004565,
+                "median": 0.05783111250002548,
+                "min": 0.04827128199940489,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 85.79047459747865,
+                "median": 85.7782688738467,
+                "min": 85.7704561159065,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 86.08377780405594,
+                "median": 86.07471913053924,
+                "min": 86.06068122904281,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 6002.721606014999,
+                "median": 5917.312846301546,
+                "min": 5808.644081769276,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.022208281000530405,
+                "median": 0.021800436000376067,
+                "min": 0.021490252000148757,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 334.03831096748405,
+                "median": 333.95460423764195,
+                "min": 333.8925055687742,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 84.29992210815873,
+                "median": 84.27341555106125,
+                "min": 84.25480550801537,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 4752.249923240477,
+                "median": 3326.558450688816,
+                "min": 3150.895275620766,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.04094074499971612,
+                "median": 0.03877882100005081,
+                "min": 0.027145037000082084,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.06666666666666667,
+              "diff_ci95": [
+                -0.16666666666666666,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.15,
+              "diff_ci95": [
+                -0.21,
+                -0.09000000000000001
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "coming": true,
+      "envelope": "Apple M4 Max 36 GB unified",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {},
+      "runs": []
+    }
+  ],
+  "week": "2026-11-02"
+}
