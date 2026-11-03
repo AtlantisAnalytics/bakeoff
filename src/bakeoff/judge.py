@@ -3,9 +3,9 @@
 Budget guarantee: before every call, `spent + that call's worst case <= max_usd` is checked, with
 input tokens estimated pessimistically as UTF-8 bytes / 2 and output capped at JUDGE_MAX_TOKENS.
 Actual reported usage is charged after each call (worst case if none is reported, or if the call
-raises). So `cost_usd <= max_usd + the excess of one call's actual usage over its worst case`;
-that excess is zero unless the provider bills more tokens than the estimate allows. The CLI builds
-the client without retries, so one call is one billed attempt.
+raises or is interrupted). So `cost_usd <= max_usd + the excess of one call's actual usage over
+its worst case`; that excess is zero unless the provider bills more tokens than the estimate
+allows. The CLI builds the client without retries, so one call is one billed attempt.
 """
 
 import asyncio
@@ -183,10 +183,11 @@ async def run_judge(
     errored = False
     calls_made = 0
     call_errors = 0
+    in_flight = 0.0  # an interrupted call's worst case: it may already be billed
 
     async def call(user: str, worst: float) -> tuple[str | None, str, float, bool] | None:
         """(winner, reason, cost, is_call_error), or None when the cap forbids the call."""
-        nonlocal spent, errored, calls_made, call_errors
+        nonlocal spent, errored, calls_made, call_errors, in_flight
         if spent + worst > max_usd:
             return None
         calls_made += 1
@@ -198,6 +199,8 @@ async def run_judge(
                 seed=0,
             )
         except (KeyboardInterrupt, asyncio.CancelledError):
+            spent += worst
+            in_flight = worst
             raise
         except Exception:  # noqa: BLE001 - charge the worst case and stop; never leak the text
             spent += worst
@@ -217,6 +220,7 @@ async def run_judge(
         winner, why = parse_reply(r.content)
         return winner, why, cost, False
 
+    iid, outs = None, []
     try:
         for (iid, *_), users, worsts in zip(todo, plans, item_worsts, strict=True):
             if spent + sum(worsts) > max_usd:
@@ -265,6 +269,17 @@ async def run_judge(
     except (KeyboardInterrupt, asyncio.CancelledError) as exc:
         status, reason = "incomplete", "interrupted"
         interrupted = exc
+        if in_flight or outs:  # the item it stopped in: keep its cost, count it nowhere
+            items.append(
+                {
+                    "id": iid,
+                    "first": outs[0][0] if outs else None,
+                    "second": outs[1][0] if len(outs) > 1 else None,
+                    "result": None,
+                    "reasons": [o[1] for o in outs] + (["interrupted"] if in_flight else []),
+                    "cost_usd": sum(o[2] for o in outs) + in_flight,
+                }
+            )
 
     decided = counts["a"] + counts["b"]
     meta = {

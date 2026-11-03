@@ -50,8 +50,9 @@ def test_cells_and_record_counts():
     assert {r["round"] for r in recs} == {0, 1, 2}
     assert set(recs[0]) == {
         "shape", "concurrency", "round", "prompt_tokens", "completion_tokens",
-        "usage_source", "ttft_s", "decode_s", "total_s", "ignore_eos", "error",
+        "usage_source", "ttft_s", "decode_s", "total_s", "ignore_eos", "error", "attempts",
     }  # fmt: skip
+    assert {r["attempts"] for r in recs} == {1}
     assert [r["shape"] for r in recs][:1] == ["short"] and recs[-1]["shape"] == "long"
     assert len(fake.requests) == 2 * (1 * 4 + 2 * 4)
 

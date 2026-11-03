@@ -7,6 +7,7 @@ from weekfix import make_bundle
 
 from bakeoff import cli
 from bakeoff.bundle import write_bundle
+from bakeoff.hashing import sha256_hex
 from bakeoff.publish import publish
 from bakeoff.rederive import rederive
 
@@ -32,7 +33,12 @@ def root(tmp_path):
 
 def bundle(root, weights, k, sub):
     return make_bundle(
-        root / sub, label=weights, weights=weights, envelope=ENV24, grades={GSM: g(k)}
+        root / sub,
+        label=weights,
+        weights=weights,
+        envelope=ENV24,
+        grades={GSM: g(k)},
+        judge=("general/chat",),
     )
 
 
@@ -47,7 +53,7 @@ def judge_bundle(root, name, a, b):
         "status_reason": None,
         "a": a,
         "b": b,
-        "suite": {"key": "general/chat", "hash": "c" * 64},
+        "suite": {"key": "general/chat", "hash": sha256_hex(b"general/chat")},
         "judge_model": "judge-x",
         "counts": {"a": 3, "b": 1, "tie": 1},
         "call_errors": 0,
@@ -160,6 +166,43 @@ def test_rederive_after_a_coming_tier_launches(root):
     assert rederive(root, W2) == []
 
 
+def test_rederive_after_tiers_are_renamed_reordered_or_removed(root):
+    """A tier's name and envelope, like `coming`, are facts of the week it was published in."""
+    two_weeks(root)
+    (root / "tiers.toml").write_text(
+        '[[tier]]\nid = "36gb-unified"\nname = "36 GB unified"\n'
+        'envelope = "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)"\n\n'
+        '[[tier]]\nid = "24gb"\nname = "24 GB (renamed)"\nenvelope = "1× RTX 3090 Ti 24 GB"\n',
+        encoding="utf-8",
+    )  # 12gb is gone
+    assert rederive(root, W1) == []
+    assert rederive(root, W2) == []
+
+
+def test_rederive_detects_a_tampered_tier_envelope(root):
+    two_weeks(root)
+    path = root / "results" / W1 / "week.json"
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    doc["tiers"][0]["envelope"] = "8× H100"
+    path.write_text(
+        json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    assert rederive(root, W1) != []  # checked against the tiers.toml W1 was published with
+
+
+def test_rederive_week_published_before_tier_snapshots(root):
+    """A week from before results/<week>/tiers.toml existed takes its tiers from its week.json."""
+    two_weeks(root)
+    for w in (W1, W2):
+        (root / "results" / w / "tiers.toml").unlink()
+    (root / "tiers.toml").write_text(
+        '[[tier]]\nid = "24gb"\nname = "24 GB"\nenvelope = "1× RTX 3090 Ti 24 GB (renamed)"\n',
+        encoding="utf-8",
+    )
+    assert rederive(root, W1) == []
+    assert rederive(root, W2) == []
+
+
 def test_rederive_correction(root):
     a, b = bundle(root, "base", 6, "runs"), bundle(root, "small", 4, "runs")
     pub(write_week(root, "w1.toml", W1, AT1, [a, b]), root)
@@ -214,3 +257,13 @@ def test_rederive_with_agreement(root):
     assert doc["quality_agreement"][0]["suites"][GSM] == counts
     shutil.rmtree(root / "runs")
     assert rederive(root, W1) == []
+
+
+def test_toml_strings_escape_del():
+    """JSON leaves DEL raw, but TOML forbids it in a basic string (week.toml may hold \\u007f)."""
+    import tomllib
+
+    from bakeoff.rederive import _q
+
+    for s in ("a\x7fb", "tab\there", 'quote " and \\ back', "nul\x00", "é ✓"):
+        assert tomllib.loads(f"k = {_q(s, 'k')}")["k"] == s

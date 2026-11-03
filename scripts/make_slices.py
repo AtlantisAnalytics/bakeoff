@@ -143,7 +143,7 @@ def manifest_text(name: str, license_: str, n_pool: int, dropped: int, system: s
         'split = "public"',
         f"license = {q(license_)}",
         f"grader = {q('numeric' if name == 'gsm8k' else 'ifeval')}",
-        "max_tokens = 1024",
+        "max_tokens = 4096",  # raised for reasoning models (d13c72c)
     ]
     if system:
         lines.append(f"system = {q(system)}")

@@ -206,6 +206,8 @@ def test_verify_unsafe_key_and_symlink(tmp_path):
         ("ip fe80::1", "private_ip"),  # scrub-ok
         ("http://localhost:8000/v1", "host_port"),  # scrub-ok
         ("lab-box-7.lan:11434", "host_port"),  # scrub-ok
+        ("api.example.com:443", "host_port"),  # scrub-ok
+        ("ip 192.0.2.10:8080", "host_port"),  # scrub-ok
         ("/Users/alice/x", "home_path"),  # scrub-ok
         ("/home/alice", "home_path"),  # scrub-ok
         ("C:\\Users\\alice\\x", "home_path"),  # scrub-ok
@@ -232,6 +234,9 @@ def test_scan_text_flags(text, kind):
         "Record 00012: ok",
         "Answer:72",
         "ratio:12",
+        "GPT-3.5:10 shots",  # version numbers are not hosts
+        "v1.2:8080",
+        "scale 2.5:10",
         "the /Users/ folder",
         "https://example.com/home/page",
         "see example.com/Users/page",

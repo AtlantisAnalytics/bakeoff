@@ -543,3 +543,18 @@ def test_method_page_kv_precision_is_the_models_own():
     assert "names its engine and version" not in " ".join(
         engines.split()
     )  # the page shows the engine
+
+
+def test_method_page_states_override_and_picks_update_rules():
+    from pathlib import Path
+
+    root = Path(__file__).parent.parent
+    for rel in ("site_src/method.html", "site/method/index.html"):
+        text = " ".join((root / rel).read_text(encoding="utf-8").split())
+        for phrase in (
+            "An override to <em>replace</em> counts when the new pick is chosen",
+            "an override away from <em>replace</em> takes the run out of that choice",
+            "<strong>Picks update.</strong>",
+            "a pick changes only through a published week",
+        ):
+            assert phrase in text, (rel, phrase)

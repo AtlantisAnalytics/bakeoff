@@ -39,16 +39,21 @@ def _int(kwargs: dict, key: str, minimum: int = 0) -> int:
 
 
 def _str(kwargs: dict, key: str) -> str:
+    # surrounding whitespace would become part of the pattern: a suite-data error, not a rule
     v = kwargs.get(key)
-    if not isinstance(v, str) or not v.strip():
-        raise BadExpected(f"{key} must be a non-empty str: {v!r}")
+    if not isinstance(v, str) or not v.strip() or v != v.strip():
+        raise BadExpected(f"{key} must be a non-empty str without surrounding spaces: {v!r}")
     return v
 
 
 def _str_list(kwargs: dict, key: str) -> list[str]:
     v = kwargs.get(key)
-    if not isinstance(v, list) or not v or not all(isinstance(s, str) and s for s in v):
-        raise BadExpected(f"{key} must be a non-empty list of non-empty strings: {v!r}")
+    if (
+        not isinstance(v, list)
+        or not v
+        or not all(isinstance(s, str) and s.strip() and s == s.strip() for s in v)
+    ):
+        raise BadExpected(f"{key} must be a non-empty list of non-empty, unpadded strings: {v!r}")
     return v
 
 

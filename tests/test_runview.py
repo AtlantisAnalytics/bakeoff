@@ -111,3 +111,30 @@ def test_outputs_hashed(tmp_path):
     assert run.outputs["general/gsm8k"]["gsm8k-0"] == sha256_hex(b"four")
     assert run.outputs["general/gsm8k"]["gsm8k-1"] == sha256_hex(b"")
     assert set(run.outputs) == {"general/gsm8k", "structured/json"}
+
+
+def test_duplicate_item_id_refused(tmp_path):
+    """A repeated id must not let a later record overwrite an earlier verdict."""
+    p = _mk(tmp_path)
+    with (p / "quality" / "general.gsm8k.jsonl").open("a", encoding="utf-8") as f:
+        f.write('{"id": "gsm8k-2", "pass": true, "error": null}\n')
+    with pytest.raises(RunViewError, match="gsm8k-2.*repeated"):
+        load_run(p)
+
+
+@pytest.mark.parametrize("name", ["gsm8k-copy", "../../outside"])
+def test_item_file_must_be_a_listed_bundle_file(tmp_path, name):
+    """Records are read only from files bundle.json lists (and so verify hashed)."""
+    import json
+    import shutil
+
+    p = _mk(tmp_path)
+    meta = json.loads((p / "bundle.json").read_text(encoding="utf-8"))
+    suite = next(s for s in meta["quality"]["suites"] if s["key"] == "general/gsm8k")
+    suite["name"] = name
+    (p / "bundle.json").write_text(json.dumps(meta), encoding="utf-8")
+    target = p / "quality" / f"general.{name}.jsonl"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(p / "quality" / "general.gsm8k.jsonl", target)
+    with pytest.raises(RunViewError, match="not a listed bundle file"):
+        load_run(p)

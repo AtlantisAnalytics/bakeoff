@@ -55,6 +55,7 @@ class ChatResult:
     t_last: float | None = None
     status: int | None = None
     error: str | None = None
+    attempts: int = 1  # timings are the last attempt's alone; >1 means 5xx retries came first
 
     @property
     def ttft_s(self) -> float | None:
@@ -151,16 +152,23 @@ class EndpointClient:
                 await asyncio.sleep(self.backoff_s[attempt - 1])
             try:
                 try:
-                    return await self._chat_once(
+                    res = await self._chat_once(
                         messages, max_tokens, temperature, seed, extra, self.usage_supported
                     )
                 except _StreamOptionsRejected:
                     self.usage_supported = False
-                    return await self._chat_once(
+                    res = await self._chat_once(
                         messages, max_tokens, temperature, seed, extra, False
                     )
+                res.attempts = attempt + 1
+                return res
             except _Retryable as e:
-                last = ChatResult(status=e.status, error=e.error, t_start=time.perf_counter())
+                last = ChatResult(
+                    status=e.status,
+                    error=e.error,
+                    t_start=time.perf_counter(),
+                    attempts=attempt + 1,
+                )
         return last
 
     async def _chat_once(

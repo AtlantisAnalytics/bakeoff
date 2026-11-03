@@ -213,12 +213,18 @@ def test_retries_5xx_then_succeeds():
     fake = FakeOpenAI(fail_first=2)
     _, (r,) = run(_chat(fake))
     assert r.error is None and r.content == "ok" and len(fake.requests) == 3
+    assert r.attempts == 3  # its TTFT is the third attempt's; the record says it was retried
 
 
 def test_gives_up_after_retries():
     fake = FakeOpenAI(fail_first=5)
     _, (r,) = run(_chat(fake))
-    assert r.error and r.status == 503 and len(fake.requests) == 3
+    assert r.error and r.status == 503 and len(fake.requests) == 3 and r.attempts == 3
+
+
+def test_first_try_is_one_attempt():
+    _, (r,) = run(_chat(FakeOpenAI()))
+    assert r.attempts == 1
 
 
 def test_4xx_not_retried():

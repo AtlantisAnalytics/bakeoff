@@ -88,8 +88,10 @@ _PRIVATE_IPV4 = re.compile(
     r")(?![\d])"
 )
 _PRIVATE_IPV6 = re.compile(r"(?<![0-9a-f:])(?:f[cd][0-9a-f]{2}|fe[89ab][0-9a-f]):", re.I)
+# A host name's last label starts with a letter: "3.5:10" and "v1.2:8080" are versions, not hosts.
 _HOST_PORT = re.compile(
-    r"(?i)\b(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|[a-z0-9-]+(?:\.[a-z0-9-]+)+):\d{2,5}\b"
+    r"(?i)\b(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z][a-z0-9-]*)"
+    r":\d{2,5}\b"
 )
 _HOME_PATH = re.compile(
     r"(?<![\w.\-])(?:/Users/|/home/)[A-Za-z0-9._-]+"

@@ -35,6 +35,7 @@ def _summary(suite: Suite, recs: list[dict]) -> dict:
         "split": suite.split,
         "hash": suite.hash,
         "n": n,
+        "items_total": len(suite.items),  # n is less when the run stopped part-way
         "passed": None,
         "errors": errors,
         "truncated": truncated,

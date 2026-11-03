@@ -60,6 +60,8 @@ def _read_items(path: Path, key: str) -> tuple[dict[str, bool], dict[str, str]]:
             raise RunViewError(f"{path.name} line {no}: not valid JSON") from e
         if not isinstance(rec, dict) or not isinstance(rec.get("id"), str):
             raise RunViewError(f"{path.name} line {no}: record has no id")
+        if rec["id"] in out:  # a later record must never overwrite an earlier verdict
+            raise RunViewError(f"{path.name} line {no}: item id {rec['id']} is repeated")
         out[rec["id"]] = rec.get("pass") is True
         output = rec.get("output")
         outputs[rec["id"]] = sha256_hex((output if isinstance(output, str) else "").encode())
@@ -86,6 +88,7 @@ def load_run(path: Path) -> RunView:
     suites: dict[str, dict] = {}
     items: dict[str, dict[str, bool]] = {}
     outputs: dict[str, dict[str, str]] = {}
+    listed = meta.get("files") if isinstance(meta.get("files"), dict) else {}
     for s in summaries:
         if not isinstance(s, dict) or not all(
             isinstance(s.get(k), str) for k in ("key", "track", "name")
@@ -95,8 +98,10 @@ def load_run(path: Path) -> RunView:
         if s.get("accuracy") is None:  # judge-scored: no per-item verdicts
             continue
         folder = "private" if s.get("split") == "private" else "quality"
-        records = path / folder / f"{s['track']}.{s['name']}.jsonl"
-        items[s["key"]], outputs[s["key"]] = _read_items(records, s["key"])
+        rel = f"{folder}/{s['track']}.{s['name']}.jsonl"
+        if rel not in listed:  # only files verify hashed, and never a path outside the bundle
+            raise RunViewError(f"item records for {s['key']} ({rel}) are not a listed bundle file")
+        items[s["key"]], outputs[s["key"]] = _read_items(path / rel, s["key"])
     speed = _obj(meta, "speed")
     fit = _obj(meta, "fit")
     decode = _obj(speed.get("short@1"), "decode_tps").get("median")

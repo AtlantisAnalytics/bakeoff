@@ -44,7 +44,12 @@ upstream engine releases.</p>
     and a pick chosen on speed alone could never be replaced, because no run can beat 100%. The
     track gets its first pick in a later week whose best score is below 100%.</li>
   <li><strong>Overrides.</strong> The owner can override a verdict. The page then shows what the
-    rules computed, what the owner decided and why.</li>
+    rules computed, what the owner decided and why. An override to <em>replace</em> counts when the
+    new pick is chosen, and an override away from <em>replace</em> takes the run out of that
+    choice.</li>
+  <li><strong>Picks update.</strong> The week's new picks are written to <code>picks.json</code>,
+    each with the bundle hash of the run that won, and a pick changes only through a published
+    week.</li>
 </ol>
 <p>Judge-model comparisons for open-ended answers are shown for information only. They never
 change a verdict.</p>
