@@ -4,8 +4,8 @@ New open-weight models are tested every week on ordinary consumer GPUs, and the 
 Monday morning at **[bakeoff.si](https://bakeoff.si)**. For each memory tier the question is the same:
 which model should run on *this* card right now?
 
-**Status: pre-launch.** The site is a holding page, and the harness and results format are being built.
-See [PLAN.md](PLAN.md).
+**Status: live.** Results are published every Monday, starting with the week of 2026-11-02. See
+[PLAN.md](PLAN.md) for what comes next.
 
 ## What gets measured
 

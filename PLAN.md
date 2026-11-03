@@ -1,8 +1,7 @@
 # bakeoff.si plan
 
-Status as of 2026-10-15: **M0 to M3 done; M4 starts the weekend of 2026-10-17** (the private runner passed its live acceptance on both tiers). The repo is seeded, and the holding page has been live at
-https://bakeoff.si since 2026-10-12. It was uploaded by hand; deploying from Git is set up in M2. The repo
-stays **private until the first public Monday** (M5).
+Status as of 2026-11-02: **M0 to M5 done.** The first public week is 2026-11-02. The repo is public, and
+https://bakeoff.si shows the published weeks (the holding page ran from 2026-10-12 until launch).
 
 ## Goal
 
@@ -36,9 +35,11 @@ the site. The bot never pushes to `main` and has no merge path; the rulesets enf
 - **No secrets, tokens or API keys**, not even in examples. Use `.env.example` with placeholder values.
 - **No raw run logs in `results/`, only the scrubbed bundle.** Raw output stays in the git-ignored `runs/`.
 - **Before M5, re-scan the full history**, not just the tip, and squash it if anything slipped in.
+  Done 2026-11-02: every commit on every branch and PR ref, plus the PR descriptions and comments,
+  came back clean. No squash was needed.
 - **Image metadata.** `brand/bakeoff-logo.png` carries a C2PA content-credentials block, which says
   it was generated with an AI image tool. It holds no personal data. The site's re-encoded assets
-  don't have it. Before M5, the owner decides whether to keep it.
+  don't have it. The owner decided to keep it (2026-11-02).
 
 ## Method
 
@@ -74,8 +75,8 @@ In short:
 | **M1** ✅ | Harness: a Python + uv package with a `bakeoff run` CLI against an OpenAI-compatible endpoint. Quality and speed/fit suites, environment capture, hashed run bundle, tests |
 | **M2** ✅ | Results schema v1. The site renders results from JSON, with no framework. `/api/v1/latest.json` plus per-week files. Git deploys via Workers Builds |
 | **M3** ✅ | Private side: the weekend schedule, the Monday standup and [Publish] opening a draft PR here (scouting follows later). Live acceptance passed 2026-10-15 on both tiers; its draft PRs were closed unmerged |
-| **M4** | Two or three private dry-run weekends; review the report quality and the scrub. The first is the weekend of 2026-10-17 |
-| **M5** | First public Monday: scrub the history, make the repo public, announce |
+| **M4** ✅ | Two or three private dry-run weekends; review the report quality and the scrub. The first is the weekend of 2026-10-17 |
+| **M5** ✅ | First public Monday (2026-11-02): scrub the history, make the repo public, announce |
 
 Later:
 - a Verified tier on rented consumer cards (more envelopes, including AMD and Intel);
