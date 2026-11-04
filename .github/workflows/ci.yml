@@ -29,5 +29,7 @@ jobs:
         run: uv run bakeoff verify --ledger --no-username
       - name: Verify bundles changed by this pull request
         if: github.event_name == 'pull_request'
-        run: uv run bakeoff verify --changed origin/${{ github.base_ref || 'main' }} --no-username
+        env:
+          BASE: ${{ github.base_ref || 'main' }}
+        run: uv run bakeoff verify --changed origin/"$BASE" --no-username
       - run: uv run python scripts/scan_repo.py

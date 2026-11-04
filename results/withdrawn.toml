@@ -9,4 +9,7 @@
 # Procedure:
 # 1. A pull request adds the row, with the reason in plain words.
 # 2. After it merges, the owner deletes the object in the Cloudflare dashboard.
-# 3. From then on, verify, fetch and rederive report "withdrawn on <date>: <reason>".
+# 3. Purge the object from Cloudflare's edge cache, which keeps serving it after the delete: in the
+#    dashboard open the bakeoff.si zone, then Caching, Configuration, Purge Cache, Custom Purge,
+#    URL, and enter https://data.bakeoff.si/sha256/<aa>/<hash> (<aa> is the first two hex digits).
+# 4. From then on, verify, fetch and rederive report "withdrawn on <date>: <reason>".

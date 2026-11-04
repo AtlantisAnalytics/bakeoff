@@ -8,12 +8,14 @@ on:
         required: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   archive:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
     environment: store
     env:
       YEAR: ${{ inputs.year }}
@@ -25,6 +27,14 @@ jobs:
       - run: uv sync --locked
       - name: Build the archive
         run: uv run bakeoff archive build "$YEAR" --out "$RUNNER_TEMP/archive"
+      - name: Refuse when an archive pull request for the year is already open
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "athena/archive-$YEAR" > /dev/null; then
+            echo "branch athena/archive-$YEAR exists: an archive pull request for $YEAR is already"               "open; finish or close it first, a Zenodo record cannot be undone" >&2
+            exit 1
+          fi
       - name: Upload to Zenodo
         env:
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
@@ -35,6 +45,8 @@ jobs:
             > "$RUNNER_TEMP/doi.txt"
           doi=$(tail -n 1 "$RUNNER_TEMP/doi.txt")
           echo "Zenodo DOI for $YEAR: $doi" | tee -a "$GITHUB_STEP_SUMMARY"
+      # The pull request is opened with GITHUB_TOKEN, so it does not trigger CI. The owner closes
+      # and reopens it (or pushes an empty commit) to run the checks.
       - name: Open a draft pull request with the archive.toml row
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -185,6 +185,9 @@ This scheduled workflow on `main` runs every Tuesday and needs no credentials:
 - `bakeoff store check` over every bundle in a split range;
 - `--rehash 50`.
 
+The audit reads through the public domain, so the edge cache can answer for an object that is gone
+from R2. Auditing R2 directly is a later improvement.
+
 When it fails, the workflow goes red, which notifies the owner through GitHub. A Telegram alert from
 Athena is a possible later addition and is not part of this sub-project.
 
@@ -212,7 +215,11 @@ bundles = ["results/2026-12-07/runs/<id>"]
 **The procedure:**
 1. A pull request adds the row, with the reason in plain words.
 2. After it merges, the owner deletes the object in the Cloudflare dashboard.
-3. From then on, `verify`, `fetch` and `rederive` report "withdrawn on <date>: <reason>".
+3. Objects are served with `Cache-Control: public, max-age=31536000, immutable` and a cache rule
+   keeps them at the edge, so deleting the object does not remove those copies. The owner purges the
+   URL `https://data.bakeoff.si/sha256/<aa>/<hash>` (Cloudflare dashboard, bakeoff.si zone, Caching,
+   Configuration, Purge Cache, Custom Purge, URL).
+4. From then on, `verify`, `fetch` and `rederive` report "withdrawn on <date>: <reason>".
 
 Rows are never removed. Only objects in the store can be withdrawn: anything in git stays in
 history. That is one more reason git holds only the small files with numbers in them.
