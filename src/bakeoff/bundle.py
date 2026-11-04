@@ -5,9 +5,10 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath
 
 from bakeoff import safejson
+from bakeoff.hashing import bad_relpath as _bad_relpath
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
 from bakeoff.store import HashMismatch, Store, StoreError, Unavailable, Withdrawn
 
@@ -30,16 +31,6 @@ def run_id(started: datetime, label: str, salt: bytes, passes: str = "") -> str:
 
 def _bundle_hash(meta: dict) -> str:
     return sha256_hex(canonical_json({k: v for k, v in meta.items() if k != "bundle_sha256"}))
-
-
-def _bad_relpath(rel: object) -> bool:
-    if not isinstance(rel, str) or not rel:
-        return True
-    for cls in (PurePosixPath, PureWindowsPath):
-        p = cls(rel)
-        if p.is_absolute() or p.anchor or ".." in p.parts:
-            return True
-    return False
 
 
 def write_bundle(run_dir: Path, meta: dict, files: dict[str, list[dict]]) -> str:
@@ -283,7 +274,7 @@ def verify_bundle(
         except UnicodeDecodeError:
             add(Finding(rel, 0, "unreadable", "file is not valid UTF-8"))
             text = data.decode("utf-8", errors="replace")
-        suffix = path.suffix.lower()
+        suffix = PurePosixPath(rel).suffix.lower()
         skip_out = username_skip_output and suffix == ".jsonl"
         # In skip mode the raw JSONL text still holds the model output, so the username is
         # checked per string below instead.

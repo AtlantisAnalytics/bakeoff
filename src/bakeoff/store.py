@@ -5,7 +5,6 @@ public store, cached locally and used only if its hash matches.
 """
 
 import hashlib
-import json
 import os
 import shutil
 import tempfile
@@ -13,8 +12,10 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
+from bakeoff import safejson
+from bakeoff.hashing import bad_relpath
 from bakeoff.ledger import Withdrawal, load_withdrawn
 
 PUBLIC_URL = "https://data.bakeoff.si"
@@ -175,11 +176,28 @@ def resolve_file(bundle_dir: Path, rel: str, sha: str, store: Store | None) -> P
 def materialize(bundle_dir: Path, dst: Path, store: Store) -> Path:
     """Copy a split bundle to `dst` and fill in every listed file from the store."""
     bundle_dir, dst = Path(bundle_dir), Path(dst)
+    try:
+        meta = safejson.loads((bundle_dir / "bundle.json").read_bytes().decode("utf-8"))
+    except (OSError, ValueError) as e:
+        raise StoreError(f"cannot read bundle.json in {bundle_dir.name}: {e}") from e
+    listed = meta.get("files") if isinstance(meta, dict) else None
+    if not isinstance(listed, dict):
+        raise StoreError("bundle.json has no files object")
+    for rel in listed:
+        if bad_relpath(rel):
+            raise StoreError(f"unsafe path in bundle files: {rel!r}")
     shutil.copytree(bundle_dir, dst, symlinks=True)
-    listed = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8")).get("files", {})
     for rel, sha in listed.items():
         target = dst / rel
-        if not target.is_file():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(store.resolve(sha), target)
+        if target.is_file() and not target.is_symlink():
+            continue
+        cur = dst
+        for part in PurePosixPath(rel).parts[:-1]:
+            cur = cur / part
+            if cur.is_symlink():
+                raise StoreError(f"refusing to write through a symlink: {rel!r}")
+        if target.is_symlink():
+            raise StoreError(f"refusing to write through a symlink: {rel!r}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(store.resolve(sha), target)
     return dst

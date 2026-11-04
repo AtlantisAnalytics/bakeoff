@@ -223,3 +223,28 @@ def test_materialize_two_files_one_hash(fake_store, tmp_path):
     (tmp_path / "src" / "bundle.json").write_text(json.dumps(listing))
     out = materialize(tmp_path / "src", tmp_path / "dst", st)
     assert (out / "a.txt").read_bytes() == b"" and (out / "d/b.txt").read_bytes() == b""
+
+
+def test_materialize_refuses_unsafe_path(fake_store, tmp_path):
+    from bakeoff.store import materialize
+
+    sha, st = make(fake_store, tmp_path, b"x")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "bundle.json").write_text(json.dumps({"files": {"../x": sha}}))
+    with pytest.raises(StoreError, match="unsafe"):
+        materialize(tmp_path / "src", tmp_path / "dst", st)
+    assert not (tmp_path / "x").exists() and not (tmp_path / "dst").exists()
+
+
+def test_materialize_refuses_symlinked_dir(fake_store, tmp_path):
+    from bakeoff.store import materialize
+
+    sha, st = make(fake_store, tmp_path, b"x")
+    src, outside = tmp_path / "src", tmp_path / "outside"
+    src.mkdir()
+    outside.mkdir()
+    (src / "d").symlink_to(outside)
+    (src / "bundle.json").write_text(json.dumps({"files": {"d/f.txt": sha}}))
+    with pytest.raises(StoreError, match="symlink"):
+        materialize(src, tmp_path / "dst", st)
+    assert list(outside.iterdir()) == []

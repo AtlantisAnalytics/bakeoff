@@ -429,3 +429,35 @@ def test_hash_mismatch_from_store_is_error(tmp_path, fake_store):
     fake_store.objects[object_key(sha)] = b"tampered\n"
     found = verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path))
     assert [f.kind for f in found] == ["hash_mismatch"]
+
+
+def test_resolved_jsonl_gets_record_scan(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(
+        tmp_path, fake_store, outputs={"general/gsm8k": ["alice wrote this", "ok"]}
+    )
+    st = Store.from_env(tmp_path)
+    flagged = verify_bundle(b, "alice", None, kept=kept, store=st)
+    assert [f.kind for f in flagged] == ["username"]
+    assert verify_bundle(b, "alice", None, True, kept=kept, store=st) == []
+
+
+def test_resolved_jsonl_invalid_line_is_unreadable(tmp_path, fake_store):
+    import json as _json
+
+    from weekfix import KEPT_RUN
+
+    from bakeoff.hashing import sha256_hex
+    from bakeoff.store import Store, object_key
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    rel = "quality/general.gsm8k.jsonl"
+    meta = _json.loads((b / "bundle.json").read_text())
+    bad = b"not json\n"
+    sha = sha256_hex(bad)
+    fake_store.objects[object_key(sha)] = bad
+    meta["files"][rel] = sha
+    (b / "bundle.json").write_text(_json.dumps(meta))
+    found = verify_bundle(b, None, None, kept=KEPT_RUN, store=Store.from_env(tmp_path))
+    assert ("unreadable", rel) in {(f.kind, f.file) for f in found}
