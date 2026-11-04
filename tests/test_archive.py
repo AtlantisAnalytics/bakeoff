@@ -143,6 +143,48 @@ def test_tampered_tar_member_refused(tmp_path, fake_store):
     assert fresh.cached(name.rsplit("/", 1)[1]) is None
 
 
+def test_same_size_tamper_refused(tmp_path, fake_store):
+    root, _ = _root(tmp_path, fake_store)
+    out = build_archive(root, 2026, tmp_path / "out", Store.from_env(root))
+    tar = out / "2026-11.tar"
+    with tarfile.open(tar) as t:
+        m = t.getmembers()[0]
+        body = t.extractfile(m).read()
+    _rewrite_member(tar, m.name, bytes(b ^ 1 for b in body))
+    fresh = Store(fake_store.url, tmp_path / "fresh-cache", {})
+    with pytest.raises(HashMismatch):
+        fresh.load_archive(out)
+    assert fresh.cached(m.name.rsplit("/", 1)[1]) is None
+
+
+def test_build_refuses_a_used_directory(tmp_path, fake_store):
+    root, _ = _root(tmp_path, fake_store)
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "2025-03.tar").write_bytes(b"stale")
+    with pytest.raises(ArchiveError, match="not empty"):
+        build_archive(root, 2026, out, Store.from_env(root))
+    assert (out / "2025-03.tar").read_bytes() == b"stale"
+
+
+def test_publish_refuses_stray_or_stale_files(tmp_path, fake_store):
+    root, _ = _root(tmp_path, fake_store)
+    out = build_archive(root, 2026, tmp_path / "out", Store.from_env(root))
+    with FakeZenodo() as z:
+        (out / "2025-03.tar").write_bytes(b"stale")
+        with pytest.raises(ArchiveError, match="unexpected"):
+            zenodo_publish(out, 2026, None, z.url, "tok")
+        (out / "2025-03.tar").unlink()
+        (out / "2026-01.tar").write_bytes(b"stale")
+        with pytest.raises(ArchiveError):
+            zenodo_publish(out, 2026, None, z.url, "tok")
+        (out / "2026-01.tar").unlink()
+        (out / "notes.txt").write_text("x")
+        with pytest.raises(ArchiveError, match="unexpected"):
+            zenodo_publish(out, 2026, None, z.url, "tok")
+        assert z.calls == []
+
+
 def test_member_not_in_manifest_refused(tmp_path, fake_store):
     root, _ = _root(tmp_path, fake_store)
     out = build_archive(root, 2026, tmp_path / "out", Store.from_env(root))

@@ -28,14 +28,24 @@ jobs:
       - name: Upload to Zenodo
         env:
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+        shell: bash
         run: |
+          set -euo pipefail
           uv run python scripts/zenodo_upload.py "$RUNNER_TEMP/archive" --year "$YEAR" \
-            | tee "$RUNNER_TEMP/doi.txt"
+            > "$RUNNER_TEMP/doi.txt"
+          doi=$(tail -n 1 "$RUNNER_TEMP/doi.txt")
+          echo "Zenodo DOI for $YEAR: $doi" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Open a draft pull request with the archive.toml row
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
+          set -euo pipefail
           doi=$(tail -n 1 "$RUNNER_TEMP/doi.txt")
+          if ! [[ "$doi" =~ ^10\.[0-9]{4,9}/[^[:space:]]+$ ]]; then
+            echo "not a DOI: refusing to write the archive.toml row" >&2
+            exit 1
+          fi
           sha=$(sha256sum "$RUNNER_TEMP/archive/MANIFEST.sha256" | cut -d' ' -f1)
           branch="athena/archive-$YEAR"
           git config user.name "github-actions[bot]"

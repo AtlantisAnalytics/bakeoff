@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import shutil
 import tarfile
 import tomllib
@@ -13,7 +14,7 @@ from pathlib import Path
 
 from bakeoff.ledger import LedgerError, bundle_kind, load_layout
 from bakeoff.ledgercheck import bundle_dirs
-from bakeoff.store import MANIFEST, Store, StoreError, object_key
+from bakeoff.store import MANIFEST, Store, StoreError, object_key, read_manifest
 
 COMMUNITY = "bakeoff-si"
 LICENSE = "cc-by-4.0"
@@ -114,6 +115,8 @@ def build_archive(root: Path, year: int, out: Path, store: Store) -> Path:
             sizes[sha] = store.resolve(sha).stat().st_size
     except StoreError as e:
         raise ArchiveError(str(e)) from None
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        raise ArchiveError(f"{out} exists and is not empty; use a new directory")
     out.mkdir(parents=True, exist_ok=True)
     for month, shas in sorted(months.items()):
         with tarfile.open(out / f"{year}-{month}.tar", "w", format=tarfile.USTAR_FORMAT) as tar:
@@ -159,14 +162,41 @@ def _call(method: str, url: str, token: str, body=None, *, raw: Path | None = No
         raise ArchiveError(f"Zenodo {method}: reply is not JSON") from None
 
 
+def _expected_files(out: Path, year: int) -> list[str]:
+    """The files of a built archive; anything else in `out`, or a tar that disagrees with the
+    manifest, is refused because a published Zenodo record can never be changed."""
+    if not out.is_dir():
+        raise ArchiveError(f"{out} is not a directory")
+    tar_name = re.compile(rf"{year}-(0[1-9]|1[0-2])\.tar")
+    names = sorted(p.name for p in out.iterdir())
+    for n in names:
+        if n not in (MANIFEST, "README.md") and not tar_name.fullmatch(n):
+            raise ArchiveError(f"unexpected file in the archive directory: {n}")
+    tars = [n for n in names if n.endswith(".tar")]
+    if MANIFEST not in names or "README.md" not in names or not tars:
+        raise ArchiveError("the archive directory is incomplete")
+    try:
+        listed = set(read_manifest(out / MANIFEST))
+    except StoreError as e:
+        raise ArchiveError(str(e)) from None
+    members: list[str] = []
+    for n in tars:
+        try:
+            with tarfile.open(out / n) as tar:
+                members += [m.name.rsplit("/", 1)[-1] for m in tar]
+        except (tarfile.TarError, OSError):
+            raise ArchiveError(f"{n} is not a readable tar file") from None
+    if sorted(members) != sorted(listed):
+        raise ArchiveError("the tar files do not match MANIFEST.sha256; rebuild the archive")
+    return names
+
+
 def zenodo_publish(out: Path, year: int, prev_doi: str | None, base_url: str, token: str) -> str:
     """Create a deposition, upload every file of `out`, set the metadata, publish; return the DOI.
 
     The token is sent only to the base URL's own host."""
     base = base_url.rstrip("/")
-    names = sorted(p.name for p in Path(out).iterdir() if p.is_file())
-    if not names:
-        raise ArchiveError("nothing to upload")
+    names = _expected_files(Path(out), year)
     dep = _call("POST", f"{base}/api/deposit/depositions", token, {})
     try:
         dep_id, bucket = dep["id"], dep["links"]["bucket"].rstrip("/")
