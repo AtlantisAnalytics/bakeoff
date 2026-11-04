@@ -4,12 +4,13 @@ import shutil
 from pathlib import Path
 
 import pytest
-from weekfix import make_bundle
+from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 import bakeoff.publish as pub
-from bakeoff.bundle import verify_bundle, write_bundle
+from bakeoff.bundle import _bundle_hash, verify_bundle, write_bundle
 from bakeoff.hashing import sha256_hex
 from bakeoff.publish import PublishError, publish, week_docs, write_picks
+from bakeoff.store import Store
 from bakeoff.week import validate_week
 
 REPO = Path(__file__).resolve().parents[1]
@@ -615,8 +616,8 @@ def test_refuses_run_with_private_split_even_without_private_files(root, monkeyp
     a = bundle(root, "base", 6)
     real = pub.load_run
 
-    def private_split(path):
-        view = real(path)
+    def private_split(path, store=None):
+        view = real(path, store)
         for s in view.suites.values():
             s["split"] = "private"
         return view
@@ -631,8 +632,8 @@ def test_refuses_run_whose_bundle_lists_an_unstarted_private_suite(root, monkeyp
     a = bundle(root, "base", 6)
     real = pub._verify
 
-    def listed_private(path, what, *args):
-        meta = real(path, what, *args)
+    def listed_private(path, what, *args, **kw):
+        meta = real(path, what, *args, **kw)
         if what == "run":
             meta = {
                 **meta,
@@ -706,3 +707,159 @@ def test_correction_must_be_later_than_the_last_correction(root):
         root,
     )
     assert doc_of(root)["revision"] == 3
+
+
+# --- split weeks --------------------------------------------------------------------------------
+
+SPLIT = (
+    f'[[layout]]\nfrom = "{W1}"\nrun = ["bundle.json", "speed.jsonl", "fit.jsonl"]\n'
+    'judge = ["bundle.json"]\n'
+)
+ALL = f'[[layout]]\nfrom = "{W1}"\nkeep = "all"\n'
+KEPT = KEPT_RUN | {"bundle.json"}
+
+
+def layout(root, text):
+    (root / "results").mkdir(exist_ok=True)
+    (root / "results" / "layout.toml").write_text(text)
+
+
+def add_sample(b):
+    """List and write a non-quality file (like samples/) in bundle b, rehashing bundle.json."""
+    (b / "samples").mkdir()
+    (b / "samples" / "s.jsonl").write_text('{"id": "s-0"}\n')
+    meta = json.loads((b / "bundle.json").read_text())
+    meta["files"]["samples/s.jsonl"] = sha256_hex((b / "samples" / "s.jsonl").read_bytes())
+    meta.pop("bundle_sha256")
+    meta["bundle_sha256"] = _bundle_hash(meta)
+    (b / "bundle.json").write_text(json.dumps(meta, indent=2) + "\n")
+    return meta["files"]["samples/s.jsonl"]
+
+
+def names_in(path):
+    return {p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file()}
+
+
+def test_split_week_stages_only_kept_files(root, tmp_path, fake_store):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    push_all(fake_store, a)
+    push_all(fake_store, b)
+    layout(root, SPLIT)
+    out = run(week_toml(root, [(a, "24gb"), (b, "24gb")]), root)
+    for src in (a, b):
+        assert names_in(out / "runs" / src.name) == KEPT
+        got = verify_bundle(out / "runs" / src.name, "alice", None, kept=KEPT, offline=True)
+        assert got == []
+    root2 = tmp_path / "root2"
+    root2.mkdir()
+    for name in ("tiers.toml", "site.toml"):
+        shutil.copy(REPO / name, root2 / name)
+    a2, b2 = bundle(root2, "base", 6), bundle(root2, "small", 4)
+    layout(root2, ALL)
+    out2 = run(week_toml(root2, [(a2, "24gb"), (b2, "24gb")]), root2)
+    assert (out / "week.json").read_bytes() == (out2 / "week.json").read_bytes()
+
+
+def test_split_week_refuses_unpushed_objects(root, fake_store):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    push_all(fake_store, a)  # b is not pushed
+    layout(root, SPLIT)
+    n = 1  # speed.jsonl and fit.jsonl are shared with a; only the quality file is missing
+    with pytest.raises(PublishError) as e:
+        run(week_toml(root, [(a, "24gb"), (b, "24gb")]), root)
+    assert str(e.value) == (
+        f"run {b.name}: {n} object(s) not in the store; run bakeoff store push first"
+    )
+    no_week(root)
+
+
+def test_check_store_false_skips_existence(root, fake_store):
+    a = bundle(root, "base", 6)
+    layout(root, SPLIT)
+    toml = week_toml(root, [(a, "24gb")])
+    with pytest.raises(PublishError, match="not in the store"):
+        run(toml, root)
+    store = Store.from_env(root)
+    out = publish(toml, root, username="alice", denylist=None, store=store, check_store=False)
+    assert names_in(out / "runs" / a.name) == KEPT
+
+
+def test_explicit_store_is_used(root, fake_store):
+    a = bundle(root, "base", 6)
+    push_all(fake_store, a)
+    layout(root, SPLIT)
+    store = Store.from_env(root)
+    toml = week_toml(root, [(a, "24gb")])
+    assert publish(toml, root, username="alice", denylist=None, store=store).is_dir()
+
+
+def test_withdrawn_samples_tolerated_withdrawn_items_fatal(root, fake_store):
+    a = bundle(root, "base", 6)
+    sample_sha = add_sample(a)
+    push_all(fake_store, a)
+    layout(root, SPLIT)
+    files = json.loads((a / "bundle.json").read_text())["files"]
+    item_sha = files["quality/general.gsm8k.jsonl"]
+    split(a, KEPT)
+
+    def withdraw(sha):
+        (root / "results" / "withdrawn.toml").write_text(
+            f'[[withdrawn]]\nsha256 = "{sha}"\ndate = "2026-10-18"\nreason = "takedown"\n'
+            f'bundles = ["{a.name}"]\n'
+        )
+
+    withdraw(sample_sha)
+    toml = week_toml(root, [(a, "24gb")])
+    out = run(toml, root)
+    assert names_in(out / "runs" / a.name) == KEPT
+    shutil.rmtree(root / "results" / W1)
+    withdraw(item_sha)
+    with pytest.raises(PublishError, match=r"withdrawn.*2026-10-18.*takedown"):
+        run(toml, root)
+    no_week(root)
+
+
+def test_split_judge_bundle_keeps_only_bundle_json(root, fake_store):
+    a, b = bundle(root, "base", 6, judge=(CHAT,)), bundle(root, "small", 4, judge=(CHAT,))
+    j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
+    for x in (a, b, j):
+        push_all(fake_store, x)
+    layout(root, SPLIT)
+    out = run(week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), root)
+    assert names_in(out / "judge" / "judge-chat-1") == {"bundle.json"}
+
+
+def test_split_judge_unpushed_says_judge(root, fake_store):
+    a, b = bundle(root, "base", 6, judge=(CHAT,)), bundle(root, "small", 4, judge=(CHAT,))
+    j = judge_bundle(root, "judge-chat-1", sha(a), sha(b))
+    push_all(fake_store, a)
+    push_all(fake_store, b)
+    layout(root, SPLIT)
+    with pytest.raises(PublishError, match=r"^judge judge-chat-1: 1 object\(s\) not in the store"):
+        run(week_toml(root, [(a, "24gb"), (b, "24gb")], judges=[j]), root)
+
+
+def test_split_correction_uses_published_copy(root, fake_store):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    for x in (a, b):
+        push_all(fake_store, x)
+    layout(root, SPLIT)
+    run(week_toml(root, [(a, "24gb"), (b, "24gb")]), root)
+    before = tree(root / "results" / W1 / "runs" / b.name)
+    out = run(week_toml(root, [(a, "24gb"), (b, "24gb")], correction="Re-graded."), root)
+    assert doc_of(root)["revision"] == 2
+    assert tree(out / "runs" / b.name) == before
+    assert names_in(out / "runs" / a.name) == KEPT
+
+
+def test_all_range_unchanged(root):
+    a, b = bundle(root, "base", 6), bundle(root, "small", 4)
+    toml = week_toml(root, [(a, "24gb"), (b, "24gb")])
+    out = run(toml, root)
+    plain = tree(out)
+    shutil.rmtree(out)
+    (root / "results" / "picks.json").unlink()
+    layout(root, ALL)
+    out = run(toml, root)
+    assert tree(out) == plain
+    assert tree(out / "runs" / a.name) == tree(a)
