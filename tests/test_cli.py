@@ -390,3 +390,171 @@ def test_run_to_publish_end_to_end(tmp_path, monkeypatch):
     page = (r / "site" / "weeks" / "2026-10-19" / "index.html").read_text(encoding="utf-8")
     assert "KV pool 156K · 20.5% at max" in page
     assert cli.main(["site", "--root", str(r), "--check"]) == 0
+
+
+# ---- bakeoff store ----
+
+from weekfix import KEPT_RUN, push_all, split  # noqa: E402
+
+from bakeoff.store import object_key  # noqa: E402
+
+SECRET = "s3cr3t-value-0123456789"  # scrub-ok
+
+
+def _store_env(monkeypatch, fs):
+    monkeypatch.setenv("BAKEOFF_STORE_ENDPOINT", fs.url)
+    monkeypatch.setenv("BAKEOFF_STORE_BUCKET", fs.bucket)
+    monkeypatch.setenv("BAKEOFF_STORE_KEY_ID", "AKIDTEST")
+    monkeypatch.setenv("BAKEOFF_STORE_SECRET", SECRET)
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+
+
+def _two(tmp_path):
+    a = make_bundle(
+        tmp_path / "a", label="A", weights="w1", envelope="e", grades={"general/x": [True, False]}
+    )
+    b = make_bundle(
+        tmp_path / "b", label="B", weights="w2", envelope="e", grades={"general/x": [True, True]}
+    )
+    return a, b
+
+
+def _listed(bundle):
+    return json.loads((bundle / "bundle.json").read_text())["files"]
+
+
+def _push(bundles, tmp_path, *extra):
+    return cli.main(["store", "push", *map(str, bundles), "--denylist", str(tmp_path / "none")])
+
+
+def test_store_push_then_check_then_fetch(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a, b = _two(tmp_path)
+    assert _push([a, b], tmp_path) == 0
+    out = capsys.readouterr().out
+    n = len(_listed(a))
+    assert f"uploaded {n}, skipped 0" in out
+    for sha in _listed(a).values():
+        assert object_key(sha) in fake_store.objects
+    assert cli.main(["store", "check", str(a), str(b)]) == 0
+    assert f"ok {n}" in capsys.readouterr().out
+    split(a, KEPT_RUN | {"bundle.json"})
+    assert cli.main(["store", "fetch", str(a)]) == 0
+    out = capsys.readouterr().out
+    assert "fetched" in out and "cached" in out
+    assert cli.main(["store", "fetch", str(a)]) == 0
+    assert "fetched 0" in capsys.readouterr().out
+
+
+def test_push_refuses_bad_bundle(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a, _ = _two(tmp_path)
+    with (a / "speed.jsonl").open("a") as f:
+        f.write("{}\n")
+    assert _push([a], tmp_path) == 1
+    assert "hash_mismatch" in capsys.readouterr().out
+    assert not any(r[0] == "PUT" for r in fake_store.requests)
+
+
+def test_push_is_idempotent(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a, _ = _two(tmp_path)
+    assert _push([a], tmp_path) == 0
+    capsys.readouterr()
+    assert _push([a], tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "uploaded 0" in out
+    assert sum(1 for r in fake_store.requests if r[0] == "PUT") == len(set(_listed(a).values()))
+
+
+def test_check_reports_missing_and_withdrawn(fake_store, tmp_path, monkeypatch, capsys):
+    a, _ = _two(tmp_path)
+    listed = _listed(a)
+    push_all(fake_store, a)
+    gone_rel = "speed.jsonl"
+    del fake_store.objects[object_key(listed[gone_rel])]
+    root = tmp_path / "root"
+    (root / "results").mkdir(parents=True)
+    wsha = listed["fit.jsonl"]
+    (root / "results" / "withdrawn.toml").write_text(
+        f'[[withdrawn]]\nsha256 = "{wsha}"\ndate = "2026-11-03"\nreason = "leak"\nbundles = ["a"]\n'
+    )
+    assert cli.main(["store", "check", str(a), "--root", str(root)]) == 1
+    out = capsys.readouterr().out
+    assert f"missing {listed[gone_rel]} {gone_rel}" in out
+    assert f"withdrawn {wsha} 2026-11-03" in out
+    fake_store.objects = {}
+    push_all(fake_store, a)
+    assert cli.main(["store", "check", str(a), "--root", str(root)]) == 0
+
+
+def test_fetch_into_writes_complete_copy(fake_store, tmp_path, monkeypatch, capsys):
+    a, _ = _two(tmp_path)
+    push_all(fake_store, a)
+    full = {rel: (a / rel).read_bytes() for rel in _listed(a)}
+    split(a, KEPT_RUN | {"bundle.json"})
+    dst = tmp_path / "into"
+    assert cli.main(["store", "fetch", str(a), "--into", str(dst)]) == 0
+    got = dst / a.name
+    assert {rel: (got / rel).read_bytes() for rel in full} == full
+    capsys.readouterr()
+    assert cli.main(["verify", str(got), "--denylist", str(tmp_path / "none")]) == 0
+
+
+def test_verify_split_bundle_through_layout(fake_store, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    root = tmp_path / "repo"
+    run = make_bundle(
+        root / "results" / "2026-11-30" / "runs",
+        label="A",
+        weights="w",
+        envelope="e",
+        grades={"general/x": [True]},
+    )
+    push_all(fake_store, run)
+    (root / "results" / "layout.toml").write_text(
+        '[[layout]]\nfrom = "2026-11-02"\nkeep = "all"\n[[layout]]\nfrom = "2026-11-30"\n'
+        'run = ["bundle.json", "speed.jsonl", "fit.jsonl"]\njudge = ["bundle.json"]\n'
+    )
+    split(run, KEPT_RUN | {"bundle.json"})
+    argv = ["verify", str(run), "--denylist", str(tmp_path / "none")]
+    assert cli.main(argv) == 0
+
+
+def test_rehash_is_deterministic(fake_store, tmp_path, monkeypatch, capsys):
+    a, _ = _two(tmp_path)
+    push_all(fake_store, a)
+
+    def gets():
+        fake_store.requests.clear()
+        assert cli.main(["store", "check", str(a), "--rehash", "2"]) == 0
+        return sorted(p for m, p, _ in fake_store.requests if m == "GET")
+
+    first = gets()
+    assert len(first) == 2
+    assert gets() == first
+    assert gets() == first  # fresh temp cache each time, so the store is read every run
+
+
+def test_rehash_catches_corrupt_store_object(fake_store, tmp_path, monkeypatch, capsys):
+    a, _ = _two(tmp_path)
+    push_all(fake_store, a)
+    sha = _listed(a)["speed.jsonl"]
+    fake_store.objects[object_key(sha)] = b"corrupt"
+    assert cli.main(["store", "check", str(a), "--rehash", "99"]) == 1
+    assert f"corrupt {sha} speed.jsonl" in capsys.readouterr().out
+
+
+def test_push_output_never_contains_secret(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a, _ = _two(tmp_path)
+    assert _push([a], tmp_path) == 0
+    sha = _listed(a)["speed.jsonl"]
+    del fake_store.objects[object_key(sha)]
+    fake_store.fail[object_key(sha)] = 403
+    assert _push([a], tmp_path) == 1
+    monkeypatch.delenv("BAKEOFF_STORE_ENDPOINT")
+    assert _push([a], tmp_path) == 1
+    cap = capsys.readouterr()
+    assert SECRET not in cap.out + cap.err
+    assert "Traceback" not in cap.err

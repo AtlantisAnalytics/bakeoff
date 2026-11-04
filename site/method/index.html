@@ -138,6 +138,9 @@ revisions comes from the published file, because their inputs are kept in the gi
 <code>bakeoff site --check</code> confirms the pages were generated from those results. The JSON
 for any week is at <code>/api/v1/weeks/&lt;week&gt;.json</code> and is described by a JSON Schema at
 <code>/api/v1/schema/week.v1.json</code>.</p>
+<p>Each split week keeps its large files outside git, by hash.
+<code>uv run bakeoff store fetch results/&lt;week&gt;/runs/&lt;id&gt;</code> downloads them and
+checks every hash against the bundle.</p>
 
 </main>
 <div class="site-footer">
