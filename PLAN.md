@@ -80,7 +80,8 @@ In short:
 
 Later:
 - a Verified tier on rented consumer cards (more envelopes, including AMD and Intel);
-- community submissions from the open harness, shown as distributions;
+- community runs: contributors run the weekly plan on their own hardware and submit by pull request
+  ([umbrella spec](docs/specs/2026-11-04-community-runs-design.md));
 - a predictive model across hardware × model × quantization that estimates unmeasured cells and picks
   what to measure next;
 - edge devices and energy per token;
