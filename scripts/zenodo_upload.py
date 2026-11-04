@@ -8,6 +8,7 @@ The token comes only from ZENODO_TOKEN; the base URL from ZENODO_URL (default ze
 import argparse
 import os
 import sys
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from bakeoff.archive import (
@@ -20,12 +21,19 @@ from bakeoff.archive import (
 REPO = Path(__file__).resolve().parents[1]
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, today: date | None = None) -> int:
     p = argparse.ArgumentParser(prog="zenodo_upload")
     p.add_argument("out_dir")
     p.add_argument("--year", type=int, required=True)
     p.add_argument("--root", default=str(REPO))
     args = p.parse_args(argv)
+    today = today or datetime.now(UTC).date()
+    if today < date(args.year + 1, 3, 1):
+        print(
+            f"error: the {args.year} archive can't be made before 1 March {args.year + 1}",
+            file=sys.stderr,
+        )
+        return 1
     token = os.environ.get("ZENODO_TOKEN")
     if not token:
         print("error: ZENODO_TOKEN is not set", file=sys.stderr)

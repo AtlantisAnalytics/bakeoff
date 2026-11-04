@@ -14,7 +14,15 @@ from pathlib import Path
 
 from bakeoff.ledger import LedgerError, bundle_kind, load_layout
 from bakeoff.ledgercheck import bundle_dirs
-from bakeoff.store import MANIFEST, Store, StoreError, object_key, read_manifest
+from bakeoff.store import (
+    MANIFEST,
+    NETWORK_ERRORS,
+    Store,
+    StoreError,
+    object_key,
+    read_manifest,
+    valid_sha,
+)
 
 COMMUNITY = "bakeoff-si"
 LICENSE = "cc-by-4.0"
@@ -87,6 +95,8 @@ def _split_objects(root: Path, year: int) -> dict[str, tuple[str, list[str]]]:
             continue
         rel = bundle.relative_to(root).as_posix()
         for sha in files.values():
+            if not valid_sha(sha):
+                raise ArchiveError(f"{bundle.name}: bad sha256 in bundle.json files")
             first, paths = found.setdefault(sha, (week, []))
             if rel not in paths:
                 paths.append(rel)
@@ -149,7 +159,7 @@ def _call(method: str, url: str, token: str, body=None, *, raw: Path | None = No
         raise ArchiveError(
             f"Zenodo {method} {urllib.parse.urlsplit(url).path}: HTTP {e.code}"
         ) from None
-    except OSError as e:
+    except NETWORK_ERRORS as e:
         raise ArchiveError(
             f"Zenodo {method} {urllib.parse.urlsplit(url).path}: {type(e).__name__}"
         ) from None
@@ -244,6 +254,6 @@ def download_record(doi: str, dest: Path) -> Path:
             with urllib.request.urlopen(f["links"]["self"], timeout=TIMEOUT) as r:
                 with (dest / name).open("wb") as out:
                     shutil.copyfileobj(r, out)
-    except (OSError, ValueError, KeyError, TypeError) as e:
+    except (*NETWORK_ERRORS, ValueError, KeyError, TypeError) as e:
         raise ArchiveError(f"cannot download record {record}: {type(e).__name__}") from None
     return dest

@@ -28,7 +28,15 @@ from bakeoff.publish import PublishError, publish, week_docs, write_picks
 from bakeoff.rederive import RederiveError, rederive
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
 from bakeoff.s3 import S3Client
-from bakeoff.store import MANIFEST, HashMismatch, Store, StoreError, materialize, object_key
+from bakeoff.store import (
+    MANIFEST,
+    HashMismatch,
+    Store,
+    StoreError,
+    materialize,
+    object_key,
+    valid_sha,
+)
 from bakeoff.suites import SuiteError, resolve_suites, suites_root
 from bakeoff.web.build import check_site, render_site, write_preview, write_site
 from bakeoff.weekcfg import WeekInputError
@@ -416,7 +424,7 @@ def _listed(bundle: Path) -> tuple[bytes, list[tuple[str, str]]]:
     if not isinstance(files, dict):
         raise StoreError(f"{bundle.name}: bundle.json has no files object")
     for rel, sha in files.items():
-        if bad_relpath(rel) or not isinstance(sha, str):
+        if bad_relpath(rel) or not valid_sha(sha):
             raise StoreError(f"{bundle.name}: bad entry in files: {rel!r}")
     return raw, sorted(files.items())
 
@@ -566,11 +574,18 @@ def _head_listed(store: Store, listed: list[tuple[str, str]], label: str = "") -
     for rel, sha in listed:
         if sha in store.withdrawn:
             print(f"withdrawn {sha} {store.withdrawn[sha].date}")
-        elif store.exists(sha):
-            present.add(sha)
         else:
-            print(f"missing {sha} {label}{rel}")
-            bad = True
+            try:
+                found = store.exists(sha)
+            except StoreError as e:
+                print(f"unavailable {sha} {label}{rel} {e}")
+                bad = True
+                continue
+            if found:
+                present.add(sha)
+            else:
+                print(f"missing {sha} {label}{rel}")
+                bad = True
     return present, bad
 
 
@@ -593,6 +608,9 @@ def _rehash(
                 fresh.resolve(sha)
             except HashMismatch:
                 print(f"corrupt {sha} {label}{rel}")
+                bad = True
+            except StoreError as e:
+                print(f"unavailable {sha} {label}{rel} {e}")
                 bad = True
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

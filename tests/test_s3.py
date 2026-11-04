@@ -19,7 +19,7 @@ def client(fake_store, monkeypatch):
     monkeypatch.setenv("BAKEOFF_STORE_KEY_ID", "AKIDTEST")
     monkeypatch.setenv("BAKEOFF_STORE_SECRET", SECRET)
     monkeypatch.setenv("BAKEOFF_STORE_BUCKET", fake_store.bucket)
-    monkeypatch.setattr("bakeoff.s3.time.sleep", lambda s: None)
+    monkeypatch.setattr("bakeoff.store.time.sleep", lambda s: None)
     return S3Client.from_env()
 
 
@@ -75,7 +75,7 @@ def test_put_retries_then_succeeds(client, fake_store, tmp_path):
 
 def test_put_gives_up_after_three_retries(client, fake_store, tmp_path, monkeypatch):
     sleeps = []
-    monkeypatch.setattr("bakeoff.s3.time.sleep", sleeps.append)
+    monkeypatch.setattr("bakeoff.store.time.sleep", sleeps.append)
     path, sha = _file(tmp_path)
     key = object_key(sha)
     fake_store.fail[key] = 500

@@ -6,7 +6,6 @@ It can put and head objects. It has no way to delete one.
 import hashlib
 import hmac
 import os
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -14,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from bakeoff.store import BACKOFF, TIMEOUT, StoreError
+from bakeoff.store import TIMEOUT, GaveUp, StoreError, retry_call
 
 REGION = "auto"
 SERVICE = "s3"
@@ -105,10 +104,8 @@ class S3Client:
     def _send(self, method: str, key: str, sha256: str, path: Path | None) -> int:
         url = f"{self.endpoint.rstrip('/')}/{self.bucket}/{key}"
         extra = dict(UPLOAD_HEADERS) if path else {}
-        last: int | str = "no response"
-        for attempt in range(len(BACKOFF) + 1):
-            if attempt:
-                time.sleep(BACKOFF[attempt - 1])
+
+        def attempt() -> int:
             amz_date = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
             headers = sign(
                 method,
@@ -131,15 +128,17 @@ class S3Client:
             except urllib.error.HTTPError as e:
                 if e.code == 404 and method == "HEAD":
                     return 404
-                if not (e.code == 429 or e.code >= 500):
-                    raise StoreError(f"{method} {key}: status {e.code}") from None
-                last = e.code
-            except (urllib.error.URLError, OSError) as e:
-                last = type(e).__name__
+                raise
             finally:
                 if body:
                     body.close()
-        raise StoreError(f"{method} {key}: gave up after retries (last {last})")
+
+        try:
+            return retry_call(attempt)
+        except urllib.error.HTTPError as e:
+            raise StoreError(f"{method} {key}: status {e.code}") from None
+        except GaveUp as e:
+            raise StoreError(f"{method} {key}: gave up after retries (last {e.last})") from None
 
     def head(self, key: str) -> bool:
         return self._send("HEAD", key, EMPTY_SHA, None) == 200

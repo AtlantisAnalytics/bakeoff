@@ -5,6 +5,7 @@ public store, cached locally and used only if its hash matches.
 """
 
 import hashlib
+import http.client
 import os
 import re
 import shutil
@@ -43,6 +44,10 @@ class HashMismatch(StoreError):
         self.sha, self.where = sha, where
 
 
+class ShortBody(OSError):
+    """The server closed the connection before the announced number of bytes arrived."""
+
+
 class Withdrawn(StoreError):
     def __init__(self, sha: str, date: str, reason: str):
         super().__init__(f"object {sha} was withdrawn on {date}: {reason}")
@@ -53,12 +58,46 @@ MANIFEST = "MANIFEST.sha256"
 _SHA = re.compile(r"[0-9a-f]{64}")
 
 
+NETWORK_ERRORS = (OSError, http.client.HTTPException)
+
+
+def valid_sha(sha: object) -> bool:
+    return isinstance(sha, str) and _SHA.fullmatch(sha) is not None
+
+
 def object_key(sha: str) -> str:
+    if not valid_sha(sha):
+        raise StoreError(f"not a sha256: {str(sha)[:80]!r}")
     return f"sha256/{sha[:2]}/{sha}"
 
 
 def _retryable(status: int) -> bool:
     return status == 429 or status >= 500
+
+
+class GaveUp(Exception):
+    def __init__(self, last: int | str):
+        super().__init__(last)
+        self.last = last
+
+
+def retry_call(call):
+    """Run `call`, retrying network errors, 429 and 5xx with BACKOFF; return its result.
+
+    Another HTTP status is raised as is. When the retries run out, raise GaveUp."""
+    last: int | str = "no attempt"
+    for attempt in range(len(BACKOFF) + 1):
+        if attempt:
+            time.sleep(BACKOFF[attempt - 1])
+        try:
+            return call()
+        except urllib.error.HTTPError as e:
+            if not _retryable(e.code):
+                raise
+            last = e.code
+        except NETWORK_ERRORS as e:
+            last = type(e).__name__
+    raise GaveUp(last)
 
 
 @dataclass
@@ -85,30 +124,32 @@ class Store:
         return self.cache / object_key(sha)
 
     def cached(self, sha: str) -> Path | None:
+        object_key(sha)
         path = self._path(sha)
         return path if path.is_file() else None
 
     def exists(self, sha: str) -> bool:
         url = self._url(sha)
-        for attempt in range(len(BACKOFF) + 1):
+
+        def head() -> bool:
+            req = urllib.request.Request(url, method="HEAD")
             try:
-                req = urllib.request.Request(url, method="HEAD")
                 with urllib.request.urlopen(req, timeout=TIMEOUT):
                     return True
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     return False
-                if not _retryable(e.code):
-                    raise Unavailable(sha, url, e.code) from None
-                status: int | str = e.code
-            except OSError as e:
-                status = type(e).__name__
-            if attempt == len(BACKOFF):
-                raise Unavailable(sha, url, status)
-            time.sleep(BACKOFF[attempt])
-        raise AssertionError("unreachable")
+                raise
+
+        try:
+            return retry_call(head)
+        except urllib.error.HTTPError as e:
+            raise Unavailable(sha, url, e.code) from None
+        except GaveUp as e:
+            raise Unavailable(sha, url, e.last) from None
 
     def resolve(self, sha: str) -> Path:
+        object_key(sha)
         if sha in self.withdrawn:
             w = self.withdrawn[sha]
             raise Withdrawn(sha, w.date, w.reason)
@@ -126,22 +167,21 @@ class Store:
 
     def _download(self, sha: str, path: Path) -> None:
         url = self._url(sha)
-        status: int | str = "no attempt"
-        for attempt in range(len(BACKOFF) + 1):
+
+        def once() -> None:
             try:
                 self._fetch_once(sha, url, path)
-                return
-            except urllib.error.HTTPError as e:
-                if not _retryable(e.code):
-                    raise Unavailable(sha, url, e.code) from None
-                status = e.code
-            except OSError as e:
-                if isinstance(e, PermissionError | FileNotFoundError) and not path.parent.exists():
+            except (PermissionError, FileNotFoundError) as e:
+                if not path.parent.exists():
                     raise StoreError(f"cannot write to cache {path.parent}: {e}") from None
-                status = type(e).__name__
-            if attempt == len(BACKOFF):
-                raise Unavailable(sha, url, status)
-            time.sleep(BACKOFF[attempt])
+                raise
+
+        try:
+            retry_call(once)
+        except urllib.error.HTTPError as e:
+            raise Unavailable(sha, url, e.code) from None
+        except GaveUp as e:
+            raise Unavailable(sha, url, e.last) from None
 
     def load_archive(self, archive_dir: Path) -> int:
         """Copy the objects of an unpacked yearly archive into the cache; return how many.
@@ -196,9 +236,14 @@ class Store:
             raise StoreError(f"cannot write to cache {path.parent}: {e}") from None
         try:
             with tmp, urllib.request.urlopen(url, timeout=TIMEOUT) as resp:
+                expected = resp.headers.get("Content-Length")
+                got = 0
                 while chunk := resp.read(CHUNK):
+                    got += len(chunk)
                     h.update(chunk)
                     tmp.write(chunk)
+            if expected is not None and expected.isdigit() and got != int(expected):
+                raise ShortBody(f"got {got} of {expected} bytes")
             if h.hexdigest() != sha:
                 raise HashMismatch(sha, url)
             os.replace(tmp.name, path)
@@ -251,9 +296,11 @@ def materialize(bundle_dir: Path, dst: Path, store: Store, *, skip_withdrawn: bo
     listed = meta.get("files") if isinstance(meta, dict) else None
     if not isinstance(listed, dict):
         raise StoreError("bundle.json has no files object")
-    for rel in listed:
+    for rel, sha in listed.items():
         if bad_relpath(rel):
             raise StoreError(f"unsafe path in bundle files: {rel!r}")
+        if not valid_sha(sha):
+            raise StoreError(f"bad sha256 in bundle files: {rel!r}")
     shutil.copytree(bundle_dir, dst, symlinks=True)
     for rel, sha in listed.items():
         target = dst / rel

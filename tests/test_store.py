@@ -129,7 +129,7 @@ def test_interrupted_download_leaves_no_cache_file(fake_store, tmp_path, monkeyp
 
     class Broken:
         def __init__(self, resp):
-            self.resp, self.n = resp, 0
+            self.resp, self.n, self.headers = resp, 0, resp.headers
 
         def __enter__(self):
             return self

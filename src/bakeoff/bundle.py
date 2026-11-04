@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 from bakeoff import safejson
 from bakeoff.hashing import bad_relpath as _bad_relpath
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
-from bakeoff.store import HashMismatch, Store, StoreError, Unavailable, Withdrawn
+from bakeoff.store import HashMismatch, Store, StoreError, Unavailable, Withdrawn, valid_sha
 
 GENERIC_USERNAMES = frozenset(
     "root user admin ubuntu ec2-user debian centos fedora pi guest runner docker vagrant "
@@ -213,6 +213,9 @@ def verify_bundle(
     for rel, expected in listed.items():
         if _bad_relpath(rel):
             findings.append(Finding(str(rel), 0, "unreadable", "unsafe path in files"))
+            continue
+        if not valid_sha(expected):
+            findings.append(Finding(rel, 0, "unreadable", "bad sha256 in files"))
             continue
         path = run_dir / rel
         if _has_symlink(run_dir, rel):

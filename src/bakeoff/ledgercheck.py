@@ -7,6 +7,7 @@ from pathlib import Path
 
 from bakeoff.bundle import Finding, verify_bundle
 from bakeoff.ledger import LedgerError, bundle_kind, load_layout, load_withdrawn
+from bakeoff.store import valid_sha
 
 _WEEK = re.compile(r"\d{4}-\d{2}-\d{2}")
 
@@ -49,7 +50,9 @@ def _listed(bundle: Path) -> dict | None:
     except (OSError, ValueError):
         return None
     files = meta.get("files") if isinstance(meta, dict) else None
-    return files if isinstance(files, dict) else None
+    if not isinstance(files, dict):
+        return None
+    return {k: v for k, v in files.items() if valid_sha(v)}
 
 
 def check_ledger(
