@@ -15,6 +15,7 @@ import tomllib
 from datetime import UTC, datetime
 from pathlib import Path
 
+from bakeoff.archive import ArchiveError, build_archive, download_record, load_archive_rows
 from bakeoff.bundle import GENERIC_USERNAMES, verify_bundle
 from bakeoff.client import EndpointClient
 from bakeoff.config import ConfigError, RunConfig, load_config
@@ -27,7 +28,7 @@ from bakeoff.publish import PublishError, publish, week_docs, write_picks
 from bakeoff.rederive import RederiveError, rederive
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
 from bakeoff.s3 import S3Client
-from bakeoff.store import HashMismatch, Store, StoreError, materialize, object_key
+from bakeoff.store import MANIFEST, HashMismatch, Store, StoreError, materialize, object_key
 from bakeoff.suites import SuiteError, resolve_suites, suites_root
 from bakeoff.web.build import check_site, render_site, write_preview, write_site
 from bakeoff.weekcfg import WeekInputError
@@ -444,7 +445,42 @@ def _non_negative(text: str) -> int:
     return n
 
 
+def _load_archive(args: argparse.Namespace, store: Store) -> None:
+    year = int(args.archive)
+    row = load_archive_rows(Path(args.root)).get(year)
+    tmp = None
+    try:
+        if args.archive_dir:
+            src = Path(args.archive_dir)
+        elif row is None:
+            raise ArchiveError(f"results/archive.toml has no row for {year}; pass --archive-dir")
+        else:
+            tmp = Path(tempfile.mkdtemp(prefix="bakeoff-archive-"))
+            src = download_record(row.doi, tmp)
+        if row is not None:
+            got = hashlib.sha256((src / MANIFEST).read_bytes()).hexdigest()
+            if got != row.manifest_sha256:
+                raise ArchiveError(f"{MANIFEST} does not match results/archive.toml for {year}")
+        print(f"archive {year}: loaded {store.load_archive(src)} objects into the cache")
+    finally:
+        if tmp is not None:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 def _cmd_store_fetch(args: argparse.Namespace) -> int:
+    if not args.bundles and not args.archive:
+        _err("give a bundle or --archive YEAR")
+        return 1
+    if args.archive_dir and not args.archive:
+        _err("--archive-dir needs --archive YEAR")
+        return 1
+    if args.archive:
+        try:
+            _load_archive(args, Store.from_env(Path(args.root)))
+        except (StoreError, LedgerError, ArchiveError, OSError) as e:
+            _err(str(e))
+            return 1
+
     def one(bundle: Path, store: Store) -> bool:
         _, listed = _listed(bundle)
         fetched = cached = 0
@@ -463,6 +499,17 @@ def _cmd_store_fetch(args: argparse.Namespace) -> int:
         return False
 
     return _store_each(args, one)
+
+
+def _cmd_archive_build(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    try:
+        out = build_archive(root, args.year, Path(args.out), Store.from_env(root))
+    except (StoreError, LedgerError, ArchiveError, OSError) as e:
+        _err(str(e))
+        return 1
+    print(f"archive {args.year}: wrote {len(list(out.iterdir()))} files to {out}")
+    return 0
 
 
 def _cmd_store_push(args: argparse.Namespace) -> int:
@@ -672,7 +719,9 @@ def _parser() -> argparse.ArgumentParser:
     so = sub.add_parser("store", help="fetch, push and check the content-addressed file store")
     ssub = so.add_subparsers(dest="store_cmd", required=True)
     sf = ssub.add_parser("fetch", help="download a split bundle's files and check their hashes")
-    sf.add_argument("bundles", nargs="+", metavar="BUNDLE")
+    sf.add_argument("bundles", nargs="*", metavar="BUNDLE")
+    sf.add_argument("--archive", metavar="YEAR", type=int, help="first load that year's archive")
+    sf.add_argument("--archive-dir", metavar="DIR", help="the record's files, already downloaded")
     sf.add_argument("--into", metavar="DIR", help="write a complete copy of each bundle under DIR")
     sf.add_argument("--root", default=".")
     sf.set_defaults(fn=_cmd_store_fetch)
@@ -698,6 +747,13 @@ def _parser() -> argparse.ArgumentParser:
     sa.add_argument("--seed", help="sampling seed (default: the current UTC ISO year-week)")
     sa.add_argument("--root", default=".")
     sa.set_defaults(fn=_cmd_store_audit)
+    ar = sub.add_parser("archive", help="build the yearly archive of stored objects")
+    asub = ar.add_subparsers(dest="archive_cmd", required=True)
+    ab = asub.add_parser("build", help="write the manifest, README and one tar per month")
+    ab.add_argument("year", type=int)
+    ab.add_argument("--out", required=True)
+    ab.add_argument("--root", default=".")
+    ab.set_defaults(fn=_cmd_archive_build)
     return p
 
 

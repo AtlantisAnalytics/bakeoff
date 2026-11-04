@@ -6,7 +6,9 @@ public store, cached locally and used only if its hash matches.
 
 import hashlib
 import os
+import re
 import shutil
+import tarfile
 import tempfile
 import time
 import urllib.error
@@ -45,6 +47,10 @@ class Withdrawn(StoreError):
     def __init__(self, sha: str, date: str, reason: str):
         super().__init__(f"object {sha} was withdrawn on {date}: {reason}")
         self.sha, self.date, self.reason = sha, date, reason
+
+
+MANIFEST = "MANIFEST.sha256"
+_SHA = re.compile(r"[0-9a-f]{64}")
 
 
 def object_key(sha: str) -> str:
@@ -137,6 +143,51 @@ class Store:
                 raise Unavailable(sha, url, status)
             time.sleep(BACKOFF[attempt])
 
+    def load_archive(self, archive_dir: Path) -> int:
+        """Copy the objects of an unpacked yearly archive into the cache; return how many.
+
+        Every tar member must be listed in the manifest and match its sha256 and size."""
+        archive_dir = Path(archive_dir)
+        sizes = read_manifest(archive_dir / MANIFEST)
+        count = 0
+        for tar_path in sorted(archive_dir.glob("*.tar")):
+            with tarfile.open(tar_path) as tar:
+                for member in tar:
+                    sha = member.name.rsplit("/", 1)[-1]
+                    if not member.isreg() or member.name != object_key(sha) or sha not in sizes:
+                        raise StoreError(f"{tar_path.name}: {member.name!r} is not in the manifest")
+                    if member.size != sizes[sha]:
+                        raise HashMismatch(sha, f"{tar_path.name} (size)")
+                    if sha in self.withdrawn:
+                        continue
+                    src = tar.extractfile(member)
+                    if src is None:
+                        raise StoreError(f"{tar_path.name}: cannot read {member.name!r}")
+                    with src:
+                        self._admit(sha, src, tar_path.name)
+                    count += 1
+        return count
+
+    def _admit(self, sha: str, src, where: str) -> None:
+        path = self._path(sha)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = tempfile.NamedTemporaryFile(dir=path.parent, delete=False)
+        except OSError as e:
+            raise StoreError(f"cannot write to cache {path.parent}: {e}") from None
+        h = hashlib.sha256()
+        try:
+            with tmp:
+                while chunk := src.read(CHUNK):
+                    h.update(chunk)
+                    tmp.write(chunk)
+            if h.hexdigest() != sha:
+                raise HashMismatch(sha, where)
+            os.replace(tmp.name, path)
+        except BaseException:
+            Path(tmp.name).unlink(missing_ok=True)
+            raise
+
     def _fetch_once(self, sha: str, url: str, path: Path) -> None:
         h = hashlib.sha256()
         try:
@@ -154,6 +205,21 @@ class Store:
         except BaseException:
             Path(tmp.name).unlink(missing_ok=True)
             raise
+
+
+def read_manifest(path: Path) -> dict[str, int]:
+    """Parse MANIFEST.sha256 into {sha256: size}."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        raise StoreError(f"cannot read {MANIFEST}: {type(e).__name__}") from None
+    out: dict[str, int] = {}
+    for line in text.splitlines():
+        parts = line.split("  ")
+        if len(parts) != 3 or not _SHA.fullmatch(parts[0]) or not parts[1].isdigit():
+            raise StoreError(f"{MANIFEST}: bad line {line[:80]!r}")
+        out[parts[0]] = int(parts[1])
+    return out
 
 
 def _hash_file(path: Path) -> str:
