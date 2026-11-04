@@ -42,7 +42,7 @@ def test_env_capture_records_only_visible_gpus(monkeypatch):
         seen.append(argv)
         return ROW if "--query-gpu" in " ".join(argv) else "CUDA Version: 12.8"
 
-    gpus, links = _nvidia_gpus(run, lambda path: None, lambda v: v)
+    gpus, links = _nvidia_gpus(run, lambda path: None, lambda v: v, linux=True)
     assert ["nvidia-smi", "-i", "2", *NVIDIA_QUERY_ARGV[1:]] in seen
     assert ["nvidia-smi", "-i", "2", *LINK_QUERY_ARGV[1:]] in seen
     assert [g["name"]["value"] for g in gpus] == ["NVIDIA GeForce RTX 3060"]
