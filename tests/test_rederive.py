@@ -3,13 +3,13 @@ import shutil
 from pathlib import Path
 
 import pytest
-from weekfix import make_bundle
+from weekfix import KEPT_RUN, make_bundle, push_all
 
 from bakeoff import cli
-from bakeoff.bundle import write_bundle
+from bakeoff.bundle import _bundle_hash, write_bundle
 from bakeoff.hashing import sha256_hex
 from bakeoff.publish import publish
-from bakeoff.rederive import rederive
+from bakeoff.rederive import RederiveError, rederive
 
 REPO = Path(__file__).resolve().parents[1]
 W1, W2 = "2026-10-19", "2026-10-26"
@@ -267,3 +267,85 @@ def test_toml_strings_escape_del():
 
     for s in ("a\x7fb", "tab\there", 'quote " and \\ back', "nul\x00", "é ✓"):
         assert tomllib.loads(f"k = {_q(s, 'k')}")["k"] == s
+
+
+# --- split weeks --------------------------------------------------------------------------------
+
+SPLIT = (
+    f'[[layout]]\nfrom = "{W1}"\nrun = ["bundle.json", "speed.jsonl", "fit.jsonl"]\n'
+    'judge = ["bundle.json"]\n'
+)
+KEPT = KEPT_RUN | {"bundle.json"}
+
+
+def add_sample(b):
+    """List and write a samples/ file in bundle b, rehashing bundle.json; return its sha."""
+    (b / "samples").mkdir()
+    (b / "samples" / "s.jsonl").write_text('{"id": "s-0"}\n')
+    meta = json.loads((b / "bundle.json").read_text())
+    meta["files"]["samples/s.jsonl"] = sha256_hex((b / "samples" / "s.jsonl").read_bytes())
+    meta.pop("bundle_sha256")
+    meta["bundle_sha256"] = _bundle_hash(meta)
+    (b / "bundle.json").write_text(json.dumps(meta, indent=2) + "\n")
+    return meta["files"]["samples/s.jsonl"]
+
+
+def split_week(root, fake_store, *, samples=False):
+    """Publish W1 (two runs) as a split week; return the sample sha (or None) and the bundles."""
+    a, b = bundle(root, "base", 6, "runs"), bundle(root, "small", 4, "runs")
+    sample = add_sample(a) if samples else None
+    (root / "results").mkdir(exist_ok=True)
+    (root / "results" / "layout.toml").write_text(SPLIT)
+    for x in (a, b):
+        push_all(fake_store, x)
+    pub(write_week(root, "w1.toml", W1, AT1, [a, b]), root)
+    shutil.rmtree(root / "runs")
+    return sample, (a, b)
+
+
+def withdraw(root, sha, bundle_name):
+    (root / "results" / "withdrawn.toml").write_text(
+        f'[[withdrawn]]\nsha256 = "{sha}"\ndate = "2026-10-18"\nreason = "takedown"\n'
+        f'bundles = ["{bundle_name}"]\n'
+    )
+
+
+def kept_names(root, name):
+    return {p.name for p in (root / "results" / W1 / "runs" / name).iterdir()}
+
+
+def test_split_week_rederives_identical(root, fake_store):
+    _, (a, _b) = split_week(root, fake_store)
+    assert kept_names(root, a.name) == KEPT
+    assert rederive(root, W1) == []
+    assert kept_names(root, a.name) == KEPT
+
+
+def test_second_rederive_offline(root, fake_store):
+    split_week(root, fake_store)
+    assert rederive(root, W1) == []
+    fake_store.__exit__(None, None, None)  # the server is gone; the cache is warm
+    assert rederive(root, W1) == []
+
+
+def test_withdrawn_quality_file_stops_with_reason(root, fake_store):
+    _, (a, _b) = split_week(root, fake_store)
+    meta = json.loads((root / "results" / W1 / "runs" / a.name / "bundle.json").read_text())
+    rel = "quality/general.gsm8k.jsonl"
+    withdraw(root, meta["files"][rel], a.name)
+    with pytest.raises(RederiveError) as e:
+        rederive(root, W1)
+    assert str(e.value) == (
+        f"{rel} in {a.name} was withdrawn on 2026-10-18: takedown; "
+        "this week can no longer be re-derived"
+    )
+
+
+def test_withdrawn_samples_file_still_identical(root, fake_store):
+    sample, (a, _b) = split_week(root, fake_store, samples=True)
+    withdraw(root, sample, a.name)
+    assert rederive(root, W1) == []
+
+
+def test_published_2026_11_02_still_identical():
+    assert rederive(REPO, "2026-11-02") == []

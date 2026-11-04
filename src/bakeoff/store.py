@@ -173,8 +173,10 @@ def resolve_file(bundle_dir: Path, rel: str, sha: str, store: Store | None) -> P
     return store.resolve(sha)
 
 
-def materialize(bundle_dir: Path, dst: Path, store: Store) -> Path:
-    """Copy a split bundle to `dst` and fill in every listed file from the store."""
+def materialize(bundle_dir: Path, dst: Path, store: Store, *, skip_withdrawn: bool = False) -> Path:
+    """Copy a split bundle to `dst` and fill in every listed file from the store.
+
+    A withdrawn file is an error unless `skip_withdrawn`, which leaves it out."""
     bundle_dir, dst = Path(bundle_dir), Path(dst)
     try:
         meta = safejson.loads((bundle_dir / "bundle.json").read_bytes().decode("utf-8"))
@@ -190,6 +192,8 @@ def materialize(bundle_dir: Path, dst: Path, store: Store) -> Path:
     for rel, sha in listed.items():
         target = dst / rel
         if target.is_file() and not target.is_symlink():
+            continue
+        if skip_withdrawn and sha in store.withdrawn:
             continue
         cur = dst
         for part in PurePosixPath(rel).parts[:-1]:

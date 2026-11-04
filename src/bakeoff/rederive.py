@@ -23,6 +23,13 @@ only in git history, so the previous revision's bookkeeping is seeded from the s
 ``revision - 1``, the original ``published_at`` and every correction entry but the last. Everything
 else, including the last correction entry (from ``[correction]`` and ``published_at``), is
 re-derived and compared.
+
+Split weeks. For a week that ``results/layout.toml`` puts in a split range, the published bundle
+directories hold only the kept files. Each bundle is rebuilt in full from the store (verified by
+sha256 and cached), ``layout.toml`` and ``withdrawn.toml`` are copied beside it, and the
+re-publish runs without the existence check: it reproduces the verdicts, it never publishes. A
+withdrawn file outside ``quality/`` is left out and tolerated; a withdrawn quality file means the
+week can no longer be re-derived. A second run works offline from a warm cache.
 """
 
 import json
@@ -32,7 +39,9 @@ import tempfile
 import tomllib
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from bakeoff.ledger import LedgerError, load_layout
 from bakeoff.publish import PublishError, publish
+from bakeoff.store import Store, StoreError, materialize
 from bakeoff.weekcfg import WeekInputError, load_tiers
 
 _WEEK = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -73,13 +82,28 @@ def _table(lines: list[str], header: str, table: object, where: str) -> None:
     lines += [f"{k} = {_q(table[k], f'{where}.{k}')}" for k in sorted(table)]
 
 
-def _copy_bundle(src: Path, dst: Path, what: str) -> None:
+def _copy_bundle(src: Path, dst: Path, what: str, store: Store | None = None) -> None:
     if src.is_symlink() or not src.is_dir():
         raise RederiveError(f"{what}: published bundle not found: {src.name}")
-    shutil.copytree(src, dst, symlinks=True)
+    if store is None:
+        shutil.copytree(src, dst, symlinks=True)
+        return
+    try:
+        meta = json.loads((src / "bundle.json").read_bytes().decode("utf-8"))
+        files = meta["files"]
+        for rel in sorted(files):
+            w = store.withdrawn.get(files[rel])
+            if w is not None and rel.startswith("quality/"):
+                raise RederiveError(
+                    f"{rel} in {src.name} was withdrawn on {w.date}: {w.reason}; "
+                    "this week can no longer be re-derived"
+                )
+        materialize(src, dst, store, skip_withdrawn=True)
+    except (OSError, ValueError, KeyError, TypeError, StoreError) as e:
+        raise RederiveError(f"{what}: cannot rebuild {src.name} from the store: {e}") from e
 
 
-def _remapped_week_toml(data: dict, week_dir: Path, tmp: Path) -> str:
+def _remapped_week_toml(data: dict, week_dir: Path, tmp: Path, store: Store | None) -> str:
     """Copy the published bundles into ``tmp`` and return week.toml text pointing at them."""
     lines = [f"week = {_q(data.get('week'), 'week')}"]
     lines.append(f"published_at = {_q(data.get('published_at'), 'published_at')}")
@@ -94,7 +118,7 @@ def _remapped_week_toml(data: dict, week_dir: Path, tmp: Path) -> str:
             name = _dir_name(t.get("bundle"), where)
             if (tmp / sub / name).exists():
                 raise RederiveError(f"week.toml {where}: directory name {name} is repeated")
-            _copy_bundle(week_dir / sub / name, tmp / sub / name, where)
+            _copy_bundle(week_dir / sub / name, tmp / sub / name, where, store)
             _table(lines, f"[[{kind}]]", {**t, "bundle": f"{sub}/{name}"}, where)
     for i, t in enumerate(data.get("override", [])):
         _table(lines, "[[override]]", t, f"override[{i}]")
@@ -169,7 +193,7 @@ def _summary(produced: bytes, stored: bytes) -> list[str]:
     return out
 
 
-def rederive(root: Path, week: str) -> list[str]:
+def rederive(root: Path, week: str, store: Store | None = None) -> list[str]:
     """Re-publish ``week`` in a temporary root; return the differences (empty when identical)."""
     root = Path(root)
     if not _WEEK.fullmatch(week):
@@ -188,8 +212,20 @@ def rederive(root: Path, week: str) -> list[str]:
     if not isinstance(stored, dict):
         raise RederiveError(f"results/{week}/week.json is not an object")
 
+    try:
+        if load_layout(root).kept(week, "run") is None:
+            store = None  # a keep = "all" week needs no store
+        elif store is None:
+            store = Store.from_env(root)
+    except (LedgerError, StoreError) as e:
+        raise RederiveError(f"layout: {e}") from e
+
     with tempfile.TemporaryDirectory(prefix="bakeoff-rederive-") as t:
         tmp = Path(t)
+        for name in ("layout.toml", "withdrawn.toml"):
+            if (results / name).is_file():
+                (tmp / "results").mkdir(exist_ok=True)
+                shutil.copyfile(results / name, tmp / "results" / name)
         (tmp / "tiers.toml").write_text(_tiers_toml(week_dir, stored), encoding="utf-8")
         if (root / "site.toml").is_file():
             shutil.copyfile(root / "site.toml", tmp / "site.toml")
@@ -201,9 +237,9 @@ def rederive(root: Path, week: str) -> list[str]:
             (tmp / "results" / week).mkdir(parents=True)
             (tmp / "results" / week / "week.json").write_bytes(_dumps(_previous_revision(stored)))
         toml = tmp / "week.toml"
-        toml.write_text(_remapped_week_toml(data, week_dir, tmp), encoding="utf-8")
+        toml.write_text(_remapped_week_toml(data, week_dir, tmp, store), encoding="utf-8")
         try:
-            out = publish(toml, tmp, username=None, denylist=None)
+            out = publish(toml, tmp, username=None, denylist=None, store=store, check_store=False)
         except PublishError as e:
             raise RederiveError(f"re-publish failed: {e}") from e
         produced = (out / "week.json").read_bytes()
