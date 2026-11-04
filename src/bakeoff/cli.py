@@ -384,6 +384,13 @@ def _store_each(args: argparse.Namespace, one) -> int:
     return code
 
 
+def _non_negative(text: str) -> int:
+    n = int(text)
+    if n < 0:
+        raise argparse.ArgumentTypeError("must be 0 or more")
+    return n
+
+
 def _cmd_store_fetch(args: argparse.Namespace) -> int:
     def one(bundle: Path, store: Store) -> bool:
         _, listed = _listed(bundle)
@@ -415,8 +422,9 @@ def _cmd_store_push(args: argparse.Namespace) -> int:
     if notice:
         print(notice, file=sys.stderr)
     try:
+        withdrawn = Store.from_env(Path(args.root)).withdrawn
         client = S3Client.from_env()
-    except StoreError as e:
+    except (StoreError, LedgerError, OSError) as e:
         _err(str(e))
         return 1
     code = 0
@@ -435,6 +443,9 @@ def _cmd_store_push(args: argparse.Namespace) -> int:
                 continue
             uploaded = skipped = 0
             for rel, sha in listed:
+                if sha in withdrawn:
+                    print(f"withdrawn {sha} {rel}, not uploaded")
+                    continue
                 key = object_key(sha)
                 if client.head(key):
                     skipped += 1
@@ -553,7 +564,9 @@ def _parser() -> argparse.ArgumentParser:
     sp.set_defaults(fn=_cmd_store_push)
     sc = ssub.add_parser("check", help="confirm every listed object is in the store")
     sc.add_argument("bundles", nargs="+", metavar="BUNDLE")
-    sc.add_argument("--rehash", type=int, default=0, metavar="N", help="re-download N objects")
+    sc.add_argument(
+        "--rehash", type=_non_negative, default=0, metavar="N", help="re-download N objects"
+    )
     sc.add_argument("--root", default=".")
     sc.set_defaults(fn=_cmd_store_check)
     return p

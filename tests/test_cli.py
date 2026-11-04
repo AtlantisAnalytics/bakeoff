@@ -558,3 +558,29 @@ def test_push_output_never_contains_secret(fake_store, tmp_path, monkeypatch, ca
     cap = capsys.readouterr()
     assert SECRET not in cap.out + cap.err
     assert "Traceback" not in cap.err
+
+
+def test_push_skips_withdrawn_object(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a, _ = _two(tmp_path)
+    listed = _listed(a)
+    wsha = listed["fit.jsonl"]
+    root = tmp_path / "root"
+    (root / "results").mkdir(parents=True)
+    (root / "results" / "withdrawn.toml").write_text(
+        f'[[withdrawn]]\nsha256 = "{wsha}"\ndate = "2026-11-03"\nreason = "leak"\nbundles = ["a"]\n'
+    )
+    argv = ["store", "push", str(a), "--root", str(root), "--denylist", str(tmp_path / "none")]
+    assert cli.main(argv) == 0
+    out = capsys.readouterr().out
+    assert f"withdrawn {wsha} fit.jsonl, not uploaded" in out
+    key = object_key(wsha)
+    assert not any(m == "PUT" and key in p for m, p, _ in fake_store.requests)
+    assert key not in fake_store.objects
+    assert f"uploaded {len(set(listed.values())) - 1}, skipped 0" in out
+
+
+def test_rehash_rejects_negative(tmp_path, capsys):
+    with pytest.raises(SystemExit):
+        cli.main(["store", "check", str(tmp_path), "--rehash", "-1"])
+    assert "must be 0 or more" in capsys.readouterr().err
