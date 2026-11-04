@@ -527,15 +527,21 @@ def _head_listed(store: Store, listed: list[tuple[str, str]], label: str = "") -
     return present, bad
 
 
-def _rehash(store: Store, chosen: list[tuple[str, str]], present: set, label: str = "") -> bool:
-    """Download each chosen present object through a fresh temp cache; print corrupt ones."""
+def _rehash(
+    store: Store, chosen: list[tuple[str, str]], present: set, label: str = ""
+) -> tuple[bool, int]:
+    """Download each chosen present object through a fresh temp cache; print corrupt ones.
+
+    Returns (any corrupt, number re-hashed)."""
     bad = False
+    done = 0
     tmp = Path(tempfile.mkdtemp(prefix="bakeoff-rehash-"))
     try:
         fresh = Store(store.base_url, tmp, {})
         for rel, sha in chosen:
             if sha not in present:
                 continue
+            done += 1
             try:
                 fresh.resolve(sha)
             except HashMismatch:
@@ -543,7 +549,7 @@ def _rehash(store: Store, chosen: list[tuple[str, str]], present: set, label: st
                 bad = True
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    return bad
+    return bad, done
 
 
 def _cmd_store_check(args: argparse.Namespace) -> int:
@@ -553,7 +559,7 @@ def _cmd_store_check(args: argparse.Namespace) -> int:
         if args.rehash and listed:
             rng = random.Random(hashlib.sha256(raw).hexdigest())
             chosen = rng.sample(listed, min(args.rehash, len(listed)))
-            bad = _rehash(store, chosen, present) or bad
+            bad = _rehash(store, chosen, present)[0] or bad
         if not bad:
             print(f"{bundle.name}: ok {len(present)}")
         return bad
@@ -601,11 +607,12 @@ def _cmd_store_audit(args: argparse.Namespace) -> int:
         items += [(name, rel, sha) for rel, sha in listed if sha not in store.withdrawn]
     items.sort()
     print(f"seed {seed}")
+    rehashed = 0
     if args.rehash and items:
         chosen = random.Random(seed).sample(items, min(args.rehash, len(items)))
-        bad = _rehash(store, [(f"{n}/{r}", s) for n, r, s in chosen], present) or bad
-    n = min(args.rehash, len(items))
-    print(f"audited {len(bundles)} bundles, {len(items)} objects, rehashed {n}")
+        failed, rehashed = _rehash(store, [(f"{b}/{r}", s) for b, r, s in chosen], present)
+        bad = failed or bad
+    print(f"audited {len(bundles)} bundles, {len(items)} objects, rehashed {rehashed}")
     return 1 if bad else 0
 
 

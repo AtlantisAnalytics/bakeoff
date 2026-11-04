@@ -228,7 +228,11 @@ def test_audit_no_split_weeks(tmp_path, capsys):
     (tmp_path / "results").mkdir()
     assert cli.main(["store", "audit", "--root", str(tmp_path)]) == 0
     assert "no split weeks" in capsys.readouterr().out
-    assert cli.main(["store", "audit", "--root", str(REPO), "--rehash", "50"]) == 0
+    (tmp_path / "results" / "layout.toml").write_text(
+        '[[layout]]\nfrom = "2026-11-02"\nkeep = "all"\n'
+    )
+    assert cli.main(["store", "audit", "--root", str(tmp_path), "--rehash", "50"]) == 0
+    assert "no split weeks" in capsys.readouterr().out
 
 
 def test_audit_ok_and_seed_is_printed(fake_store, tmp_path, capsys):
@@ -251,6 +255,10 @@ def test_audit_missing_object_fails(fake_store, tmp_path, capsys):
     files = json.loads((run / "bundle.json").read_text())["files"]
     rel = next(r for r in files if "quality" in r)
     del fake_store.objects[object_key(files[rel])]
+    assert cli.main(["store", "audit", "--root", str(root)]) == 1
+    assert "rehashed 0" in capsys.readouterr().out
+    assert cli.main(["store", "audit", "--root", str(root), "--rehash", "99"]) == 1
+    assert "rehashed 2" in capsys.readouterr().out
     assert cli.main(["store", "audit", "--root", str(root)]) == 1
     assert f"missing {files[rel]} " in (out := capsys.readouterr().out)
     assert out.split("\n")[0].endswith(f"/{rel}")
