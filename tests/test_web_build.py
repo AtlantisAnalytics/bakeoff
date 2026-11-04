@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from htmlcheck import assert_balanced
+from topofix import RUNS, bundle, write_experiment
 from weekfix import make_bundle
 
 from bakeoff.publish import publish
@@ -52,6 +53,7 @@ def root(tmp_path):
     (r / "site").mkdir()
     for name in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
         shutil.copy(REPO / "site" / name, r / "site" / name)
+    write_experiment(r, {"g": [bundle(r, f"{RUNS}/a")]}, "<p>Topology</p>\n<!-- runs: g -->\n")
     return r
 
 
@@ -77,7 +79,13 @@ def two_weeks(root):
 
 def test_unlaunched_has_only_holding_files(root):
     files = render_site(root)
-    assert set(files) == {"index.html", "_headers", "method/index.html", "privacy/index.html"}
+    assert set(files) == {
+        "index.html",
+        "_headers",
+        "method/index.html",
+        "privacy/index.html",
+        "topology/index.html",
+    }
     assert b"First results soon" in files["index.html"]
 
 
@@ -88,6 +96,7 @@ def test_unlaunched_ignores_published_weeks(root):
         "_headers",
         "method/index.html",
         "privacy/index.html",
+        "topology/index.html",
     }
 
 
@@ -106,6 +115,7 @@ def test_launched_keys(two_weeks):
         "_headers",
         "method/index.html",
         "privacy/index.html",
+        "topology/index.html",
     } <= keys
 
 

@@ -1,0 +1,491 @@
+{
+  "bundle_format": "m2",
+  "run_id": "20261103T103950Z-granite-4-2-8b-fp8-fit-speed-531bc5c4",
+  "started_at": "2026-11-03T10:39:50Z",
+  "ended_at": "2026-11-03T10:44:41Z",
+  "status": "complete",
+  "status_reason": null,
+  "config": {
+    "endpoint": {
+      "model": "p-g8b-tp2-node",
+      "timeout_s": 600.0
+    },
+    "model": {
+      "label": "Granite 4.2 8B FP8",
+      "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7",
+      "weights_file": "",
+      "quant": "fp8",
+      "runtime": "vllm",
+      "runtime_version": "",
+      "envelope": "2× RTX 3060 12 GB",
+      "parallel": "tp=2"
+    },
+    "quality": {
+      "suites": [],
+      "private_suites": []
+    },
+    "speed": {
+      "concurrency": [
+        1,
+        4
+      ],
+      "repeats": 5,
+      "warmup": 1
+    },
+    "fit": {
+      "steps": [
+        4096,
+        8192,
+        16384,
+        32768,
+        65536,
+        131072
+      ],
+      "max_context": 0
+    }
+  },
+  "env": {
+    "host": {
+      "os": {
+        "value": "Linux",
+        "source": "measured"
+      },
+      "os_version": {
+        "value": "Ubuntu 24.04.5 LTS",
+        "source": "measured"
+      },
+      "cpu": {
+        "value": "Intel(R) Xeon(R) Gold 5215 CPU @ 2.20GHz",
+        "source": "measured"
+      },
+      "cpu_cores": {
+        "value": 40,
+        "source": "measured"
+      },
+      "ram_bytes": {
+        "value": 134790950912,
+        "source": "measured"
+      }
+    },
+    "gpus": [
+      {
+        "name": {
+          "value": "NVIDIA GeForce RTX 3060",
+          "source": "measured"
+        },
+        "vram_mib": {
+          "value": 12288,
+          "source": "measured"
+        },
+        "driver": {
+          "value": "570.207",
+          "source": "measured"
+        },
+        "cuda": {
+          "value": "12.8",
+          "source": "measured"
+        },
+        "power_limit_w": {
+          "value": 170.0,
+          "source": "measured"
+        },
+        "pcie_gen_max": {
+          "value": 3,
+          "source": "measured"
+        },
+        "pcie_width_max": {
+          "value": 16,
+          "source": "measured"
+        },
+        "pcie_width": {
+          "value": 16,
+          "source": "measured"
+        },
+        "numa_node": {
+          "value": 1,
+          "source": "measured"
+        }
+      },
+      {
+        "name": {
+          "value": "NVIDIA GeForce RTX 3060",
+          "source": "measured"
+        },
+        "vram_mib": {
+          "value": 12288,
+          "source": "measured"
+        },
+        "driver": {
+          "value": "570.207",
+          "source": "measured"
+        },
+        "cuda": {
+          "value": "12.8",
+          "source": "measured"
+        },
+        "power_limit_w": {
+          "value": 170.0,
+          "source": "measured"
+        },
+        "pcie_gen_max": {
+          "value": 3,
+          "source": "measured"
+        },
+        "pcie_width_max": {
+          "value": 16,
+          "source": "measured"
+        },
+        "pcie_width": {
+          "value": 16,
+          "source": "measured"
+        },
+        "numa_node": {
+          "value": 1,
+          "source": "measured"
+        }
+      }
+    ],
+    "gpu_links": [
+      {
+        "gpus": {
+          "value": [
+            0,
+            1
+          ],
+          "source": "measured"
+        },
+        "path": {
+          "value": "NODE",
+          "source": "measured"
+        },
+        "p2p_read": {
+          "value": "CNS",
+          "source": "measured"
+        }
+      }
+    ],
+    "runtime": {
+      "name": {
+        "value": "vllm",
+        "source": "operator"
+      },
+      "version": {
+        "value": "0.19.0",
+        "source": "reported"
+      },
+      "served_model": {
+        "value": "p-g8b-tp2-node",
+        "source": "reported"
+      }
+    },
+    "model": {
+      "label": {
+        "value": "Granite 4.2 8B FP8",
+        "source": "operator"
+      },
+      "weights": {
+        "value": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7",
+        "source": "operator"
+      },
+      "weights_file": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "quant": {
+        "value": "fp8",
+        "source": "operator"
+      },
+      "envelope": {
+        "value": "2× RTX 3060 12 GB",
+        "source": "operator"
+      },
+      "parallel": {
+        "value": "tp=2",
+        "source": "operator"
+      }
+    },
+    "harness": {
+      "version": {
+        "value": "0.1.0",
+        "source": "measured"
+      },
+      "git_commit": {
+        "value": "ecdaa5c53706071beecef148db52aaf7f33c3e60",
+        "source": "reported"
+      },
+      "git_dirty": {
+        "value": false,
+        "source": "reported"
+      },
+      "python": {
+        "value": "3.12.3",
+        "source": "measured"
+      }
+    }
+  },
+  "suites": [],
+  "quality": {
+    "suites": [],
+    "tracks": {}
+  },
+  "speed": {
+    "short@1": {
+      "ttft_s": {
+        "median": 0.032196125999689684,
+        "min": 0.03138245600166556,
+        "max": 0.03549928199936403,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 4006.6932276648236,
+        "min": 3633.8763133944803,
+        "max": 4110.576941242381,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 61.87688709856659,
+        "min": 61.84099246418548,
+        "max": 61.885710169882515,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 61.611035250326964,
+        "min": 61.57001306207016,
+        "max": 61.65007054392394,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "short@4": {
+      "ttft_s": {
+        "median": 0.07909175399981905,
+        "min": 0.04717266800071229,
+        "max": 0.08553791300073499,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 1631.0294191569521,
+        "min": 1508.1031962855063,
+        "max": 2734.6343861248665,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 57.95808341105963,
+        "min": 57.912887635199795,
+        "max": 58.03566126517386,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 228.4194423024234,
+        "min": 228.22042932088195,
+        "max": 228.61646724020554,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@1": {
+      "ttft_s": {
+        "median": 0.04643777799901727,
+        "min": 0.045873817998653976,
+        "max": 0.05014466299871856,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 38740.010343261274,
+        "min": 35876.200824123065,
+        "max": 39216.26929009454,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 59.18779995516604,
+        "min": 59.115197537164,
+        "max": 59.244683397779404,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 58.78627365137349,
+        "min": 58.66527914727649,
+        "max": 58.849796704806124,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@4": {
+      "ttft_s": {
+        "median": 0.11820962499950838,
+        "min": 0.07753906599828042,
+        "max": 0.13491247800084238,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 15218.873632761002,
+        "min": 13334.570876303726,
+        "max": 23201.208021255974,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 52.1327862235495,
+        "min": 51.94656242701379,
+        "max": 52.16929267474154,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 203.88811688095848,
+        "min": 203.71239399201409,
+        "max": 204.3271072228932,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    }
+  },
+  "fit": {
+    "max_context_passed": 32768,
+    "server_context": 32768,
+    "server_context_probe": "pre_fit",
+    "limit_source": "reported",
+    "truncation_check": "measured",
+    "incomplete": false,
+    "steps": {
+      "4096": {
+        "status": "pass",
+        "kv_fraction": 0.0832
+      },
+      "8192": {
+        "status": "pass",
+        "kv_fraction": 0.1664
+      },
+      "16384": {
+        "status": "pass",
+        "kv_fraction": 0.3329
+      },
+      "32768": {
+        "status": "pass",
+        "kv_fraction": 0.6658
+      },
+      "65536": {
+        "status": "skipped",
+        "reason": "above context limit"
+      },
+      "131072": {
+        "status": "skipped",
+        "reason": "above context limit"
+      }
+    },
+    "kv": {
+      "capacity_tokens": {
+        "value": 49216,
+        "source": "reported"
+      },
+      "block_size": {
+        "value": 16,
+        "source": "reported"
+      },
+      "cache_dtype": {
+        "value": "auto",
+        "source": "reported"
+      }
+    }
+  },
+  "memory": {
+    "platform": {
+      "value": "nvidia",
+      "source": "measured"
+    },
+    "baseline": {
+      "value": {
+        "mem_used_mib_total": 21922,
+        "mem_used_mib_per_gpu": [
+          10961,
+          10961
+        ],
+        "power_w_mean": 74.55,
+        "power_w_max": 74.55
+      },
+      "source": "measured"
+    },
+    "peaks": {
+      "value": {
+        "baseline": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 74.55,
+          "power_w_max": 74.55
+        },
+        "speed": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 241.2717525773196,
+          "power_w_max": 250.31
+        },
+        "fit:calibrate": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 248.9125,
+          "power_w_max": 258.01
+        },
+        "fit:4096": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 253.82049999999998,
+          "power_w_max": 257.97
+        },
+        "fit:8192": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 257.4889285714286,
+          "power_w_max": 260.66999999999996
+        },
+        "fit:16384": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 262.8298148148148,
+          "power_w_max": 269.78
+        },
+        "fit:32768": {
+          "mem_used_mib_total": 21922,
+          "mem_used_mib_per_gpu": [
+            10961,
+            10961
+          ],
+          "power_w_mean": 270.8603619909502,
+          "power_w_max": 274.89
+        }
+      },
+      "source": "measured"
+    },
+    "runtime_reported": {
+      "size_vram": {
+        "value": null,
+        "source": "not_captured"
+      }
+    }
+  },
+  "files": {
+    "speed.jsonl": "8b7485107dfad636a843587bf79f2f8dfee4362cd0360ab0dad354ac9c311214",
+    "fit.jsonl": "1f943e81381a56ead11011334bd28ba52b4ff2667c87dc055616d5449aa8441a",
+    "samples.jsonl": "85878eb412d0bb64041cb8fb8403df85b5f0a8b16369205c91edb0d445798d22"
+  },
+  "bundle_sha256": "6576731eff4b07cf9960fd258ffd0b3526e18ac5fbee3dc97306ab6128d7216a"
+}

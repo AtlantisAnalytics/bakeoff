@@ -1,6 +1,8 @@
 # Results
 
 Published bake-off results: one directory per Monday, plus the files the site and API serve.
+`experiments/` holds runs from explorations outside the weekly rules, such as the multi-GPU
+runs behind `/topology/`; they never change a pick.
 Nothing has been published yet.
 
 The data in this directory is licensed under

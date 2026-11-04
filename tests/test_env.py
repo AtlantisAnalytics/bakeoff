@@ -18,7 +18,9 @@ from bakeoff.env import (
     detect_platform,
     field,
     parse_cuda_version,
+    parse_link_query,
     parse_nvidia_query,
+    parse_topo_matrix,
     parse_vm_stat,
 )
 
@@ -40,6 +42,7 @@ CFG = RunConfig(
         quant="Q4_K_M",
         runtime="ollama",
         envelope="8k",
+        parallel="tp=2",
     ),
     quality=QualityConfig(),
     speed=SpeedConfig(),
@@ -88,7 +91,7 @@ def leaves(node, path=""):
 
 
 def check_shape(env):
-    assert set(env) == {"host", "gpus", "runtime", "model", "harness"}
+    assert set(env) == {"host", "gpus", "gpu_links", "runtime", "model", "harness"}
     for path, leaf in leaves(env):
         assert leaf["source"] in SOURCES, path
         if leaf["value"] is None:
@@ -115,7 +118,7 @@ def git_answers(toplevel, dirty=True):
     return git
 
 
-def nvidia_run(query, root=None, dirty=True):
+def nvidia_run(query, root=None, dirty=True, link=None, topo=None, p2p=None):
     calls = []
     git = git_answers(root, dirty) if root is not None else None
 
@@ -125,8 +128,13 @@ def nvidia_run(query, root=None, dirty=True):
             return "GPU 0: redacted\n"
         if argv == ["nvidia-smi"]:
             return fx("nvidia_smi_header.txt")
-        if argv[0] == "nvidia-smi" and argv[1].startswith("--query-gpu="):
-            return query
+        if argv == ["nvidia-smi", "topo", "-m"]:
+            return topo
+        if argv == ["nvidia-smi", "topo", "-p2p", "r"]:
+            return p2p
+        q = next((a for a in argv if a.startswith("--query-gpu=")), None)
+        if argv[0] == "nvidia-smi" and q:
+            return link if "pcie.link" in q else query
         if argv[0] == "git" and git:
             return git(argv)
         return None
@@ -160,7 +168,20 @@ def test_nvidia_host(tmp_path):
     assert gpu["driver"]["value"] == "570.86.15"
     assert gpu["cuda"] == {"value": "12.8", "source": "measured"}
     assert gpu["power_limit_w"] == {"value": 450.0, "source": "measured"}
-    assert set(gpu) == {"name", "vram_mib", "driver", "cuda", "power_limit_w"}
+    assert set(gpu) == {
+        "name",
+        "vram_mib",
+        "driver",
+        "cuda",
+        "power_limit_w",
+        "pcie_gen_max",
+        "pcie_width_max",
+        "pcie_width",
+        "numa_node",
+    }
+    assert gpu["pcie_width"] == {"value": None, "source": "not_captured"}  # no link query here
+    assert env["gpu_links"] == []  # one GPU: no pairs, and topo is never run
+    assert not any(c[:2] == ["nvidia-smi", "topo"] for c in run.calls)
     assert env["host"]["os"]["value"] == "Linux"
     assert env["host"]["os_version"]["value"] == "Ubuntu 24.04.1 LTS"
     assert env["host"]["cpu"]["value"] == "AMD Ryzen 9 7950X 16-Core Processor"
@@ -262,6 +283,7 @@ def test_operator_fields():
         "weights_file": "ex.gguf",
         "quant": "Q4_K_M",
         "envelope": "8k",
+        "parallel": "tp=2",
     }.items():
         assert env["model"][k] == {"value": v, "source": "operator"}
     assert env["runtime"]["name"] == {"value": "ollama", "source": "operator"}
@@ -575,3 +597,119 @@ def test_git_archive_substitutes_commit():
     with tarfile.open(fileobj=io.BytesIO(tar)) as t:
         text = t.extractfile("src/bakeoff/_commit").read().decode()
     assert re.fullmatch(r"[0-9a-f]{40}\n?", text)
+
+
+# Reliant-style host: three RTX 3060s on two sockets (GPU0 on node 0, GPU1 and GPU2 on node 1).
+NUMA_FILES = {
+    **LINUX_FILES,
+    "/sys/bus/pci/devices/0000:3b:00.0/numa_node": "0\n",
+    "/sys/bus/pci/devices/0000:af:00.0/numa_node": "1\n",
+    "/sys/bus/pci/devices/0000:d8:00.0/numa_node": "1\n",
+}
+QUERY_3060X3 = (
+    "0, NVIDIA GeForce RTX 3060, 12288, 570.207, 170.00, 1, [N/A]\n"
+    "1, NVIDIA GeForce RTX 3060, 12288, 570.207, 170.00, 1, [N/A]\n"
+    "2, NVIDIA GeForce RTX 3060, 12288, 570.207, 170.00, 1, [N/A]\n"
+)
+
+
+def _three_gpu_run(query=QUERY_3060X3, link=None):
+    return nvidia_run(
+        query,
+        link=fx("nvidia_link_3gpu.csv") if link is None else link,
+        topo=fx("nvidia_topo_m_3gpu.txt"),
+        p2p=fx("nvidia_topo_p2p_3gpu.txt"),
+    )
+
+
+def test_parse_link_query():
+    rows = parse_link_query(fx("nvidia_link_3gpu.csv"))
+    assert rows[1] == {"bus": "00000000:AF:00.0", "gen_max": 3, "width_max": 16, "width": 16}
+    assert sorted(rows) == [0, 1, 2]
+    assert parse_link_query("0, 00000000:01:00.0, [N/A], 16, [N/A]\n")[0] == {
+        "bus": "00000000:01:00.0",
+        "gen_max": None,
+        "width_max": 16,
+        "width": None,
+    }
+    assert parse_link_query("garbage\n") == {}
+
+
+def test_parse_topo_matrix_strips_escapes():
+    m = parse_topo_matrix(fx("nvidia_topo_m_3gpu.txt"))
+    assert m == {(0, 1): "SYS", (0, 2): "SYS", (1, 2): "NODE"}
+    assert parse_topo_matrix(fx("nvidia_topo_p2p_3gpu.txt")) == {
+        (0, 1): "CNS",
+        (0, 2): "CNS",
+        (1, 2): "CNS",
+    }
+    assert parse_topo_matrix("") == {}
+
+
+def test_three_gpus_record_pcie_numa_and_links():
+    run = _three_gpu_run()
+    env = capture_env(CFG, None, None, run=run, read=fake_read(NUMA_FILES), platform="linux")
+    check_shape(env)
+    assert [g["numa_node"]["value"] for g in env["gpus"]] == [0, 1, 1]
+    g = env["gpus"][2]
+    assert g["pcie_gen_max"] == {"value": 3, "source": "measured"}
+    assert g["pcie_width_max"]["value"] == 16 and g["pcie_width"]["value"] == 16
+    assert env["gpu_links"] == [
+        {
+            "gpus": {"value": [0, 1], "source": "measured"},
+            "path": {"value": "SYS", "source": "measured"},
+            "p2p_read": {"value": "CNS", "source": "measured"},
+        },
+        {
+            "gpus": {"value": [0, 2], "source": "measured"},
+            "path": {"value": "SYS", "source": "measured"},
+            "p2p_read": {"value": "CNS", "source": "measured"},
+        },
+        {
+            "gpus": {"value": [1, 2], "source": "measured"},
+            "path": {"value": "NODE", "source": "measured"},
+            "p2p_read": {"value": "CNS", "source": "measured"},
+        },
+    ]
+    # the bus id is only a sysfs lookup key; it is never recorded
+    assert "00000000" not in json.dumps(env) and ":3b:" not in json.dumps(env).lower()
+
+
+def test_links_use_positions_of_the_visible_gpus(monkeypatch):
+    # CUDA_VISIBLE_DEVICES=1,2: nvidia-smi -i 1,2 returns physical rows 1 and 2, which are the
+    # run's GPUs 0 and 1. Links are numbered by position in env["gpus"].
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "1,2")
+    query = "".join(QUERY_3060X3.splitlines(keepends=True)[1:])
+    link = "".join(fx("nvidia_link_3gpu.csv").splitlines(keepends=True)[1:])
+    run = _three_gpu_run(query=query, link=link)
+    env = capture_env(CFG, None, None, run=run, read=fake_read(NUMA_FILES), platform="linux")
+    check_shape(env)
+    assert [g["numa_node"]["value"] for g in env["gpus"]] == [1, 1]
+    assert [(lk["gpus"]["value"], lk["path"]["value"]) for lk in env["gpu_links"]] == [
+        ([0, 1], "NODE")
+    ]
+
+
+def test_topology_failure_keeps_pairs_not_captured():
+    run = nvidia_run(QUERY_3060X3, link=None, topo=None, p2p=None)
+    env = capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
+    check_shape(env)
+    assert len(env["gpu_links"]) == 3
+    assert env["gpu_links"][0]["path"] == {"value": None, "source": "not_captured"}
+    assert env["gpus"][0]["numa_node"] == {"value": None, "source": "not_captured"}
+
+
+def test_negative_numa_node_is_not_captured():
+    files = {**NUMA_FILES, "/sys/bus/pci/devices/0000:3b:00.0/numa_node": "-1\n"}
+    env = capture_env(
+        CFG, None, None, run=_three_gpu_run(), read=fake_read(files), platform="linux"
+    )
+    assert env["gpus"][0]["numa_node"] == {"value": None, "source": "not_captured"}
+
+
+def test_malformed_row_pairs_are_not_captured():
+    query = "0, NVIDIA GeForce RTX 3060, 12288, 570.207, 170.00, 1, [N/A]\nbroken\n"
+    run = nvidia_run(query, link=None, topo=fx("nvidia_topo_m_3gpu.txt"), p2p=None)
+    env = capture_env(CFG, None, None, run=run, read=fake_read(LINUX_FILES), platform="linux")
+    check_shape(env)
+    assert env["gpu_links"][0]["path"] == {"value": None, "source": "not_captured"}

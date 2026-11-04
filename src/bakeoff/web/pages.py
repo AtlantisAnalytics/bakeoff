@@ -110,7 +110,7 @@ def newsletter_form(site: SiteConfig) -> str:
 
 
 def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
-    links = ['<a href="/method/">Method</a>']
+    links = ['<a href="/method/">Method</a>', '<a href="/topology/">Multi-GPU</a>']
     if site.launched:
         links.append('<a href="/weeks/">Archive</a>')
     if week is not None:

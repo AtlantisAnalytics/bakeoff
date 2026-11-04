@@ -2,7 +2,8 @@
 
 Only the fields named in the spec are recorded. Nothing here runs a command that prints
 identity (hostname, uname -n, nvidia-smi -q, ioreg, system_profiler), and `nvidia-smi -L` is used
-for detection only because its output carries GPU UUIDs.
+for detection only because its output carries GPU UUIDs. PCI bus ids are read only to find each
+GPU's NUMA node in sysfs; they are never recorded.
 """
 
 import csv
@@ -29,6 +30,15 @@ NVIDIA_QUERY = (
     "--query-gpu=index,name,memory.total,driver_version,power.limit,memory.used,power.draw"
 )
 NVIDIA_QUERY_ARGV = ["nvidia-smi", NVIDIA_QUERY, "--format=csv,noheader,nounits"]
+LINK_QUERY_ARGV = [
+    "nvidia-smi",
+    "--query-gpu=index,pci.bus_id,pcie.link.gen.max,pcie.link.width.max,pcie.link.width.current",
+    "--format=csv,noheader,nounits",
+]
+TOPO_ARGV = ["nvidia-smi", "topo", "-m"]
+P2P_ARGV = ["nvidia-smi", "topo", "-p2p", "r"]
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+_BUS = re.compile(r"([0-9A-Fa-f]{1,8}):([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-7])")
 _GPU_ID = re.compile(r"\d+|GPU-[0-9A-Fa-f-]+|MIG-[0-9A-Za-z/-]+")
 
 
@@ -106,6 +116,55 @@ def parse_nvidia_query(text: str) -> list[dict]:
             }
         )
     return rows
+
+
+def parse_link_query(text: str) -> dict[int, dict]:
+    """``LINK_QUERY_ARGV`` output, keyed by nvidia-smi index; malformed rows are dropped."""
+    rows = {}
+    for rec in csv.reader(text.splitlines(), skipinitialspace=True):
+        if len(rec) != 5:
+            continue
+        idx, bus, gen, width_max, width = (c.strip() for c in rec)
+        index = _num(idx, int)
+        if index is None:
+            continue
+        rows[index] = {
+            "bus": bus if _BUS.fullmatch(bus) else None,
+            "gen_max": _num(gen, int),
+            "width_max": _num(width_max, int),
+            "width": _num(width, int),
+        }
+    return rows
+
+
+def parse_topo_matrix(text: str) -> dict[tuple[int, int], str]:
+    """The GPU-to-GPU cells of ``nvidia-smi topo -m`` or ``topo -p2p r``, keyed (i, j) with
+    i < j on nvidia-smi indices. CPU affinity and NIC columns are ignored."""
+    cols: dict[int, int] = {}
+    cells: dict[tuple[int, int], str] = {}
+    for line in _ANSI.sub("", text).splitlines():
+        tokens = [t.strip() for t in line.split("\t")]
+        if not cols and tokens and tokens[0] == "" and "GPU0" in tokens:
+            cols = {pos: int(t[3:]) for pos, t in enumerate(tokens) if re.fullmatch(r"GPU\d+", t)}
+            continue
+        m = re.fullmatch(r"GPU(\d+)", tokens[0]) if cols and tokens else None
+        if not m:
+            continue
+        i = int(m.group(1))
+        for pos, j in cols.items():
+            if i < j and pos < len(tokens) and re.fullmatch(r"[A-Z0-9#]{1,8}", tokens[pos]):
+                cells[(i, j)] = tokens[pos]
+    return cells
+
+
+def _numa_node(read: Reader, bus: str | None) -> int | None:
+    m = _BUS.fullmatch(bus or "")
+    if not m:
+        return None
+    dom, b, d, f = m.groups()
+    text = read(f"/sys/bus/pci/devices/{int(dom, 16):04x}:{b.lower()}:{d.lower()}.{f}/numa_node")
+    node = _num(text or "", int)
+    return node if isinstance(node, int) and node >= 0 else None  # -1: no NUMA information
 
 
 def parse_cuda_version(nvidia_smi_text: str) -> str | None:
@@ -194,19 +253,46 @@ def _mac_host(
     }
 
 
-def _nvidia_gpus(run: Runner, clean: Cleaner) -> list[dict]:
+def _nvidia_gpus(run: Runner, read: Reader, clean: Cleaner) -> tuple[list[dict], list[dict]]:
+    """The run's GPUs, and one link entry per pair of them (numbered by position in the list)."""
     rows = parse_nvidia_query(run(nvidia_argv(NVIDIA_QUERY_ARGV)) or "")
     cuda = parse_cuda_version(run(["nvidia-smi"]) or "")
-    return [
-        {
-            "name": field(clean(r["name"]), "measured"),
-            "vram_mib": field(r["vram_mib"], "measured"),
-            "driver": field(clean(r["driver"]), "measured"),
-            "cuda": field(cuda, "measured"),
-            "power_limit_w": field(r["power_limit_w"], "measured"),
-        }
-        for r in rows
-    ]
+    links = parse_link_query(run(nvidia_argv(LINK_QUERY_ARGV)) or "")
+    gpus = []
+    for r in rows:
+        link = links.get(r["index"], {})
+        gpus.append(
+            {
+                "name": field(clean(r["name"]), "measured"),
+                "vram_mib": field(r["vram_mib"], "measured"),
+                "driver": field(clean(r["driver"]), "measured"),
+                "cuda": field(cuda, "measured"),
+                "power_limit_w": field(r["power_limit_w"], "measured"),
+                "pcie_gen_max": field(link.get("gen_max"), "measured"),
+                "pcie_width_max": field(link.get("width_max"), "measured"),
+                # the width the link trained to; the current generation is not recorded because
+                # idle GPUs drop to gen 1 between requests
+                "pcie_width": field(link.get("width"), "measured"),
+                "numa_node": field(_numa_node(read, link.get("bus")), "measured"),
+            }
+        )
+    if len(rows) < 2:
+        return gpus, []
+    path = parse_topo_matrix(run(TOPO_ARGV) or "")
+    p2p = parse_topo_matrix(run(P2P_ARGV) or "")
+    pairs = []
+    for a in range(len(rows)):
+        for b in range(a + 1, len(rows)):
+            ia, ib = rows[a]["index"], rows[b]["index"]
+            key = (min(ia, ib), max(ia, ib)) if ia is not None and ib is not None else None
+            pairs.append(
+                {
+                    "gpus": field([a, b], "measured"),
+                    "path": field(path.get(key), "measured"),
+                    "p2p_read": field(p2p.get(key), "measured"),
+                }
+            )
+    return gpus, pairs
 
 
 def _is_bakeoff_root(root: Path) -> bool:
@@ -304,8 +390,9 @@ def capture_env(
         host = _linux_host(read, clean)
     else:
         host = {k: field(None, "measured") for k in _HOST_KEYS}
+    links: list[dict] = []
     if kind == "nvidia":
-        gpus = _nvidia_gpus(run, clean)
+        gpus, links = _nvidia_gpus(run, read, clean)
     elif kind == "darwin" and (sysctl[0] or "").startswith("Apple"):
         gpus = [
             {
@@ -325,6 +412,7 @@ def capture_env(
     return {
         "host": host,
         "gpus": gpus,
+        "gpu_links": links,
         "runtime": {
             "name": field(model.runtime if model else None, "operator"),
             "version": _runtime_version(clean((runtime or {}).get("version")), model),
@@ -336,6 +424,7 @@ def capture_env(
             "weights_file": field((model.weights_file or None) if model else None, "operator"),
             "quant": field((model.quant or None) if model else None, "operator"),
             "envelope": field((model.envelope or None) if model else None, "operator"),
+            "parallel": field((model.parallel or None) if model else None, "operator"),
         },
         "harness": {
             "version": field(__version__, "measured"),

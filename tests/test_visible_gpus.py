@@ -2,7 +2,7 @@
 
 import pytest
 
-from bakeoff.env import NVIDIA_QUERY_ARGV, _nvidia_gpus, nvidia_argv
+from bakeoff.env import LINK_QUERY_ARGV, NVIDIA_QUERY_ARGV, _nvidia_gpus, nvidia_argv
 from bakeoff.sampler import SAMPLER_NVIDIA_ARGV, Sampler
 
 ROW = "2, NVIDIA GeForce RTX 3060, 12288, 570.207, 170.00, 9000, 120.5\n"
@@ -42,9 +42,11 @@ def test_env_capture_records_only_visible_gpus(monkeypatch):
         seen.append(argv)
         return ROW if "--query-gpu" in " ".join(argv) else "CUDA Version: 12.8"
 
-    gpus = _nvidia_gpus(run, lambda v: v)
+    gpus, links = _nvidia_gpus(run, lambda path: None, lambda v: v)
     assert ["nvidia-smi", "-i", "2", *NVIDIA_QUERY_ARGV[1:]] in seen
+    assert ["nvidia-smi", "-i", "2", *LINK_QUERY_ARGV[1:]] in seen
     assert [g["name"]["value"] for g in gpus] == ["NVIDIA GeForce RTX 3060"]
+    assert links == []
 
 
 def test_sampler_samples_only_visible_gpus(monkeypatch):

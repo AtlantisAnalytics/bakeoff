@@ -31,6 +31,8 @@ measured, the rules that turned it into verdicts, and the raw data. Anyone can r
 <p>A tier is a hardware envelope: a GPU memory size, or a unified-memory machine. Models are only
 compared with other models in the same tier. Today's tiers are 12&nbsp;GB, 24&nbsp;GB and
 36&nbsp;GB unified. Each tier has a current <em>pick</em> per quality track.</p>
+<p>A tier is one card or one machine. What splitting a model across several cards gets you is a
+separate exploration: see <a href="/topology/">multi-GPU topology</a>.</p>
 
 <h2>Engines</h2>
 <p>A model runs on the inference engine its format needs: vLLM for safetensors weights, ExLlamaV3
@@ -140,7 +142,7 @@ for any week is at <code>/api/v1/weeks/&lt;week&gt;.json</code> and is described
 </main>
 <div class="site-footer">
 <footer>
-<p class="footer-links"><a href="/method/">Method</a><a href="/weeks/">Archive</a><a href="/feed.xml">Feed</a><a href="/privacy/">Privacy</a></p>
+<p class="footer-links"><a href="/method/">Method</a><a href="/topology/">Multi-GPU</a><a href="/weeks/">Archive</a><a href="/feed.xml">Feed</a><a href="/privacy/">Privacy</a></p>
 
 <p><a class="maker" href="https://www.atlantisanalytics.com/"><img src="/atlantis.webp" width="40" height="40" alt="">A project of Atlantis Analytics</a></p>
 </footer>
