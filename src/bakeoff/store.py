@@ -61,7 +61,12 @@ class Store:
     @classmethod
     def from_env(cls, root: Path) -> "Store":
         base = os.environ.get("BAKEOFF_STORE_URL") or PUBLIC_URL
-        cache = Path(os.environ.get("BAKEOFF_CACHE") or DEFAULT_CACHE).expanduser()
+        try:
+            cache = Path(os.environ.get("BAKEOFF_CACHE") or DEFAULT_CACHE).expanduser()
+        except RuntimeError:
+            raise StoreError(
+                "cannot find a home directory for the default cache; set BAKEOFF_CACHE"
+            ) from None
         return cls(base, cache, load_withdrawn(root))
 
     def _url(self, sha: str) -> str:

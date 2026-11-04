@@ -179,3 +179,14 @@ def test_fake_store_put_and_head_paths(fake_store):
             urllib.request.Request(f"{fake_store.url}/{path}", method="HEAD")
         ).close()
     assert [r[0] for r in fake_store.requests] == ["PUT", "HEAD", "HEAD"]
+
+
+def test_unresolvable_home_asks_for_cache_env(tmp_path, monkeypatch):
+    monkeypatch.delenv("BAKEOFF_CACHE", raising=False)
+
+    def no_home(self):
+        raise RuntimeError("Could not determine home directory.")
+
+    monkeypatch.setattr(store_mod.Path, "expanduser", no_home)
+    with pytest.raises(StoreError, match="BAKEOFF_CACHE"):
+        Store.from_env(tmp_path)
