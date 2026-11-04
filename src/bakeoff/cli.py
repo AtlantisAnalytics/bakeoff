@@ -12,6 +12,7 @@ import shutil
 import sys
 import tempfile
 import tomllib
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bakeoff.bundle import GENERIC_USERNAMES, verify_bundle
@@ -21,6 +22,7 @@ from bakeoff.env import capture_env
 from bakeoff.hashing import bad_relpath
 from bakeoff.judge import JudgeError, Prices, run_judge
 from bakeoff.ledger import LedgerError, bundle_kind, load_layout, week_of
+from bakeoff.ledgercheck import bundle_dirs, changed_bundles, check_ledger
 from bakeoff.publish import PublishError, publish, week_docs, write_picks
 from bakeoff.rederive import RederiveError, rederive
 from bakeoff.runner import PASSES, PreflightError, execute_run, preflight
@@ -159,10 +161,17 @@ def pick_username(
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
+    modes = [bool(args.dir), args.ledger, bool(args.changed)]
+    if sum(modes) != 1:
+        args.parser.error("give exactly one of DIR, --ledger or --changed BASE")
     denylist = Path(args.denylist) if args.denylist else DEFAULT_DENYLIST.expanduser()
     username, notice, skip_output = pick_username(args.no_username)
     if notice:
         print(notice, file=sys.stderr)
+    if args.ledger:
+        return _verify_ledger(args, username, denylist)
+    if args.changed:
+        return _verify_changed(args, username, denylist, skip_output)
     run_dir = Path(args.dir)
     if (run_dir / "private").exists():
         print("notice: contains private-suite outputs; do not share", file=sys.stderr)
@@ -176,6 +185,50 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     for f in findings:
         print(f"{f.file}:{f.line} {f.kind} {f.detail}")
     return 1 if findings else 0
+
+
+def _verify_ledger(args: argparse.Namespace, username, denylist: Path) -> int:
+    try:
+        found = check_ledger(Path(args.root), username=username, denylist=denylist)
+    except (LedgerError, OSError) as e:
+        _err(str(e))
+        return 1
+    for bundle, f in found:
+        print(f"{bundle}: {f.file}:{f.line} {f.kind} {f.detail}")
+    return 1 if found else 0
+
+
+def _verify_changed(args: argparse.Namespace, username, denylist: Path, skip_output: bool) -> int:
+    root = Path(args.root)
+    code = 0
+    try:
+        bundles = changed_bundles(root, args.changed)
+        store = Store.from_env(root)
+        layout = load_layout(root)
+    except (LedgerError, StoreError, OSError) as e:
+        _err(str(e))
+        return 1
+    for bundle in bundles:
+        week = week_of(root.resolve(), bundle.resolve())
+        try:
+            kept = None
+            if week is not None:
+                try:
+                    meta = json.loads((bundle / "bundle.json").read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    meta = {}
+                kept = layout.kept(week, bundle_kind(meta if isinstance(meta, dict) else {}))
+            findings = verify_bundle(
+                bundle, username, denylist, username_skip_output=skip_output, kept=kept, store=store
+            )
+        except (LedgerError, StoreError, OSError) as e:
+            print(f"{bundle.relative_to(root).as_posix()}: {e}")
+            code = 1
+            continue
+        for f in findings:
+            print(f"{bundle.relative_to(root).as_posix()}: {f.file}:{f.line} {f.kind} {f.detail}")
+        code = 1 if findings else code
+    return code
 
 
 def _split_context(run_dir: Path) -> dict:
@@ -459,42 +512,101 @@ def _cmd_store_push(args: argparse.Namespace) -> int:
     return code
 
 
+def _head_listed(store: Store, listed: list[tuple[str, str]], label: str = "") -> tuple[set, bool]:
+    """HEAD every listed object; print withdrawn and missing ones. Returns (present, bad)."""
+    present: set[str] = set()
+    bad = False
+    for rel, sha in listed:
+        if sha in store.withdrawn:
+            print(f"withdrawn {sha} {store.withdrawn[sha].date}")
+        elif store.exists(sha):
+            present.add(sha)
+        else:
+            print(f"missing {sha} {label}{rel}")
+            bad = True
+    return present, bad
+
+
+def _rehash(store: Store, chosen: list[tuple[str, str]], present: set, label: str = "") -> bool:
+    """Download each chosen present object through a fresh temp cache; print corrupt ones."""
+    bad = False
+    tmp = Path(tempfile.mkdtemp(prefix="bakeoff-rehash-"))
+    try:
+        fresh = Store(store.base_url, tmp, {})
+        for rel, sha in chosen:
+            if sha not in present:
+                continue
+            try:
+                fresh.resolve(sha)
+            except HashMismatch:
+                print(f"corrupt {sha} {label}{rel}")
+                bad = True
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return bad
+
+
 def _cmd_store_check(args: argparse.Namespace) -> int:
     def one(bundle: Path, store: Store) -> bool:
         raw, listed = _listed(bundle)
-        bad = False
-        ok = 0
-        present: set[str] = set()
-        for rel, sha in listed:
-            if sha in store.withdrawn:
-                print(f"withdrawn {sha} {store.withdrawn[sha].date}")
-            elif store.exists(sha):
-                ok += 1
-                present.add(sha)
-            else:
-                print(f"missing {sha} {rel}")
-                bad = True
+        present, bad = _head_listed(store, listed)
         if args.rehash and listed:
             rng = random.Random(hashlib.sha256(raw).hexdigest())
             chosen = rng.sample(listed, min(args.rehash, len(listed)))
-            tmp = Path(tempfile.mkdtemp(prefix="bakeoff-rehash-"))
-            try:
-                fresh = Store(store.base_url, tmp, {})
-                for rel, sha in chosen:
-                    if sha not in present:
-                        continue
-                    try:
-                        fresh.resolve(sha)
-                    except HashMismatch:
-                        print(f"corrupt {sha} {rel}")
-                        bad = True
-            finally:
-                shutil.rmtree(tmp, ignore_errors=True)
+            bad = _rehash(store, chosen, present) or bad
         if not bad:
-            print(f"{bundle.name}: ok {ok}")
+            print(f"{bundle.name}: ok {len(present)}")
         return bad
 
     return _store_each(args, one)
+
+
+def _iso_week_seed(now: datetime | None = None) -> str:
+    year, week, _ = (now or datetime.now(UTC)).isocalendar()
+    return f"{year}-W{week:02d}"
+
+
+def _cmd_store_audit(args: argparse.Namespace) -> int:
+    root = Path(args.root)
+    try:
+        layout = load_layout(root)
+        store = Store.from_env(root)
+        bundles = [
+            d
+            for d, week in bundle_dirs(root)
+            if week is not None
+            and (layout.kept(week, "run") is not None or layout.kept(week, "judge") is not None)
+        ]
+    except (StoreError, LedgerError, OSError) as e:
+        _err(str(e))
+        return 1
+    if not bundles:
+        print("no split weeks")
+        return 0
+    seed = args.seed or _iso_week_seed()
+    bad = False
+    present: set[str] = set()
+    items: list[tuple[str, str, str]] = []
+    for bundle in bundles:
+        name = bundle.relative_to(root).as_posix()
+        try:
+            _, listed = _listed(bundle)
+        except StoreError as e:
+            print(f"{name}: {e}")
+            bad = True
+            continue
+        here, missing = _head_listed(store, listed, f"{name}/")
+        bad = bad or missing
+        present |= here
+        items += [(name, rel, sha) for rel, sha in listed if sha not in store.withdrawn]
+    items.sort()
+    print(f"seed {seed}")
+    if args.rehash and items:
+        chosen = random.Random(seed).sample(items, min(args.rehash, len(items)))
+        bad = _rehash(store, [(f"{n}/{r}", s) for n, r, s in chosen], present) or bad
+    n = min(args.rehash, len(items))
+    print(f"audited {len(bundles)} bundles, {len(items)} objects, rehashed {n}")
+    return 1 if bad else 0
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -511,12 +623,15 @@ def _parser() -> argparse.ArgumentParser:
     e.add_argument("--config")
     e.set_defaults(fn=_cmd_env)
     v = sub.add_parser("verify", help="check hashes and scan for scrub violations")
-    v.add_argument("dir")
+    v.add_argument("dir", nargs="?")
     v.add_argument("--denylist")
+    v.add_argument("--root", default=".", help="repository root for --ledger and --changed")
+    v.add_argument("--ledger", action="store_true", help="check every published bundle offline")
+    v.add_argument("--changed", metavar="BASE", help="fully verify bundles changed since BASE")
     v.add_argument(
         "--no-username", action="store_true", help="do not scan for the current username"
     )
-    v.set_defaults(fn=_cmd_verify)
+    v.set_defaults(fn=_cmd_verify, parser=v)
     j = sub.add_parser("judge", help="blind pairwise judge over two bundles")
     j.add_argument("a")
     j.add_argument("b")
@@ -569,6 +684,13 @@ def _parser() -> argparse.ArgumentParser:
     )
     sc.add_argument("--root", default=".")
     sc.set_defaults(fn=_cmd_store_check)
+    sa = ssub.add_parser("audit", help="check every split week's objects; re-hash a sample")
+    sa.add_argument(
+        "--rehash", type=_non_negative, default=0, metavar="N", help="re-download N objects in all"
+    )
+    sa.add_argument("--seed", help="sampling seed (default: the current UTC ISO year-week)")
+    sa.add_argument("--root", default=".")
+    sa.set_defaults(fn=_cmd_store_audit)
     return p
 
 
