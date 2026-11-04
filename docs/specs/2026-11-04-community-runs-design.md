@@ -71,6 +71,25 @@ The graduation rules are defined in sub-project 6. They build on three kinds of 
 They are built in that order. Sub-project 1 is useful on its own: it stops the repository growing
 with our own weekly bundles too.
 
+## Assessment stays adjustable
+
+The criteria will keep getting stricter on two axes: *what* is measured (suites, items, metrics) and
+*how strictly* it is judged (graders, thresholds, verdict rules). Nothing here may make that harder,
+and four principles keep it possible without rewriting history:
+
+1. **Raw data is never thinned.** Every quality output and every telemetry sample is kept, in the
+   store. A metric invented later, such as energy per token from the power samples, can then be
+   computed for every past run.
+2. **Assessment is versioned on both axes.** Suites by hash, graders by version, verdict rules by
+   version. A change to rule logic, not just to a threshold, bumps the rules version, and the verdict
+   code applies the version the week was published with, so every old week rederives exactly.
+3. **A re-assessment is a new artifact, never an edit.** Re-grading old outputs with a stricter
+   grader, or re-judging them with a new judge criterion, produces a new record keyed by bundle hashes
+   and the grader or rules version. Bundles and published weeks never change. Corrections keep using
+   the existing revision mechanism.
+4. **Week plans pin the suite hashes and the rules version,** so community runs follow the same
+   discipline as ours.
+
 ## Cross-cutting rules
 
 - **Scrub.** A contributor's bundle passes the same `bakeoff verify` as ours. Environment capture is
