@@ -599,7 +599,7 @@ def test_git_archive_substitutes_commit():
     assert re.fullmatch(r"[0-9a-f]{40}\n?", text)
 
 
-# Reliant-style host: three RTX 3060s on two sockets (GPU0 on node 0, GPU1 and GPU2 on node 1).
+# A dual-socket host: three RTX 3060s on two sockets (GPU0 on node 0, GPU1 and GPU2 on node 1).
 NUMA_FILES = {
     **LINUX_FILES,
     "/sys/bus/pci/devices/0000:3b:00.0/numa_node": "0\n",
