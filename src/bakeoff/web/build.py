@@ -15,10 +15,20 @@ from xml.sax.saxutils import escape, quoteattr
 
 from bakeoff.publish import week_docs
 from bakeoff.web.pages import archive_page, holding_page, week_page, wrap_static
+from bakeoff.web.topology import topology_page
 from bakeoff.week import load_week_schema
 from bakeoff.weekcfg import SiteConfig, load_site
 
-OWNED = ("index.html", "weeks", "api", "feed.xml", "_headers", "method", "privacy")
+OWNED = (
+    "index.html",
+    "weeks",
+    "api",
+    "feed.xml",
+    "_headers",
+    "method",
+    "privacy",
+    "topology",
+)
 ASSETS = (
     "style.css",
     "logo.webp",
@@ -136,6 +146,9 @@ def render_site(root: Path, *, launched: bool | None = None) -> dict[str, bytes]
     files["_headers"] = headers_file(site).encode("utf-8")
     files["method/index.html"] = _static_page(root, "method", "bakeoff.si, method", site)
     files["privacy/index.html"] = _static_page(root, "privacy", "bakeoff.si, privacy", site)
+    topology = topology_page(root, site)
+    if topology is not None:
+        files["topology/index.html"] = topology.encode("utf-8")
     if not site.launched:
         return files
 

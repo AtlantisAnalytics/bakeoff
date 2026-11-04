@@ -25,7 +25,7 @@ jobs:
       - run: uv run bakeoff site --check
       - name: Verify published bundles
         run: |
-          for d in results/*/runs/*/ results/*/judge/*/; do
+          for d in results/*/runs/*/ results/*/judge/*/ results/experiments/*/runs/*/; do
             [ -d "$d" ] || continue
             uv run bakeoff verify --no-username "$d"
           done

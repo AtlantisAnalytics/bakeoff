@@ -1,0 +1,38 @@
+# The runs behind /topology/. Each group is one table on the page, in this order; paths are
+# relative to the repository root. Rows under results/<week>/ are published weekly runs, shown
+# for comparison.
+
+[[group]]
+key = "granite-3b"
+bundles = [
+  "results/2026-11-02/runs/20261031T160911Z-granite-4-2-3b-a8bc41e5",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T081107Z-granite-4-2-3b-fit-speed-d790e49e",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T102439Z-granite-4-2-3b-fit-speed-f67bf711",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T102820Z-granite-4-2-3b-fit-speed-78803e35",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T083353Z-granite-4-2-3b-fit-speed-bacb370b",
+]
+
+[[group]]
+key = "granite-8b"
+bundles = [
+  "results/experiments/2026-11-multi-gpu/runs/20261103T103209Z-granite-4-2-8b-fp8-fit-speed-5f075bda",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T103950Z-granite-4-2-8b-fp8-fit-speed-531bc5c4",
+  "results/2026-11-02/runs/20261031T170054Z-granite-4-2-8b-fp8-efbd0734",
+]
+
+[[group]]
+key = "qwen-27b"
+bundles = [
+  "results/experiments/2026-11-multi-gpu/runs/20261103T090143Z-qwen3-8-27b-exl3-fit-speed-1ecaf552",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T092144Z-qwen3-8-27b-exl3-fit-speed-1ab3fc12",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T084445Z-qwen3-8-27b-exl3-fit-speed-ce2cea26",
+  "results/experiments/2026-11-multi-gpu/runs/20261103T094135Z-qwen3-8-27b-exl3-fit-speed-cfa24f07",
+  "results/2026-11-02/runs/20261031T160519Z-qwen3-8-27b-exl3-939898fc",
+]
+
+[[group]]
+key = "gemma-12b"
+bundles = [
+  "results/experiments/2026-11-multi-gpu/runs/20261103T095624Z-gemma-4-12b-it-exl3-fit-speed-b3de8f94",
+  "results/2026-11-02/runs/20261031T164045Z-gemma-4-12b-it-exl3-0a3b143c",
+]

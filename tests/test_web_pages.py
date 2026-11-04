@@ -281,7 +281,7 @@ def test_feed_link_only_when_launched(doc):
     assert "/feed.xml" in wrap_static("<p>x</p>", "T", SITE)
 
 
-@pytest.mark.parametrize("name", ["method", "privacy"])
+@pytest.mark.parametrize("name", ["method", "privacy", "topology"])
 def test_site_src_fragments_wrap_cleanly(name):
     from pathlib import Path
 

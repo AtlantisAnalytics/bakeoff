@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#fefefe">
+<title>bakeoff.si, multi-GPU topology</title>
+<meta name="description" content="Weekly open-model bake-offs on consumer GPUs. Open method, open data.">
+<link rel="canonical" href="https://bakeoff.si/topology/">
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bakeoff.si/topology/">
+<meta property="og:title" content="bakeoff.si, multi-GPU topology">
+<meta property="og:description" content="Weekly open-model bake-offs on consumer GPUs. Open method, open data.">
+<meta property="og:image" content="https://bakeoff.si/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<div class="site-header"><a href="/"><img src="/logo.webp" width="440" height="360" alt="bakeoff.si"></a></div>
+<main>
+<h1 class="title">Multi-GPU topology</h1>
+<p>Can two or three cheap 12&nbsp;GB cards stand in for one big one? In November 2026 we ran four
+models on one machine with three RTX&nbsp;3060s, split several ways, and measured speed and usable
+context. This is an exploration, not a tier: these runs are not part of any week, and they never
+change a pick or a verdict. Every number below is read from the raw bundles, which are published
+like every other result.</p>
+
+<h2>Short version</h2>
+<ul class="flat">
+  <li><strong>Two cards with tensor parallelism pay off.</strong> Decode is 1.7&times; one card's,
+    and models and contexts that don't fit on one 12&nbsp;GB card do fit on two.</li>
+  <li><strong>Against a 24&nbsp;GB RTX&nbsp;3090&nbsp;Ti,</strong> two 3060s decode at 60&ndash;72%
+    of its speed for 62&ndash;67% of its power.</li>
+  <li><strong>A third card adds little.</strong> Tensor parallelism over three cards was 8% faster
+    than over two, for 35% more power.</li>
+  <li><strong>How the model is split matters more than how many cards there are.</strong> Splitting
+    by layers was 1.7&times; slower than tensor parallelism on the same two cards, and a pipeline
+    over three cards was no faster than one card.</li>
+  <li><strong>Crossing CPU sockets cost almost nothing</strong> on this machine: 0.5% of decode
+    speed.</li>
+</ul>
+
+<h2>The machine</h2>
+<p>A dual-socket workstation with two Intel Xeon Gold 5215 CPUs and 125&nbsp;GiB of RAM, running
+Ubuntu 24.04 and NVIDIA driver 570. It has three RTX&nbsp;3060 12&nbsp;GB cards at their stock
+170&nbsp;W limit. Each card has its own PCIe&nbsp;3.0 x16 link to a CPU: card&nbsp;0 to the first
+socket, cards&nbsp;1 and&nbsp;2 to the second. GeForce cards don't support peer-to-peer transfers,
+so every byte between cards goes through the CPUs. Each bundle records every card's PCIe link and
+NUMA node and the path between each pair of cards, as <code>nvidia-smi topo</code> reports it.</p>
+
+<h2>How to read the tables</h2>
+<ul class="flat">
+  <li><strong>Split:</strong> <em>tensor parallel</em> divides every layer across the cards, which
+    work on each token together. A <em>layer split</em> or a <em>pipeline</em> gives each card a
+    run of whole layers, so for a single request one card works while the others wait.</li>
+  <li><strong>Cards used:</strong> the cards that held at least 1&nbsp;GiB during the run. A split
+    can leave a card idle.</li>
+  <li><strong>Farthest link:</strong> the longest path between any two of the run's cards.</li>
+  <li><strong>Decode</strong> is the median tokens/s of one request, short prompt.
+    <strong>4 streams</strong> is the total tokens/s of four requests at once. <strong>TTFT</strong>
+    is the time to the first token. <strong>Context</strong> is the largest context that passed the
+    fit test. <strong>Power</strong> is the mean board power of all the run's cards during the
+    speed test (CPU power not included).</li>
+  <li>Rows marked with a week are published weekly runs, on the same engines.</li>
+</ul>
+
+<h2>Granite 4.2 3B (vLLM)</h2>
+<p>The small model shows the scaling most clearly. Our own single-card run decodes within 2% of
+the published weekly one. Two cards in tensor parallel decode 1.71&times; faster, and serve four
+streams 1.77&times; faster. Putting the two cards on different sockets made no real difference. A
+three-card pipeline was exactly as fast as one card, at 65% more power.</p>
+<div class="table-wrap"><table><tr><th>Cards</th><th>Split</th><th>Cards used</th><th>Farthest link</th><th class="num">Decode tok/s</th><th class="num">4 streams tok/s</th><th class="num">TTFT</th><th class="num">Context</th><th class="num">Power</th><th>Data</th></tr><tr><td>1× RTX 3060 12 GB<br><span class="muted small">week 2026-11-02</span></td><td>one card</td><td>1</td><td>—</td><td class="num">45.6</td><td class="num">153.4</td><td class="num">42 ms</td><td class="num">32K</td><td class="num">140 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/2026-11-02/runs/20261031T160911Z-granite-4-2-3b-a8bc41e5">Raw bundle</a></td></tr><tr><td>1× RTX 3060 12 GB</td><td>one card</td><td>1</td><td>—</td><td class="num">46.3</td><td class="num">158.2</td><td class="num">42 ms</td><td class="num">32K</td><td class="num">136 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T081107Z-granite-4-2-3b-fit-speed-d790e49e">Raw bundle</a></td></tr><tr><td>2× RTX 3060 12 GB</td><td>tensor parallel</td><td>2 of 2</td><td>same socket</td><td class="num">79.1</td><td class="num">280.1</td><td class="num">33 ms</td><td class="num">32K</td><td class="num">245 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T102439Z-granite-4-2-3b-fit-speed-f67bf711">Raw bundle</a></td></tr><tr><td>2× RTX 3060 12 GB</td><td>tensor parallel</td><td>2 of 2</td><td>across sockets</td><td class="num">78.7</td><td class="num">278.2</td><td class="num">34 ms</td><td class="num">32K</td><td class="num">245 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T102820Z-granite-4-2-3b-fit-speed-78803e35">Raw bundle</a></td></tr><tr><td>3× RTX 3060 12 GB</td><td>pipeline</td><td>3 of 3</td><td>across sockets</td><td class="num">46.3</td><td class="num">157.4</td><td class="num">43 ms</td><td class="num">32K</td><td class="num">225 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T083353Z-granite-4-2-3b-fit-speed-bacb370b">Raw bundle</a></td></tr></table></div>
+
+<h2>Granite 4.2 8B FP8 (vLLM)</h2>
+<p>On one 12&nbsp;GB card the FP8 weights leave too little memory for the KV cache. We could only
+serve 4K of context, well short of the 16K minimum our rules require. Two cards reach 32K, and decode
+1.78&times; faster than one, at 72% of a 3090&nbsp;Ti's decode speed and 67% of its power.</p>
+<div class="table-wrap"><table><tr><th>Cards</th><th>Split</th><th>Cards used</th><th>Farthest link</th><th class="num">Decode tok/s</th><th class="num">4 streams tok/s</th><th class="num">TTFT</th><th class="num">Context</th><th class="num">Power</th><th>Data</th></tr><tr><td>1× RTX 3060 12 GB</td><td>one card</td><td>1</td><td>—</td><td class="num">34.7</td><td class="num">132.5</td><td class="num">51 ms</td><td class="num">4K</td><td class="num">135 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T103209Z-granite-4-2-8b-fp8-fit-speed-5f075bda">Raw bundle</a></td></tr><tr><td>2× RTX 3060 12 GB</td><td>tensor parallel</td><td>2 of 2</td><td>same socket</td><td class="num">61.9</td><td class="num">228.4</td><td class="num">32 ms</td><td class="num">32K</td><td class="num">241 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T103950Z-granite-4-2-8b-fp8-fit-speed-531bc5c4">Raw bundle</a></td></tr><tr><td>1× RTX 3090 Ti 24 GB<br><span class="muted small">week 2026-11-02</span></td><td>one card</td><td>1</td><td>—</td><td class="num">86.1</td><td class="num">334.0</td><td class="num">22 ms</td><td class="num">64K</td><td class="num">359 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/2026-11-02/runs/20261031T170054Z-granite-4-2-8b-fp8-efbd0734">Raw bundle</a></td></tr></table></div>
+
+<h2>Qwen3.8 27B EXL3 (ExLlamaV3)</h2>
+<p>A 27B model at 4 bits doesn't fit on one 3060, so every row here is split. Tensor parallelism
+over two cards decodes 1.66&times; faster than a layer split over the same two. The "three-card"
+layer split put the whole model on the first two cards and left the third empty. ExLlamaV3's
+automatic split fills cards in order. Tensor parallelism over three cards gained 8% in decode and
+11% in four-stream throughput over two, for 35% more power. Two cards reach 69% of the
+3090&nbsp;Ti's decode speed.</p>
+<div class="table-wrap"><table><tr><th>Cards</th><th>Split</th><th>Cards used</th><th>Farthest link</th><th class="num">Decode tok/s</th><th class="num">4 streams tok/s</th><th class="num">TTFT</th><th class="num">Context</th><th class="num">Power</th><th>Data</th></tr><tr><td>2× RTX 3060 12 GB</td><td>layer split</td><td>2 of 2</td><td>same socket</td><td class="num">19.5</td><td class="num">59.5</td><td class="num">811 ms</td><td class="num">64K</td><td class="num">219 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T090143Z-qwen3-8-27b-exl3-fit-speed-1ecaf552">Raw bundle</a></td></tr><tr><td>3× RTX 3060 12 GB</td><td>layer split</td><td>2 of 3</td><td>across sockets</td><td class="num">19.4</td><td class="num">59.8</td><td class="num">815 ms</td><td class="num">64K</td><td class="num">229 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T092144Z-qwen3-8-27b-exl3-fit-speed-1ab3fc12">Raw bundle</a></td></tr><tr><td>2× RTX 3060 12 GB</td><td>tensor parallel</td><td>2 of 2</td><td>same socket</td><td class="num">32.4</td><td class="num">90.3</td><td class="num">532 ms</td><td class="num">64K</td><td class="num">270 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T084445Z-qwen3-8-27b-exl3-fit-speed-ce2cea26">Raw bundle</a></td></tr><tr><td>3× RTX 3060 12 GB</td><td>tensor parallel</td><td>3 of 3</td><td>across sockets</td><td class="num">35.0</td><td class="num">100.5</td><td class="num">452 ms</td><td class="num">64K</td><td class="num">365 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T094135Z-qwen3-8-27b-exl3-fit-speed-cfa24f07">Raw bundle</a></td></tr><tr><td>1× RTX 3090 Ti 24 GB<br><span class="muted small">week 2026-11-02</span></td><td>one card</td><td>1</td><td>—</td><td class="num">47.2</td><td class="num">140.4</td><td class="num">314 ms</td><td class="num">64K</td><td class="num">436 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/2026-11-02/runs/20261031T160519Z-qwen3-8-27b-exl3-939898fc">Raw bundle</a></td></tr></table></div>
+
+<h2>Gemma 4 12B IT EXL3 (ExLlamaV3)</h2>
+<p>Two cards in tensor parallel hold the full 128K context and decode at 60% of the
+3090&nbsp;Ti's speed. Long prompts are where the 3060s trail most: prefill on a long prompt ran at
+4,694 tokens/s, against 9,021 on the 3090&nbsp;Ti, about half.</p>
+<div class="table-wrap"><table><tr><th>Cards</th><th>Split</th><th>Cards used</th><th>Farthest link</th><th class="num">Decode tok/s</th><th class="num">4 streams tok/s</th><th class="num">TTFT</th><th class="num">Context</th><th class="num">Power</th><th>Data</th></tr><tr><td>2× RTX 3060 12 GB</td><td>tensor parallel</td><td>2 of 2</td><td>same socket</td><td class="num">39.8</td><td class="num">124.0</td><td class="num">295 ms</td><td class="num">128K</td><td class="num">279 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/experiments/2026-11-multi-gpu/runs/20261103T095624Z-gemma-4-12b-it-exl3-fit-speed-b3de8f94">Raw bundle</a></td></tr><tr><td>1× RTX 3090 Ti 24 GB<br><span class="muted small">week 2026-11-02</span></td><td>one card</td><td>1</td><td>—</td><td class="num">66.1</td><td class="num">215.5</td><td class="num">163 ms</td><td class="num">128K</td><td class="num">431 W</td><td><a href="https://github.com/AtlantisAnalytics/bakeoff/tree/main/results/2026-11-02/runs/20261031T164045Z-gemma-4-12b-it-exl3-0a3b143c">Raw bundle</a></td></tr></table></div>
+
+<h2>Setup notes</h2>
+<ul class="flat">
+  <li><strong>vLLM on GeForce cards.</strong> Without peer-to-peer support, vLLM falls back from
+    its own all-reduce to NCCL. Tensor parallel start-up then ran out of memory while capturing
+    CUDA graphs, at both 0.92 and 0.88 of card memory, because graph memory sits outside that
+    budget. Setting <code>VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=1</code> makes vLLM count graph
+    memory before it sizes the KV cache; with it, every multi-GPU vLLM run started at 0.90.
+    Single-card runs keep the weekly 0.92.</li>
+  <li><strong>ExLlamaV3 tensor parallel uses the CPU.</strong> During these runs the server process
+    used up to about 15 CPU cores, so a machine with fewer cores may be slower. The bundles don't
+    record this; we saw it in <code>top</code>.</li>
+  <li><strong>Check which cards a split used.</strong> Look at each card's memory, as the
+    <em>Cards used</em> column does.</li>
+</ul>
+
+<h2>Limits</h2>
+<ul class="flat">
+  <li>One machine, one run of five repeats per setup. Another board, another PCIe generation or
+    NVLink would change the link results. The socket result was measured only on the 3B model.</li>
+  <li>Speed and fit only: no quality suites were run. A split changes the order of floating-point
+    sums, so outputs can differ slightly from a single card's, as they do between cards.</li>
+  <li>The multi-GPU vLLM runs used 0.90 of card memory and the single-card runs 0.92, as noted
+    above.</li>
+  <li>The 3090&nbsp;Ti rows are from a different machine and week, and serve as a reference point,
+    not a controlled comparison.</li>
+</ul>
+
+<h2>Reproduce</h2>
+<p>The bundles, and a list of which run is in which table, are in
+<code>results/experiments/2026-11-multi-gpu/</code> in the repository. Each bundle names the
+harness commit that made it, and the engine versions: vLLM 0.19.0, and ExLlamaV3 1.6.3 served by
+TabbyAPI. To run a setup yourself, pick the cards, serve, and run the speed and fit passes:</p>
+<pre><code>CUDA_VISIBLE_DEVICES=1,2 VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=1 \
+  vllm serve &lt;weights&gt; --tensor-parallel-size 2 \
+  --gpu-memory-utilization 0.90 --max-model-len 32768
+uv run bakeoff run run.toml --only speed --only fit</code></pre>
+<p>with <code>envelope = "2× RTX 3060 12 GB"</code> and <code>parallel = "tp=2"</code> in the
+run file's <code>[model]</code> table. For ExLlamaV3, set <code>tensor_parallel: true</code>
+(tensor parallel) or <code>gpu_split_auto: true</code> (layer split) in TabbyAPI's model
+config.</p>
+
+</main>
+<div class="site-footer">
+<footer>
+<p class="footer-links"><a href="/method/">Method</a><a href="/topology/">Multi-GPU</a><a href="/weeks/">Archive</a><a href="/feed.xml">Feed</a><a href="/privacy/">Privacy</a></p>
+
+<p><a class="maker" href="https://www.atlantisanalytics.com/"><img src="/atlantis.webp" width="40" height="40" alt="">A project of Atlantis Analytics</a></p>
+</footer>
+</div>
+</body>
+</html>

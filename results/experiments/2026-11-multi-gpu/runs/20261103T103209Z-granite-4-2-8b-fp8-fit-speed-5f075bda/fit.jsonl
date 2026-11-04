@@ -1,0 +1,3 @@
+{"accepted": true, "depth": 0.1, "error": null, "expected_prompt_tokens": null, "finish_reason": "stop", "lines": 69, "prompt_tokens": 1576, "retrieved": true, "step": 4096, "ttft_s": 1.1062642239994602, "within_5pct": null}
+{"accepted": true, "depth": 0.5, "error": null, "expected_prompt_tokens": null, "finish_reason": "stop", "lines": 69, "prompt_tokens": 1576, "retrieved": true, "step": 4096, "ttft_s": 1.021525443999053, "within_5pct": null}
+{"accepted": true, "depth": 0.9, "error": null, "expected_prompt_tokens": null, "finish_reason": "stop", "lines": 69, "prompt_tokens": 1576, "retrieved": true, "step": 4096, "ttft_s": 0.6130325310004991, "within_5pct": null}
