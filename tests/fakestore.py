@@ -62,7 +62,14 @@ class _Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         key = self._record()
         n = int(self.headers.get("Content-Length") or 0)
-        self.server.owner.objects[key] = self.rfile.read(n)
+        body = self.rfile.read(n)
+        forced = self._forced(key)
+        if forced is not None:
+            self.send_response(forced)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        self.server.owner.objects[key] = body
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
