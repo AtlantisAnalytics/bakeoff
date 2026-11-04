@@ -1,4 +1,5 @@
 import hashlib
+import json
 import urllib.request
 
 import pytest
@@ -190,3 +191,35 @@ def test_unresolvable_home_asks_for_cache_env(tmp_path, monkeypatch):
     monkeypatch.setattr(store_mod.Path, "expanduser", no_home)
     with pytest.raises(StoreError, match="BAKEOFF_CACHE"):
         Store.from_env(tmp_path)
+
+
+def test_materialize_round_trip(fake_store, tmp_path):
+    from weekfix import KEPT_RUN, make_bundle, push_all, split
+
+    from bakeoff.bundle import verify_bundle
+    from bakeoff.store import materialize
+
+    b = make_bundle(
+        tmp_path / "b",
+        label="M",
+        weights="M",
+        envelope="lab-box-7 24 GB",
+        grades={"general/gsm8k": [True, False]},
+    )
+    push_all(fake_store, b)
+    split(b, KEPT_RUN)
+    out = materialize(b, tmp_path / "full", Store.from_env(tmp_path))
+    assert out == tmp_path / "full"
+    assert verify_bundle(out, None, None) == []
+    assert not (b / "quality/general.gsm8k.jsonl").exists()
+
+
+def test_materialize_two_files_one_hash(fake_store, tmp_path):
+    from bakeoff.store import materialize
+
+    sha, st = make(fake_store, tmp_path, b"")
+    (tmp_path / "src").mkdir()
+    listing = {"files": {"a.txt": sha, "d/b.txt": sha}}
+    (tmp_path / "src" / "bundle.json").write_text(json.dumps(listing))
+    out = materialize(tmp_path / "src", tmp_path / "dst", st)
+    assert (out / "a.txt").read_bytes() == b"" and (out / "d/b.txt").read_bytes() == b""

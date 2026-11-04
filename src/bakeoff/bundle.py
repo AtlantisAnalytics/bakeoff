@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from bakeoff import safejson
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
+from bakeoff.store import HashMismatch, Store, StoreError, Unavailable, Withdrawn
 
 GENERIC_USERNAMES = frozenset(
     "root user admin ubuntu ec2-user debian centos fedora pi guest runner docker vagrant "
@@ -189,7 +190,13 @@ def verify_bundle(
     username: str | None,
     denylist: Path | None,
     username_skip_output: bool = False,
+    *,
+    kept: frozenset[str] | None = None,
+    offline: bool = False,
+    store: Store | None = None,
 ) -> list[Finding]:
+    """`kept` names the files a split bundle keeps in the directory; the other listed files
+    are fetched through `store` (or skipped when `offline`) and checked like local ones."""
     run_dir = Path(run_dir)
     meta_path = run_dir / "bundle.json"
     if meta_path.is_symlink():
@@ -211,6 +218,7 @@ def verify_bundle(
     entries = list(_walk(run_dir, walk_errors))
     for bad in walk_errors:
         findings.append(Finding(bad, 0, "unreadable", "directory cannot be read"))
+    resolved: list[tuple[str, Path]] = []
     for rel, expected in listed.items():
         if _bad_relpath(rel):
             findings.append(Finding(str(rel), 0, "unreadable", "unsafe path in files"))
@@ -218,10 +226,28 @@ def verify_bundle(
         path = run_dir / rel
         if _has_symlink(run_dir, rel):
             findings.append(Finding(rel, 0, "unreadable", "listed path goes through a symlink"))
-        elif not path.is_file():
+        elif kept is not None and rel not in kept and os.path.lexists(path):
+            findings.append(Finding(rel, 0, "kept_mismatch", "stored file committed"))
+        elif path.is_file():
+            if sha256_file(path) != expected:
+                findings.append(
+                    Finding(rel, 0, "hash_mismatch", "file hash differs from bundle.json")
+                )
+        elif kept is not None and rel in kept:
+            findings.append(Finding(rel, 0, "kept_mismatch", "kept file missing"))
+        elif kept is not None and offline:
+            continue
+        elif store is None or offline:
             findings.append(Finding(rel, 0, "missing_file", "listed file is missing"))
-        elif sha256_file(path) != expected:
-            findings.append(Finding(rel, 0, "hash_mismatch", "file hash differs from bundle.json"))
+        else:
+            try:
+                resolved.append((rel, store.resolve(expected)))
+            except HashMismatch as e:
+                findings.append(Finding(rel, 0, "hash_mismatch", str(e)))
+            except Withdrawn as e:
+                findings.append(Finding(rel, 0, "withdrawn", str(e)))
+            except (Unavailable, StoreError) as e:
+                findings.append(Finding(rel, 0, "unavailable", str(e)))
     for rel, _, link in entries:
         if link:
             if rel not in listed:
@@ -246,14 +272,12 @@ def verify_bundle(
             seen.add(f)
             findings.append(f)
 
-    for rel, path, link in entries:
-        if link or _has_symlink(run_dir, rel):
-            continue
+    def scan_file(rel: str, path: Path) -> None:
         try:
             data = path.read_bytes()
         except OSError as e:
             add(Finding(rel, 0, "unreadable", f"cannot read file: {e}"))
-            continue
+            return
         try:
             text = data.decode("utf-8")
         except UnicodeDecodeError:
@@ -283,8 +307,14 @@ def verify_bundle(
                 obj = safejson.loads(text)
             except ValueError:
                 add(Finding(rel, 0, "unreadable", "file is not valid JSON"))
-                continue
+                return
             for st in iter_strings(obj):
                 for _, kind, match in scan_text(st, terms, username):
                     add(Finding(rel, 0, kind, match))
+
+    for rel, path, link in entries:
+        if not (link or _has_symlink(run_dir, rel)):
+            scan_file(rel, path)
+    for rel, path in resolved:
+        scan_file(rel, path)
     return findings

@@ -138,3 +138,29 @@ def test_item_file_must_be_a_listed_bundle_file(tmp_path, name):
     shutil.copy(p / "quality" / "general.gsm8k.jsonl", target)
     with pytest.raises(RunViewError, match="not a listed bundle file"):
         load_run(p)
+
+
+def test_load_run_reads_items_from_store(tmp_path, fake_store):
+    from weekfix import KEPT_RUN, push_all, split
+
+    from bakeoff.store import Store
+
+    b = _mk(tmp_path, outputs={"general/gsm8k": ["a", "b", "c", "d"]})
+    full = load_run(b)
+    push_all(fake_store, b)
+    split(b, KEPT_RUN)
+    with pytest.raises(RunViewError):
+        load_run(b)
+    got = load_run(b, store=Store.from_env(tmp_path))
+    assert got.items == full.items and got.outputs == full.outputs
+
+
+def test_load_run_maps_store_error(tmp_path, fake_store):
+    from weekfix import KEPT_RUN, split
+
+    from bakeoff.store import Store
+
+    b = _mk(tmp_path)
+    split(b, KEPT_RUN)
+    with pytest.raises(RunViewError, match="unavailable"):
+        load_run(b, store=Store.from_env(tmp_path))

@@ -5,7 +5,9 @@ public store, cached locally and used only if its hash matches.
 """
 
 import hashlib
+import json
 import os
+import shutil
 import tempfile
 import time
 import urllib.error
@@ -168,3 +170,16 @@ def resolve_file(bundle_dir: Path, rel: str, sha: str, store: Store | None) -> P
     if store is None:
         raise Unavailable(sha, str(local), "no local file and no store")
     return store.resolve(sha)
+
+
+def materialize(bundle_dir: Path, dst: Path, store: Store) -> Path:
+    """Copy a split bundle to `dst` and fill in every listed file from the store."""
+    bundle_dir, dst = Path(bundle_dir), Path(dst)
+    shutil.copytree(bundle_dir, dst, symlinks=True)
+    listed = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8")).get("files", {})
+    for rel, sha in listed.items():
+        target = dst / rel
+        if not target.is_file():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(store.resolve(sha), target)
+    return dst
