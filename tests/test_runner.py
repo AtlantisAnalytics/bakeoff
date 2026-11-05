@@ -16,7 +16,13 @@ from bakeoff.config import (
     SpeedConfig,
 )
 from bakeoff.env import NVIDIA_QUERY_ARGV
-from bakeoff.runner import PreflightError, execute_run, make_redactor, preflight
+from bakeoff.runner import (
+    PreflightError,
+    execute_run,
+    make_redactor,
+    mem_baseline_from_env,
+    preflight,
+)
 from bakeoff.sampler import SAMPLER_NVIDIA_ARGV
 
 URL = "http://lab-box-7.lan:11434/v1"  # scrub-ok
@@ -506,3 +512,74 @@ def test_interrupted_run_reports_only_size_vram(tmp_path, monkeypatch):
     (path,) = [p for p in tmp_path.rglob("bundle.json")]
     meta = json.loads(path.read_text())
     assert list(meta["memory"]["runtime_reported"]) == ["size_vram"]
+
+
+@pytest.mark.parametrize("raw", [None, "", "abc", "0", "-5", "1.5", "1e9", " "])
+def test_baseline_env_ignored_when_junk(raw):
+    assert mem_baseline_from_env({} if raw is None else {"BAKEOFF_MEM_BASELINE_BYTES": raw}) is None
+
+
+def test_baseline_env_positive_int():
+    assert mem_baseline_from_env({"BAKEOFF_MEM_BASELINE_BYTES": "1234"}) == 1234
+
+
+class _NoPower:
+    def start(self):
+        return False
+
+    def latest(self, max_age_s=2.0):
+        return None
+
+    def stop(self):
+        pass
+
+
+def _mac_run(thermal):
+    vm = (Path(__file__).parent / "data" / "env" / "vm_stat.txt").read_text()
+
+    def run(argv):
+        if argv == ["vm_stat"]:
+            return vm
+        if argv[:3] == ["pmset", "-g", "therm"]:
+            return next(thermal)
+        return None
+
+    return run
+
+
+def test_runner_records_thermal_end_and_baseline(tmp_path, monkeypatch):
+    from bakeoff import runner
+
+    monkeypatch.setattr(runner, "PowerStream", _NoPower)
+    monkeypatch.setenv("BAKEOFF_MEM_BASELINE_BYTES", "1000")
+    therm = iter(
+        [
+            "Note: No thermal warning level has been recorded\n",
+            "Note: Thermal warning level 1 has been recorded\n",
+        ]
+    )
+    path = go(make_cfg(), FakeOpenAI(), tmp_path, run=_mac_run(therm), platform="darwin")
+    meta = json.loads((path / "bundle.json").read_text())
+    assert meta["env"]["host"]["power_state"]["thermal_warning"]["value"] == 0
+    assert meta["env"]["host"]["thermal_warning_end"] == {"value": 1, "source": "measured"}
+    assert meta["memory"]["mem_baseline_bytes"] == {
+        "value": 1000,
+        "source": "measured (system-wide)",
+    }
+    peaks = meta["memory"]["peaks"]["value"]
+    assert peaks["baseline"]["mem_over_baseline_bytes"] > 0
+    # peaks carry one source for the whole dict ("measured"); the over-baseline figure is
+    # system-wide (llama.cpp reports no usage of its own), so it gets a sibling with that source
+    assert meta["memory"]["mem_over_baseline_bytes"] == {
+        "value": {k: v["mem_over_baseline_bytes"] for k, v in peaks.items()},
+        "source": "measured (system-wide)",
+    }
+    assert verify_bundle(path, username="alice", denylist=None) == []
+
+
+def test_no_thermal_end_off_darwin(tmp_path):
+    path = go(make_cfg(), FakeOpenAI(), tmp_path, run=fake_nvidia, platform="linux")
+    meta = json.loads((path / "bundle.json").read_text())
+    assert "thermal_warning_end" not in meta["env"]["host"]
+    assert "mem_baseline_bytes" not in meta["memory"]
+    assert "mem_over_baseline_bytes" not in meta["memory"]

@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -15,10 +15,18 @@ from urllib.parse import urlsplit
 from bakeoff.bundle import run_id, write_bundle
 from bakeoff.client import EndpointClient, normalize_base_url
 from bakeoff.config import RunConfig, public_config
-from bakeoff.env import Runner, capture_env, default_run, detect_platform, field
+from bakeoff.env import (
+    Runner,
+    capture_env,
+    default_run,
+    detect_platform,
+    field,
+    mac_thermal_warning,
+)
 from bakeoff.errors import AbortRun
 from bakeoff.fit import run_fit
 from bakeoff.hashing import canonical_json
+from bakeoff.powermetrics import PowerStream
 from bakeoff.quality import QualityResult, run_quality
 from bakeoff.sampler import Sampler
 from bakeoff.speed import run_speed
@@ -112,6 +120,13 @@ def make_redactor(base_url: str, secrets: tuple[str, ...] = ()) -> Callable[[obj
         return obj
 
     return redact
+
+
+def mem_baseline_from_env(environ: Mapping[str, str]) -> int | None:
+    """BAKEOFF_MEM_BASELINE_BYTES: system memory in use with the model unloaded. A positive
+    integer or nothing; anything else is ignored."""
+    raw = environ.get("BAKEOFF_MEM_BASELINE_BYTES", "").strip()
+    return int(raw) if raw.isascii() and raw.isdigit() and int(raw) > 0 else None
 
 
 def _iso(t: datetime) -> str:
@@ -238,14 +253,25 @@ async def execute_run(
         started, cfg.model.label, salt, "-".join(sorted(wanted)) if wanted != set(PASSES) else ""
     )
 
-    sampler = Sampler(detect_platform(run, platform), run, interval_s=sample_interval_s)
+    sampler_platform = detect_platform(run, platform)
+    power = PowerStream() if sampler_platform == "darwin" else None
+    mem_baseline = mem_baseline_from_env(os.environ)
+    sampler = Sampler(
+        sampler_platform,
+        run,
+        interval_s=sample_interval_s,
+        power=power,
+        baseline_mem_bytes=mem_baseline,
+    )
     quality = QualityResult()
     speed_out: tuple[list[dict], dict] | None = None
     fit_out: tuple[list[dict], dict] | None = None
     status, reason = "complete", None
     interrupted: BaseException | None = None
-    sampler.start()
     try:
+        if power is not None:
+            power.start()  # False (not permitted) just leaves power unrecorded
+        sampler.start()
         if "quality" in wanted:
             sampler.mark("quality")
             try:
@@ -274,14 +300,26 @@ async def execute_run(
         status, reason = "incomplete", "interrupted"
         interrupted = exc
     finally:
-        samples = sampler.stop()
+        try:
+            samples = sampler.stop()
+        finally:  # powermetrics runs as root: it must never outlive the run
+            if power is not None:
+                power.stop()
 
+    if sampler_platform == "darwin":
+        env["host"]["thermal_warning_end"] = mac_thermal_warning(run)
     reported = (
         {"size_vram": field(None, "reported")}
         if interrupted
         else await _runtime_reported(client, runtime_name)
     )
     peaks = sampler.peaks()
+    # system-wide on the Mac (llama.cpp reports no usage of its own): its own source, beside peaks
+    over_baseline = {
+        name: p["mem_over_baseline_bytes"]
+        for name, p in peaks.items()
+        if "mem_over_baseline_bytes" in p
+    }
     files: dict[str, list[dict]] = {}
     for key, recs in quality.records.items():
         suite = next(s for s in suites if s.key == key)
@@ -313,6 +351,16 @@ async def execute_run(
             "baseline": field(peaks.get("baseline"), "measured"),
             "peaks": field(peaks or None, "measured"),
             "runtime_reported": reported,
+            **(
+                {"mem_baseline_bytes": field(mem_baseline, "measured (system-wide)")}
+                if mem_baseline is not None
+                else {}
+            ),
+            **(
+                {"mem_over_baseline_bytes": field(over_baseline, "measured (system-wide)")}
+                if over_baseline
+                else {}
+            ),
         },
     }
     redact = make_redactor(cfg.endpoint.base_url, secrets)
