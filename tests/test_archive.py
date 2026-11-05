@@ -6,6 +6,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
+from fakestore import require_loopback
 from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 from bakeoff import cli
@@ -201,6 +202,7 @@ def test_member_not_in_manifest_refused(tmp_path, fake_store):
 
 class FakeZenodo:
     def __init__(self):
+        require_loopback()
         self.calls: list[tuple[str, str, dict, bytes]] = []
         self.published_meta = None
         owner = self

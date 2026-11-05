@@ -1,11 +1,38 @@
 """A loopback stand-in for the object store: public GET/HEAD and S3 path-style GET/HEAD/PUT."""
 
+import functools
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
 BUCKET = "bkt"
+
+
+def _loopback_probe() -> bool:
+    """True if a connection to a listening loopback socket gets through within 2 s. A sandbox
+    that drops loopback (Athena's publish runner) would otherwise hang each test until its
+    timeout, and the whole suite past the verify limit."""
+    with socket.socket() as srv:
+        srv.bind(("127.0.0.1", 0))  # scrub-ok
+        srv.listen(1)
+        try:
+            socket.create_connection(srv.getsockname(), timeout=2).close()
+        except OSError:
+            return False
+    return True
+
+
+@functools.cache
+def loopback_ok() -> bool:
+    return _loopback_probe()
+
+
+def require_loopback() -> None:
+    """Skip the calling test when loopback connections are blocked here."""
+    if not loopback_ok():
+        pytest.skip("loopback connections are blocked here; this test needs a local server")
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -79,6 +106,7 @@ class FakeStore:
     bucket = BUCKET
 
     def __init__(self):
+        require_loopback()
         self.objects: dict[str, bytes] = {}
         self.requests: list[tuple[str, str, dict]] = []
         self.fail: dict[str, int] = {}
