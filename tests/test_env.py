@@ -3,6 +3,8 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 from bakeoff import __version__
 from bakeoff.bundle import scan_text
 from bakeoff.config import (
@@ -178,8 +180,10 @@ def test_nvidia_host(tmp_path):
         "pcie_width_max",
         "pcie_width",
         "numa_node",
+        "tensor_unlock",
     }
     assert gpu["pcie_width"] == {"value": None, "source": "not_captured"}  # no link query here
+    assert gpu["tensor_unlock"] == {"value": "off", "source": "measured"}
     assert env["gpu_links"] == []  # one GPU: no pairs, and topo is never run
     assert not any(c[:2] == ["nvidia-smi", "topo"] for c in run.calls)
     assert env["host"]["os"]["value"] == "Linux"
@@ -705,6 +709,67 @@ def test_negative_numa_node_is_not_captured():
         CFG, None, None, run=_three_gpu_run(), read=fake_read(files), platform="linux"
     )
     assert env["gpus"][0]["numa_node"] == {"value": None, "source": "not_captured"}
+
+
+UNLOCK_LIVE = {"/sys/module/gpu_unlock/initstate": "live\n"}
+
+
+def _unlock(files, platform="linux"):
+    env = capture_env(
+        CFG, None, None, run=_three_gpu_run(), read=fake_read(files), platform=platform
+    )
+    check_shape(env)
+    return [g["tensor_unlock"]["value"] for g in env["gpus"]], env
+
+
+@pytest.mark.parametrize(
+    ("extra", "want"),
+    [
+        ({}, ["off", "off", "off"]),
+        ({**UNLOCK_LIVE, "/proc/cmdline": "quiet\n"}, ["loaded", "loaded", "loaded"]),
+        (
+            {**UNLOCK_LIVE, "/proc/cmdline": "quiet gpu_unlock.targets=all splash\n"},
+            ["targeted", "targeted", "targeted"],
+        ),
+        (
+            {**UNLOCK_LIVE, "/proc/cmdline": "gpu_unlock.targets=0000:AF:00.0\n"},
+            ["loaded", "targeted", "loaded"],
+        ),
+        # "all" mixed with addresses is ignored by the module; the addresses still apply
+        (
+            {**UNLOCK_LIVE, "/proc/cmdline": "gpu_unlock.targets=all,0000:d8:00.0\n"},
+            ["loaded", "loaded", "targeted"],
+        ),
+        # the module's own parameter wins over the command line
+        (
+            {
+                **UNLOCK_LIVE,
+                "/sys/module/gpu_unlock/parameters/targets": "0000:3b:00.0\n",
+                "/proc/cmdline": "gpu_unlock.targets=all\n",
+            },
+            ["targeted", "loaded", "loaded"],
+        ),
+    ],
+)
+def test_tensor_unlock(extra, want):
+    got, env = _unlock({**NUMA_FILES, **extra})
+    assert got == want
+    text = json.dumps(env).lower()
+    assert "0000:af" not in text and "0000:d8" not in text and "0000:3b" not in text
+
+
+def test_tensor_unlock_unknown_without_bus_or_cmdline():
+    run = nvidia_run(QUERY_3060X3, link=None, topo=None, p2p=None)
+    files = {**LINUX_FILES, **UNLOCK_LIVE, "/proc/cmdline": "gpu_unlock.targets=0000:af:00.0\n"}
+    env = capture_env(CFG, None, None, run=run, read=fake_read(files), platform="linux")
+    assert env["gpus"][0]["tensor_unlock"] == {"value": None, "source": "not_captured"}
+    got, _ = _unlock({**NUMA_FILES, **UNLOCK_LIVE})  # loaded, but no readable targets
+    assert got == [None, None, None]
+
+
+def test_tensor_unlock_not_captured_off_linux():
+    got, _ = _unlock(NUMA_FILES, platform="win32")
+    assert got == [None, None, None]
 
 
 def test_malformed_row_pairs_are_not_captured():

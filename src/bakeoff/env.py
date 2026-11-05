@@ -3,7 +3,7 @@
 Only the fields named in the spec are recorded. Nothing here runs a command that prints
 identity (hostname, uname -n, nvidia-smi -q, ioreg, system_profiler), and `nvidia-smi -L` is used
 for detection only because its output carries GPU UUIDs. PCI bus ids are read only to find each
-GPU's NUMA node in sysfs; they are never recorded.
+GPU's NUMA node in sysfs and to match it against gpu_unlock's targets; they are never recorded.
 """
 
 import csv
@@ -157,14 +157,57 @@ def parse_topo_matrix(text: str) -> dict[tuple[int, int], str]:
     return cells
 
 
-def _numa_node(read: Reader, bus: str | None) -> int | None:
-    m = _BUS.fullmatch(bus or "")
+def _pci_name(bus: str | None) -> str | None:
+    """A bus id as sysfs and `lspci -D` name it: "00000000:AF:00.0" -> "0000:af:00.0"."""
+    m = _BUS.fullmatch((bus or "").strip())
     if not m:
         return None
     dom, b, d, f = m.groups()
-    text = read(f"/sys/bus/pci/devices/{int(dom, 16):04x}:{b.lower()}:{d.lower()}.{f}/numa_node")
-    node = _num(text or "", int)
+    return f"{int(dom, 16):04x}:{b.lower()}:{d.lower()}.{f}"
+
+
+def _numa_node(read: Reader, bus: str | None) -> int | None:
+    name = _pci_name(bus)
+    if name is None:
+        return None
+    node = _num(read(f"/sys/bus/pci/devices/{name}/numa_node") or "", int)
     return node if isinstance(node, int) and node >= 0 else None  # -1: no NUMA information
+
+
+# gpu_unlock (github.com/Zagitta/gpu-unlock) lifts GeForce's half-rate cap on FP16/BF16/TF32
+# tensor math with FP32 accumulation at boot. Prefill and TTFT change with it; decode doesn't.
+UNLOCK_MODULE = "/sys/module/gpu_unlock"
+
+
+def _unlock_targets(read: Reader) -> str | frozenset[str] | None:
+    """ "off" when the module isn't loaded, "all", the targeted PCI names, or None (unknown)."""
+    if (read(f"{UNLOCK_MODULE}/initstate") or "").strip() != "live":
+        return "off"
+    raw = read(f"{UNLOCK_MODULE}/parameters/targets")
+    if raw is None:
+        cmdline = read("/proc/cmdline")
+        if cmdline is None:
+            return None
+        given = [t.split("=", 1)[1] for t in cmdline.split() if t.startswith("gpu_unlock.targets=")]
+        raw = given[-1] if given else ""
+    if raw.strip() == "all":
+        return "all"
+    # the module ignores "all" mixed with addresses, and anything else it can't parse
+    return frozenset(n for n in (_pci_name(t) for t in raw.split(",")) if n)
+
+
+def _tensor_unlock(targets: str | frozenset[str] | None, bus: str | None) -> str | None:
+    """ "targeted" says the module was asked to unlock this card, not that the unlock took."""
+    if targets is None or targets == "off":
+        return targets
+    if targets == "all":
+        return "targeted"
+    if not targets:
+        return "loaded"
+    name = _pci_name(bus)
+    if name is None:
+        return None
+    return "targeted" if name in targets else "loaded"
 
 
 def parse_cuda_version(nvidia_smi_text: str) -> str | None:
@@ -253,11 +296,14 @@ def _mac_host(
     }
 
 
-def _nvidia_gpus(run: Runner, read: Reader, clean: Cleaner) -> tuple[list[dict], list[dict]]:
+def _nvidia_gpus(
+    run: Runner, read: Reader, clean: Cleaner, linux: bool
+) -> tuple[list[dict], list[dict]]:
     """The run's GPUs, and one link entry per pair of them (numbered by position in the list)."""
     rows = parse_nvidia_query(run(nvidia_argv(NVIDIA_QUERY_ARGV)) or "")
     cuda = parse_cuda_version(run(["nvidia-smi"]) or "")
     links = parse_link_query(run(nvidia_argv(LINK_QUERY_ARGV)) or "")
+    unlock = _unlock_targets(read) if linux else None
     gpus = []
     for r in rows:
         link = links.get(r["index"], {})
@@ -274,6 +320,7 @@ def _nvidia_gpus(run: Runner, read: Reader, clean: Cleaner) -> tuple[list[dict],
                 # idle GPUs drop to gen 1 between requests
                 "pcie_width": field(link.get("width"), "measured"),
                 "numa_node": field(_numa_node(read, link.get("bus")), "measured"),
+                "tensor_unlock": field(_tensor_unlock(unlock, link.get("bus")), "measured"),
             }
         )
     if len(rows) < 2:
@@ -392,7 +439,7 @@ def capture_env(
         host = {k: field(None, "measured") for k in _HOST_KEYS}
     links: list[dict] = []
     if kind == "nvidia":
-        gpus, links = _nvidia_gpus(run, read, clean)
+        gpus, links = _nvidia_gpus(run, read, clean, platform.startswith("linux"))
     elif kind == "darwin" and (sysctl[0] or "").startswith("Apple"):
         gpus = [
             {
