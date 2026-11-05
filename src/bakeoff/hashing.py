@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 
@@ -22,3 +22,13 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def bad_relpath(rel: object) -> bool:
+    if not isinstance(rel, str) or not rel:
+        return True
+    for cls in (PurePosixPath, PureWindowsPath):
+        p = cls(rel)
+        if p.is_absolute() or p.anchor or ".." in p.parts:
+            return True
+    return False

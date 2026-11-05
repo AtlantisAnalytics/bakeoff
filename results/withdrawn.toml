@@ -1,0 +1,15 @@
+# Store objects taken down. Rows are never removed. Only objects in the store can be withdrawn.
+#
+# [[withdrawn]]
+# sha256 = "<64 lowercase hex>"
+# date = "2027-01-12"
+# reason = "model output reproduced personal data"
+# bundles = ["results/2026-12-07/runs/<id>"]
+#
+# Procedure:
+# 1. A pull request adds the row, with the reason in plain words.
+# 2. After it merges, the owner deletes the object in the Cloudflare dashboard.
+# 3. Purge the object from Cloudflare's edge cache, which keeps serving it after the delete: in the
+#    dashboard open the bakeoff.si zone, then Caching, Configuration, Purge Cache, Custom Purge,
+#    URL, and enter https://data.bakeoff.si/sha256/<aa>/<hash> (<aa> is the first two hex digits).
+# 4. From then on, verify, fetch and rederive report "withdrawn on <date>: <reason>".

@@ -332,3 +332,132 @@ def test_username_skip_keeps_other_patterns_in_output(tmp_path):
     kinds = _kinds(verify_bundle(run, "alice", deny, username_skip_output=True))  # scrub-ok
     assert "home_path" in kinds and "denylist" in kinds
     assert "username" not in kinds
+
+
+def _split_bundle(tmp_path, fs, **kw):
+    from weekfix import KEPT_RUN, make_bundle, push_all, split
+
+    kw.setdefault("grades", {"general/gsm8k": [True, False]})
+    b = make_bundle(tmp_path / "b", label="M", weights="M", envelope="lab-box-7 24 GB", **kw)
+    push_all(fs, b)
+    split(b, KEPT_RUN)
+    return b, KEPT_RUN
+
+
+def test_split_bundle_verifies_through_store(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    assert verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path)) == []
+
+
+def test_stored_file_committed_is_kept_mismatch(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    (b / "quality").mkdir(exist_ok=True)
+    (b / "quality/general.gsm8k.jsonl").write_bytes(
+        fake_store.objects[next(k for k in fake_store.objects)]
+    )
+    found = verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path))
+    assert [(f.file, f.kind) for f in found if f.kind == "kept_mismatch"] == [
+        ("quality/general.gsm8k.jsonl", "kept_mismatch")
+    ]
+    assert "stored file committed" in found[0].detail
+
+
+def test_kept_file_missing_is_kept_mismatch(tmp_path, fake_store):
+    b, kept = _split_bundle(tmp_path, fake_store)
+    (b / "fit.jsonl").unlink()
+    found = verify_bundle(b, None, None, kept=kept, offline=True)
+    assert [(f.file, f.kind, f.detail) for f in found] == [
+        ("fit.jsonl", "kept_mismatch", "kept file missing")
+    ]
+
+
+def test_offline_checks_ledger_only(tmp_path, fake_store):
+    b, kept = _split_bundle(tmp_path, fake_store)
+    fake_store.requests.clear()
+    assert verify_bundle(b, None, None, kept=kept, offline=True) == []
+    assert fake_store.requests == []
+
+
+def test_missing_object_is_unavailable(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    fake_store.objects.clear()
+    found = verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path))
+    assert {f.kind for f in found} == {"unavailable"}
+    assert fake_store.url in found[0].detail
+
+
+def test_withdrawn_object_reported(tmp_path, fake_store):
+    import json as _json
+
+    from bakeoff.ledger import Withdrawal
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    sha = _json.loads((b / "bundle.json").read_text())["files"]["quality/general.gsm8k.jsonl"]
+    st = Store.from_env(tmp_path)
+    st.withdrawn[sha] = Withdrawal(sha, "2026-11-01", "leaked name", ())
+    found = verify_bundle(b, None, None, kept=kept, store=st)
+    assert [f.kind for f in found] == ["withdrawn"]
+    assert "2026-11-01" in found[0].detail and "leaked name" in found[0].detail
+
+
+def test_scrub_scan_covers_resolved_files(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(
+        tmp_path,
+        fake_store,
+        outputs={"general/gsm8k": ["see 10.1.2.3 now", "ok"]},  # scrub-ok
+    )
+    found = verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path))
+    assert [(f.file, f.kind) for f in found] == [("quality/general.gsm8k.jsonl", "private_ip")]
+
+
+def test_hash_mismatch_from_store_is_error(tmp_path, fake_store):
+    from bakeoff.store import Store, object_key
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    import json as _json
+
+    sha = _json.loads((b / "bundle.json").read_text())["files"]["quality/general.gsm8k.jsonl"]
+    fake_store.objects[object_key(sha)] = b"tampered\n"
+    found = verify_bundle(b, None, None, kept=kept, store=Store.from_env(tmp_path))
+    assert [f.kind for f in found] == ["hash_mismatch"]
+
+
+def test_resolved_jsonl_gets_record_scan(tmp_path, fake_store):
+    from bakeoff.store import Store
+
+    b, kept = _split_bundle(
+        tmp_path, fake_store, outputs={"general/gsm8k": ["alice wrote this", "ok"]}
+    )
+    st = Store.from_env(tmp_path)
+    flagged = verify_bundle(b, "alice", None, kept=kept, store=st)
+    assert [f.kind for f in flagged] == ["username"]
+    assert verify_bundle(b, "alice", None, True, kept=kept, store=st) == []
+
+
+def test_resolved_jsonl_invalid_line_is_unreadable(tmp_path, fake_store):
+    import json as _json
+
+    from weekfix import KEPT_RUN
+
+    from bakeoff.hashing import sha256_hex
+    from bakeoff.store import Store, object_key
+
+    b, kept = _split_bundle(tmp_path, fake_store)
+    rel = "quality/general.gsm8k.jsonl"
+    meta = _json.loads((b / "bundle.json").read_text())
+    bad = b"not json\n"
+    sha = sha256_hex(bad)
+    fake_store.objects[object_key(sha)] = bad
+    meta["files"][rel] = sha
+    (b / "bundle.json").write_text(_json.dumps(meta))
+    found = verify_bundle(b, None, None, kept=KEPT_RUN, store=Store.from_env(tmp_path))
+    assert ("unreadable", rel) in {(f.kind, f.file) for f in found}

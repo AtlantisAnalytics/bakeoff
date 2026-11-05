@@ -140,3 +140,23 @@ def make_bundle(
     out = dir / run_id
     write_bundle(out, meta, files)
     return out
+
+
+KEPT_RUN = frozenset({"speed.jsonl", "fit.jsonl"})
+
+
+def push_all(fs, bundle: Path) -> None:
+    """Put every file bundle.json lists into the fake store under its sha256."""
+    from bakeoff.store import object_key
+
+    meta = json.loads((bundle / "bundle.json").read_text())
+    for rel, sha in meta["files"].items():
+        fs.objects[object_key(sha)] = (bundle / rel).read_bytes()
+
+
+def split(bundle: Path, kept: frozenset[str]) -> None:
+    """Delete every listed file that is not kept, leaving a split bundle."""
+    meta = json.loads((bundle / "bundle.json").read_text())
+    for rel in meta["files"]:
+        if rel not in kept:
+            (bundle / rel).unlink()

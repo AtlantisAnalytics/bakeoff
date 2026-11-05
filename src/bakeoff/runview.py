@@ -5,6 +5,7 @@ from pathlib import Path
 
 from bakeoff import safejson
 from bakeoff.hashing import sha256_hex
+from bakeoff.store import Store, StoreError, resolve_file
 
 
 class RunViewError(ValueError):
@@ -68,7 +69,7 @@ def _read_items(path: Path, key: str) -> tuple[dict[str, bool], dict[str, str]]:
     return out, outputs
 
 
-def load_run(path: Path) -> RunView:
+def load_run(path: Path, store: Store | None = None) -> RunView:
     path = Path(path)
     meta_path = path / "bundle.json"
     try:
@@ -101,7 +102,11 @@ def load_run(path: Path) -> RunView:
         rel = f"{folder}/{s['track']}.{s['name']}.jsonl"
         if rel not in listed:  # only files verify hashed, and never a path outside the bundle
             raise RunViewError(f"item records for {s['key']} ({rel}) are not a listed bundle file")
-        items[s["key"]], outputs[s["key"]] = _read_items(path / rel, s["key"])
+        try:
+            item_path = resolve_file(path, rel, listed[rel], store)
+        except StoreError as e:
+            raise RunViewError(str(e)) from e
+        items[s["key"]], outputs[s["key"]] = _read_items(item_path, s["key"])
     speed = _obj(meta, "speed")
     fit = _obj(meta, "fit")
     decode = _obj(speed.get("short@1"), "decode_tps").get("median")

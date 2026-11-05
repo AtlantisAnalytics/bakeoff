@@ -1,0 +1,73 @@
+name: archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Year to archive (run on or after 1 March of the following year)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    environment: store
+    env:
+      YEAR: ${{ inputs.year }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Build the archive
+        run: uv run bakeoff archive build "$YEAR" --out "$RUNNER_TEMP/archive"
+      - name: Refuse when an archive pull request for the year is already open
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --heads origin "athena/archive-$YEAR" > /dev/null; then
+            echo "branch athena/archive-$YEAR exists: an archive pull request for $YEAR is already"               "open; finish or close it first, a Zenodo record cannot be undone" >&2
+            exit 1
+          fi
+      - name: Upload to Zenodo
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/zenodo_upload.py "$RUNNER_TEMP/archive" --year "$YEAR" \
+            > "$RUNNER_TEMP/doi.txt"
+          doi=$(tail -n 1 "$RUNNER_TEMP/doi.txt")
+          echo "Zenodo DOI for $YEAR: $doi" | tee -a "$GITHUB_STEP_SUMMARY"
+      # The pull request is opened with GITHUB_TOKEN, so it does not trigger CI. The owner closes
+      # and reopens it (or pushes an empty commit) to run the checks.
+      - name: Open a draft pull request with the archive.toml row
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          doi=$(tail -n 1 "$RUNNER_TEMP/doi.txt")
+          if ! [[ "$doi" =~ ^10\.[0-9]{4,9}/[^[:space:]]+$ ]]; then
+            echo "not a DOI: refusing to write the archive.toml row" >&2
+            exit 1
+          fi
+          sha=$(sha256sum "$RUNNER_TEMP/archive/MANIFEST.sha256" | cut -d' ' -f1)
+          branch="athena/archive-$YEAR"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          printf '\n[[archive]]\nyear = %s\ndoi = "%s"\nmanifest_sha256 = "%s"\n' \
+            "$YEAR" "$doi" "$sha" >> results/archive.toml
+          git add results/archive.toml
+          git commit -m "archive: record the $YEAR Zenodo archive"
+          git push origin "$branch"
+          gh pr create --draft --base main --head "$branch" \
+            --title "archive: record the $YEAR Zenodo archive" \
+            --body "Adds the DOI and manifest sha256 of the $YEAR archive: $doi"

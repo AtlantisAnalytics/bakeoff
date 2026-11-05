@@ -1,0 +1,6 @@
+# Which files of a published bundle are kept in git, by week. Each range applies from its week
+# until the next range. Every other file a bundle lists lives in the store, named by its sha256.
+
+[[layout]]
+from = "2026-11-02"   # published before the store existed: every file in git
+keep = "all"

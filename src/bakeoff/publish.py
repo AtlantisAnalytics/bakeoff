@@ -35,6 +35,10 @@ Rules enforced here (beyond the loaders, the verdict code and the week schema):
   ``corrections`` and is refused when a later week exists and the week's ``picks_after`` changes.
   A correction's ``published_at`` must be later than the previous revision's (the original, or
   the last correction). Only run ``bundle_format`` ``m1`` and ``m2`` are accepted.
+* A week that ``results/layout.toml`` puts in a split range stages only the kept files of each
+  bundle (``bundle.json`` plus the layout's names) and refuses unless every listed object that is
+  not withdrawn is already in the store (``check_store=False`` skips that check, for rederive).
+  A withdrawn file outside ``quality/`` is tolerated; a withdrawn ``quality/`` file is fatal.
 * The username scan of the staged ``week.toml`` and ``week.json`` does not honour
   ``username_skip_output`` (it fails closed); pass ``username=None`` (``--no-username``) instead.
 * ``picks_before`` is the ``picks_after`` of the latest published week before this one. A tier
@@ -50,7 +54,9 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from bakeoff import safejson
 from bakeoff.bundle import Finding, iter_strings, load_terms, scan_text, verify_bundle
+from bakeoff.ledger import LedgerError, load_layout
 from bakeoff.runview import RunView, RunViewError, load_run
+from bakeoff.store import Store, StoreError
 from bakeoff.verdicts import RULES_V1, TierResult, VerdictError, assess_tier
 from bakeoff.week import build_week, validate_week
 from bakeoff.weekcfg import RunEntry, WeekInputError, load_tiers, load_week
@@ -127,14 +133,32 @@ def _findings_text(findings: list[Finding]) -> str:
     return shown + (f"; and {more} more" if more > 0 else "")
 
 
-def _verify(path: Path, what: str, username, denylist, skip_output: bool) -> dict:
-    """Verify one bundle; return its bundle.json. Refuses on any finding or a bad status."""
+def _verify(
+    path: Path,
+    what: str,
+    username,
+    denylist,
+    skip_output: bool,
+    *,
+    kept=None,
+    offline=False,
+    store: Store | None = None,
+) -> dict:
+    """Verify one bundle; return its bundle.json. Refuses on any finding or a bad status.
+    A withdrawn file outside ``quality/`` is tolerated: nothing downstream reads it."""
     if path.is_symlink():
         raise PublishError(f"{what}: bundle directory is a symlink: {path}")
     if not path.is_dir():
         raise PublishError(f"{what}: bundle directory not found: {path}")
-    findings = verify_bundle(path, username, denylist, skip_output)
-    real = [f for f in findings if f.kind != "incomplete"]
+    findings = verify_bundle(
+        path, username, denylist, skip_output, kept=kept, offline=offline, store=store
+    )
+    real = [
+        f
+        for f in findings
+        if f.kind != "incomplete"
+        and not (f.kind == "withdrawn" and not f.file.startswith("quality/"))
+    ]
     if real:
         raise PublishError(f"{what} {path.name}: {len(real)} finding(s): {_findings_text(real)}")
     meta = _read_json(path / "bundle.json", f"{what} {path.name}/bundle.json")
@@ -256,9 +280,20 @@ def _scan(path: Path, strings, terms: list[str], username: str | None) -> None:
         raise PublishError(f"staged {path.name}: scrub finding(s): {_findings_text(found)}")
 
 
-def _stage_bundle(src: Path, dst: Path, sha: str, what: str, username, denylist, skip) -> None:
-    shutil.copytree(src, dst, symlinks=True)
-    meta = _verify(dst, f"copied {what}", username, denylist, skip)
+def _stage_bundle(
+    src: Path, dst: Path, sha: str, what: str, username, denylist, skip, kept=None
+) -> None:
+    if kept is None:
+        shutil.copytree(src, dst, symlinks=True)
+    else:
+        listed = _read_json(src / "bundle.json", f"{what} {src.name}/bundle.json")
+        names = {"bundle.json", *(r for r in listed.get("files", {}) if r in kept)}
+        for rel in sorted(names):
+            if not (src / rel).is_file():
+                raise PublishError(f"{what} {src.name}: kept file {rel} is missing")
+            (dst / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src / rel, dst / rel)
+    meta = _verify(dst, f"copied {what}", username, denylist, skip, kept=kept, offline=True)
     if meta.get("bundle_sha256") != sha:
         raise PublishError(f"copied {what} {dst.name}: bundle_sha256 changed while copying")
 
@@ -270,6 +305,8 @@ def publish(
     username: str | None,
     denylist: Path | None,
     username_skip_output: bool = False,
+    store: Store | None = None,
+    check_store: bool = True,
 ) -> Path:
     """Publish one week into ``root/results/<week>`` and update ``results/picks.json``."""
     root = Path(root)
@@ -285,6 +322,16 @@ def publish(
         raise PublishError(f"denylist not found: {denylist}")
     terms = load_terms(denylist)
     vargs = (username, denylist, username_skip_output)
+    try:
+        layout = load_layout(root)
+        kept_run, kept_judge = layout.kept(inp.week, "run"), layout.kept(inp.week, "judge")
+        if kept_run is None:
+            store = None  # a keep = "all" week publishes exactly as before
+        elif store is None:
+            store = Store.from_env(root)
+    except (LedgerError, StoreError) as e:
+        raise PublishError(f"layout: {e}") from e
+    listed_files: dict[str, tuple[str, dict]] = {}  # bundle label -> (what, bundle.json files)
 
     final = results / inp.week
     staging = results / f".{inp.week}.staging"
@@ -338,9 +385,10 @@ def publish(
     runs: dict[str, tuple[RunView, RunEntry]] = {}
     sources: dict[str, Path] = {}
     for entry in inp.runs:
-        meta = _verify(entry.bundle, "run", *vargs)
+        meta = _verify(entry.bundle, "run", *vargs, store=store)
+        listed_files[f"run {entry.bundle.name}"] = meta.get("files", {})
         try:
-            view = load_run(entry.bundle)
+            view = load_run(entry.bundle, store)
         except RunViewError as e:
             raise PublishError(f"run {entry.bundle.name}: {e}") from e
         if view.bundle_format not in RUN_FORMATS:
@@ -370,17 +418,22 @@ def publish(
         sources[rid] = (
             _published_copy(final / "runs" / rid, view.bundle_sha256, f"run {rid}") or entry.bundle
         )
+        if store is not None and sources[rid] != entry.bundle:
+            _verify(sources[rid], "published run", *vargs, kept=kept_run, store=store)
     run_by_sha = {view.bundle_sha256: rid for rid, (view, _) in runs.items()}
     judges: list[dict] = []
     judge_src: dict[str, tuple[Path, str]] = {}
     for path in inp.judges:
-        meta = _verify(path, "judge bundle", *vargs)
+        meta = _verify(path, "judge bundle", *vargs, store=store)
         jid = _segment(path.name, "judge bundle directory name")
+        listed_files[f"judge {jid}"] = meta.get("files", {})
         if jid in judge_src:
             raise PublishError(f"duplicate judge bundle directory name {jid}")
         judges.append(_judge_entry(meta, jid, run_by_sha, {r: v for r, (v, _) in runs.items()}))
         sha = meta["bundle_sha256"]
         judge_src[jid] = (_published_copy(final / "judge" / jid, sha, f"judge {jid}") or path, sha)
+        if store is not None and judge_src[jid][0] != path:
+            _verify(judge_src[jid][0], "published judge", *vargs, kept=kept_judge, store=store)
 
     # Assess every tier with runs this week or a pick to carry forward.
     by_tier: dict[str, list[RunView]] = {}
@@ -436,6 +489,19 @@ def publish(
             "depend on; publish the fix as a new week instead"
         )
 
+    if store is not None and check_store:
+        for label, files in listed_files.items():
+            try:
+                gone = sum(
+                    1 for s in files.values() if s not in store.withdrawn and not store.exists(s)
+                )
+            except StoreError as e:
+                raise PublishError(f"{label}: cannot check the store: {e}") from e
+            if gone:
+                raise PublishError(
+                    f"{label}: {gone} object(s) not in the store; run bakeoff store push first"
+                )
+
     # Stage, re-verify, scan, swap.
     created = False
     try:
@@ -445,10 +511,10 @@ def publish(
         for rid in sorted(runs):
             view = runs[rid][0]
             dst = staging / "runs" / rid
-            _stage_bundle(sources[rid], dst, view.bundle_sha256, "run", *vargs)
+            _stage_bundle(sources[rid], dst, view.bundle_sha256, "run", *vargs, kept_run)
         for jid in sorted(judge_src):
             src, sha = judge_src[jid]
-            _stage_bundle(src, staging / "judge" / jid, sha, "judge bundle", *vargs)
+            _stage_bundle(src, staging / "judge" / jid, sha, "judge bundle", *vargs, kept_judge)
         (staging / "week.toml").write_bytes(inp.source_bytes)
         (staging / "tiers.toml").write_bytes(tiers_bytes)  # rederive reads it, not today's
         (staging / "week.json").write_bytes(_dumps(doc))
