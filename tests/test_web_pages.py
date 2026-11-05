@@ -572,3 +572,42 @@ def test_method_page_states_mac_tier_method():
             "raised to 32 GB",
         ):
             assert phrase in text, (rel, phrase)
+
+
+def _cell(source_url):
+    from bakeoff.web.pages import _model_cell
+
+    model = {"label": "M", "quant": "q", "runtime": "vllm", "license": "Apache-2.0"}
+    if source_url is not None:
+        model["source_url"] = source_url
+    return _model_cell({"model": model})
+
+
+def test_model_cell_credits_the_weights_publisher():
+    html = _cell("https://huggingface.co/vcruz305/Nanbeige4.3-33B-SAGE-EXL3-4.50bpw")
+    assert 'weights by <a href="https://huggingface.co/vcruz305">vcruz305</a>' in html
+    assert (
+        '<a href="https://huggingface.co/vcruz305/Nanbeige4.3-33B-SAGE-EXL3-4.50bpw">Source</a>'
+        in html
+    )
+    assert_balanced(html)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.org/m",
+        "https://huggingface.co/vcruz305",
+        "https://huggingface.co/a b/c",
+        "javascript:alert(1)",
+    ],
+)
+def test_model_cell_names_no_publisher_it_cannot_read(url):
+    html = _cell(url)
+    assert "weights by" not in html
+    assert "Source" in html
+
+
+def test_model_cell_without_source():
+    html = _cell(None)
+    assert "weights by" not in html and "Source" not in html
