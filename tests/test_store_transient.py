@@ -4,6 +4,7 @@ import socket
 import threading
 
 import pytest
+from fakestore import require_loopback
 from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 from bakeoff import cli
@@ -23,6 +24,7 @@ class RawServer:
     """Answers every request with fixed bytes, then closes the connection."""
 
     def __init__(self, reply: bytes):
+        require_loopback()
         self.reply, self.hits = reply, 0
         self.sock = socket.socket()
         self.sock.bind(("127.0.0.1", 0))  # scrub-ok
