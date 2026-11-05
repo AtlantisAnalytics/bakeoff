@@ -4,12 +4,15 @@ Every interpolated value goes through ``_e`` (``html.escape(str(v), quote=True)`
 ``<script>``, no ``<style>`` and no ``style=`` attribute: the stylesheet is ``/style.css``.
 """
 
+import re
 from html import escape
 
 from bakeoff.web import fmt
 from bakeoff.weekcfg import SiteConfig
 
 DESCRIPTION = "Weekly open-model bake-offs on consumer GPUs. Open method, open data."
+# a Hugging Face repo URL: the org (or user) that published the weights, then the repo name
+_HF_REPO = re.compile(r"https://huggingface\.co/([A-Za-z0-9][A-Za-z0-9._-]*)/[A-Za-z0-9._-]+/?")
 
 # Machine reason codes -> short human phrases. Unknown codes fall back to the code itself.
 REASONS = {
@@ -189,6 +192,10 @@ def _model_cell(run: dict) -> str:
         lic = _link(m["license_url"], lic)
     src = m.get("source_url")
     src_html = f" · {_link(src, 'Source')}" if src else ""
+    hf = _HF_REPO.fullmatch(str(src)) if src else None
+    if hf:  # credit whoever published the weights: the lab, or the person who quantized them
+        org = hf.group(1)
+        src_html = f" · weights by {_link(f'https://huggingface.co/{org}', _e(org))}{src_html}"
     out.append(f'<div class="small">{lic}{src_html}</div>')
     return "".join(out)
 
