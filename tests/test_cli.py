@@ -139,7 +139,7 @@ def _planted_bundle(tmp_path, text):
 
 
 @pytest.mark.parametrize(
-    "name", ["root", "ROOT", "ubuntu", "ec2-user", "nobody", "pi", "bob", "ab"]
+    "name", ["root", "ROOT", "ubuntu", "ec2-user", "nobody", "pi", "bob", "ab", "bakeoff"]
 )
 def test_generic_and_short_usernames_are_skipped(monkeypatch, name):
     monkeypatch.setattr(cli.getpass, "getuser", lambda: name)
@@ -184,6 +184,14 @@ def test_verify_username_flag_and_notice(tmp_path, monkeypatch, capsys):
     assert "username" in capsys.readouterr().out
     argv = ["verify", str(run), "--denylist", str(tmp_path / "none"), "--no-username"]
     assert cli.main(argv) == 0
+
+
+def test_verify_lab_account_named_bakeoff(tmp_path, monkeypatch):
+    """A lab account named after the harness (the Mac tier's) is not a leak: the open-ended
+    grader's own reason text names the harness."""
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "bakeoff")
+    run = _planted_bundle(tmp_path, "deferred to bakeoff judge")
+    assert cli.main(["verify", str(run), "--denylist", str(tmp_path / "none")]) == 0
 
 
 def test_verify_notes_private_outputs(tmp_path, monkeypatch, capsys):
