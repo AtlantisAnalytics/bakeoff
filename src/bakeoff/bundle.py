@@ -12,9 +12,11 @@ from bakeoff.hashing import bad_relpath as _bad_relpath
 from bakeoff.hashing import canonical_json, sha256_file, sha256_hex
 from bakeoff.store import HashMismatch, Store, StoreError, Unavailable, Withdrawn, valid_sha
 
+# bakeoff: a lab account named after the harness (the Mac tier's) reveals nothing, and the harness
+# writes its own name into bundles ("deferred to bakeoff judge").
 GENERIC_USERNAMES = frozenset(
     "root user admin ubuntu ec2-user debian centos fedora pi guest runner docker vagrant "
-    "nobody".split()
+    "nobody bakeoff".split()
 )
 
 
