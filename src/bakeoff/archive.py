@@ -17,6 +17,7 @@ from bakeoff.ledgercheck import bundle_dirs
 from bakeoff.store import (
     MANIFEST,
     NETWORK_ERRORS,
+    USER_AGENT,
     Store,
     StoreError,
     object_key,
@@ -142,7 +143,7 @@ def build_archive(root: Path, year: int, out: Path, store: Store) -> Path:
 
 
 def _call(method: str, url: str, token: str, body=None, *, raw: Path | None = None) -> dict:
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}", "User-Agent": USER_AGENT}
     data = None
     if raw is not None:
         headers["Content-Type"] = "application/octet-stream"
@@ -245,13 +246,19 @@ def download_record(doi: str, dest: Path) -> Path:
     if not record.isdigit():
         raise ArchiveError(f"cannot find a Zenodo record number in {doi!r}")
     try:
-        with urllib.request.urlopen(f"{base}/api/records/{record}", timeout=60) as resp:
+        listing_req = urllib.request.Request(
+            f"{base}/api/records/{record}", headers={"User-Agent": USER_AGENT}
+        )
+        with urllib.request.urlopen(listing_req, timeout=60) as resp:
             listing = json.loads(resp.read())
         for f in listing["files"]:
             name = f["key"]
             if "/" in name or name.startswith("."):
                 raise ArchiveError(f"unsafe file name in record: {name!r}")
-            with urllib.request.urlopen(f["links"]["self"], timeout=TIMEOUT) as r:
+            file_req = urllib.request.Request(
+                f["links"]["self"], headers={"User-Agent": USER_AGENT}
+            )
+            with urllib.request.urlopen(file_req, timeout=TIMEOUT) as r:
                 with (dest / name).open("wb") as out:
                     shutil.copyfileobj(r, out)
     except (*NETWORK_ERRORS, ValueError, KeyError, TypeError) as e:

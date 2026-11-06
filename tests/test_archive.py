@@ -9,8 +9,14 @@ from fakestore import http_route
 from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 from bakeoff import cli
-from bakeoff.archive import ArchiveError, build_archive, load_archive_rows, zenodo_publish
-from bakeoff.store import HashMismatch, Store, StoreError, object_key
+from bakeoff.archive import (
+    ArchiveError,
+    build_archive,
+    download_record,
+    load_archive_rows,
+    zenodo_publish,
+)
+from bakeoff.store import USER_AGENT, HashMismatch, Store, StoreError, object_key
 
 LAYOUT = (
     '[[layout]]\nfrom = "2026-11-02"\nkeep = "all"\n[[layout]]\nfrom = "2026-11-30"\n'
@@ -245,6 +251,40 @@ class FakeZenodo:
 
     def __exit__(self, *exc):
         self._route.close()
+
+
+def test_download_record_names_the_harness(tmp_path, monkeypatch):
+    seen = []
+
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            seen.append((self.path, self.headers.get("User-Agent")))
+            if self.path == "/api/records/4242":
+                body = json.dumps(
+                    {
+                        "files": [
+                            {"key": "2026-01.tar", "links": {"self": f"{route.url}/f/2026-01.tar"}}
+                        ]
+                    }
+                )
+            else:
+                body = "tar bytes"
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body.encode())
+
+    route = http_route(H)
+    monkeypatch.setenv("ZENODO_URL", route.url)
+    try:
+        download_record("10.5281/zenodo.4242", tmp_path)
+    finally:
+        route.close()
+    assert (tmp_path / "2026-01.tar").read_text() == "tar bytes"
+    assert seen == [("/api/records/4242", USER_AGENT), ("/f/2026-01.tar", USER_AGENT)]
 
 
 def test_zenodo_upload_against_fake(tmp_path, fake_store, monkeypatch):

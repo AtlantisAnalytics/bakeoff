@@ -44,6 +44,17 @@ def test_resolve_downloads_once_then_uses_cache(fake_store, tmp_path):
     assert len(gets(fake_store)) == 1
 
 
+def test_store_requests_name_the_harness(fake_store, tmp_path):
+    # Cloudflare's Browser Integrity Check refuses urllib's default "Python-urllib/3.x" (error 1010)
+    sha, st = make(fake_store, tmp_path)
+    assert st.exists(sha)
+    st.resolve(sha)
+    agents = [(cmd, h.get("User-Agent")) for cmd, _, h in fake_store.requests]
+    assert agents == [("HEAD", store_mod.USER_AGENT), ("GET", store_mod.USER_AGENT)]
+    assert store_mod.USER_AGENT.startswith("bakeoff/")
+    assert "+https://bakeoff.si" in store_mod.USER_AGENT
+
+
 def test_resolve_refuses_wrong_bytes(fake_store, tmp_path):
     sha = sha_of(b"right")
     fake_store.objects[object_key(sha)] = b"wrong"
