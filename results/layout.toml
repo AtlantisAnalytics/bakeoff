@@ -4,3 +4,8 @@
 [[layout]]
 from = "2026-11-02"   # published before the store existed: every file in git
 keep = "all"
+
+[[layout]]
+from = "2026-11-30"   # from here on, large files live in the store (data.bakeoff.si)
+run = ["bundle.json", "speed.jsonl", "fit.jsonl"]
+judge = ["bundle.json"]
