@@ -1,38 +1,69 @@
-"""A loopback stand-in for the object store: public GET/HEAD and S3 path-style GET/HEAD/PUT."""
+"""An in-process stand-in for the object store: public GET/HEAD and S3 path-style GET/HEAD/PUT.
 
-import functools
+Test servers are reached in process: a urllib connection to a routed loopback address gets one
+end of a socketpair, and the server's handler runs on the other end in a thread. HTTP is parsed
+for real, but no IP socket is opened, so these tests also run where loopback is blocked (Athena's
+publish runner). Any address without a route goes out over the network as usual.
+"""
+
+import http.client
+import itertools
 import socket
 import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import types
+import urllib.request
+from collections.abc import Callable
+from http.server import BaseHTTPRequestHandler
 
 import pytest
 
 BUCKET = "bkt"
 
-
-def _loopback_probe() -> bool:
-    """True if a connection to a listening loopback socket gets through within 2 s. A sandbox
-    that drops loopback (Athena's publish runner) would otherwise hang each test until its
-    timeout, and the whole suite past the verify limit."""
-    with socket.socket() as srv:
-        srv.bind(("127.0.0.1", 0))  # scrub-ok
-        srv.listen(1)
-        try:
-            socket.create_connection(srv.getsockname(), timeout=2).close()
-        except OSError:
-            return False
-    return True
+_ROUTES: dict[str, Callable[[socket.socket], None]] = {}  # "host:port" -> serves one connection
+_PORTS = itertools.count(50000)
 
 
-@functools.cache
-def loopback_ok() -> bool:
-    return _loopback_probe()
+class _Connection(http.client.HTTPConnection):
+    def connect(self):
+        serve = _ROUTES.get(f"{self.host}:{self.port}")
+        if serve is None:
+            return super().connect()
+        self.sock, theirs = socket.socketpair()
+        if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+            self.sock.settimeout(self.timeout)
+        threading.Thread(target=_serve_once, args=(serve, theirs), daemon=True).start()
 
 
-def require_loopback() -> None:
-    """Skip the calling test when loopback connections are blocked here."""
-    if not loopback_ok():
-        pytest.skip("loopback connections are blocked here; this test needs a local server")
+def _serve_once(serve: Callable[[socket.socket], None], sock: socket.socket) -> None:
+    with sock:
+        serve(sock)
+
+
+class _RoutingHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_Connection, req)
+
+
+urllib.request.install_opener(urllib.request.build_opener(_RoutingHandler))
+
+
+class Route:
+    """An in-process address: each connection to `url` is served by `serve(sock)`, which reads
+    the request from sock and writes the reply; the connection closes when it returns."""
+
+    def __init__(self, serve: Callable[[socket.socket], None]):
+        self._addr = f"127.0.0.1:{next(_PORTS)}"  # scrub-ok
+        self.url = f"http://{self._addr}"
+        _ROUTES[self._addr] = serve
+
+    def close(self) -> None:
+        _ROUTES.pop(self._addr, None)
+
+
+def http_route(handler: type[BaseHTTPRequestHandler], **server_attrs) -> Route:
+    """A Route served by an http.server handler class; `self.server` carries server_attrs."""
+    server = types.SimpleNamespace(**server_attrs)
+    return Route(lambda sock: handler(sock, ("127.0.0.1", 0), server))  # scrub-ok
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -106,23 +137,18 @@ class FakeStore:
     bucket = BUCKET
 
     def __init__(self):
-        require_loopback()
         self.objects: dict[str, bytes] = {}
         self.requests: list[tuple[str, str, dict]] = []
         self.fail: dict[str, int] = {}
         self.fail_left: dict[str, int] = {}  # optional: serve the forced status this many times
-        self._server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)  # scrub-ok
-        self._server.owner = self
-        self._server.bucket = self.bucket
-        self.url = f"http://127.0.0.1:{self._server.server_address[1]}"  # scrub-ok
+        self._route = http_route(_Handler, owner=self, bucket=self.bucket)
+        self.url = self._route.url
 
     def __enter__(self) -> "FakeStore":
-        threading.Thread(target=self._server.serve_forever, daemon=True).start()
         return self
 
     def __exit__(self, *exc) -> None:
-        self._server.shutdown()
-        self._server.server_close()
+        self._route.close()
 
 
 @pytest.fixture

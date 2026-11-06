@@ -2,11 +2,10 @@ import hashlib
 import io
 import json
 import tarfile
-import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 
 import pytest
-from fakestore import require_loopback
+from fakestore import http_route
 from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 from bakeoff import cli
@@ -202,7 +201,6 @@ def test_member_not_in_manifest_refused(tmp_path, fake_store):
 
 class FakeZenodo:
     def __init__(self):
-        require_loopback()
         self.calls: list[tuple[str, str, dict, bytes]] = []
         self.published_meta = None
         owner = self
@@ -224,8 +222,8 @@ class FakeZenodo:
 
             do_POST = do_PUT = do_GET = _do
 
-        self._server = ThreadingHTTPServer(("127.0.0.1", 0), H)  # scrub-ok
-        self.url = f"http://127.0.0.1:{self._server.server_address[1]}"  # scrub-ok
+        self._route = http_route(H)
+        self.url = self._route.url
 
     def answer(self, method, path, body):
         if (method, path) == ("POST", "/api/deposit/depositions"):
@@ -243,12 +241,10 @@ class FakeZenodo:
         return 404, {}
 
     def __enter__(self):
-        threading.Thread(target=self._server.serve_forever, daemon=True).start()
         return self
 
     def __exit__(self, *exc):
-        self._server.shutdown()
-        self._server.server_close()
+        self._route.close()
 
 
 def test_zenodo_upload_against_fake(tmp_path, fake_store, monkeypatch):

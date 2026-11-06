@@ -1,10 +1,8 @@
 import hashlib
 import json
-import socket
-import threading
 
 import pytest
-from fakestore import require_loopback
+from fakestore import Route
 from weekfix import KEPT_RUN, make_bundle, push_all, split
 
 from bakeoff import cli
@@ -24,30 +22,20 @@ class RawServer:
     """Answers every request with fixed bytes, then closes the connection."""
 
     def __init__(self, reply: bytes):
-        require_loopback()
         self.reply, self.hits = reply, 0
-        self.sock = socket.socket()
-        self.sock.bind(("127.0.0.1", 0))  # scrub-ok
-        self.sock.listen(8)
-        self.url = f"http://127.0.0.1:{self.sock.getsockname()[1]}"  # scrub-ok
-        threading.Thread(target=self._loop, daemon=True).start()
+        self._route = Route(self._serve)
+        self.url = self._route.url
 
-    def _loop(self):
-        while True:
-            try:
-                conn, _ = self.sock.accept()
-            except OSError:
-                return
-            conn.recv(65536)
-            self.hits += 1
-            conn.sendall(self.reply)
-            conn.close()
+    def _serve(self, conn):
+        conn.recv(65536)
+        self.hits += 1
+        conn.sendall(self.reply)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *exc):
-        self.sock.close()
+        self._route.close()
 
 
 SHORT = b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\n" + BODY[:50]
