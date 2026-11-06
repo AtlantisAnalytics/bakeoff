@@ -127,15 +127,20 @@ another memory share or maximum context gives another pool. The KV cache is kept
 precision (FP16 or BF16; vLLM's <code>cache_dtype</code> "auto"), never quantized.</p>
 
 <h2>Reproduce a week</h2>
-<p>The repository and the raw data become public at launch. Everything is in the repository. Each week's input, the raw bundles for every run, and the
-week's results sit together under <code>results/&lt;week&gt;/</code>.</p>
+<p>Each week's input, its results and the run bundles sit together under
+<code>results/&lt;week&gt;/</code> in the repository. Weeks up to 2026-11-23 keep every bundle
+file there. From 2026-11-30, each bundle keeps its small files in git (<code>bundle.json</code>,
+speed and fit), and its larger files (quality outputs and samples) are served from
+<code>data.bakeoff.si</code>, named by their SHA-256 hash; <code>results/layout.toml</code> says
+which files stay in git for which weeks. No account or key is needed to read them.</p>
 <pre><code>git clone https://github.com/AtlantisAnalytics/bakeoff
 cd bakeoff
 uv sync
 uv run bakeoff rederive &lt;week&gt;
 uv run bakeoff site --check</code></pre>
 <p><code>bakeoff rederive</code> re-publishes the week from its stored input and bundles in a
-temporary directory, with the earlier weeks' picks, applies the rules above and compares the
+temporary directory (for a week from 2026-11-30 it first downloads the bundles' larger files, checks
+each against its hash, and caches them), with the earlier weeks' picks, applies the rules above and compares the
 result byte for byte with the published <code>week.json</code>. It prints
 <code>identical</code> or the fields that differ. For a corrected week, the bookkeeping of earlier
 revisions comes from the published file, because their inputs are kept in the git history.

@@ -65,7 +65,10 @@ generated and committed, so the PR diff is exactly what deploys, and CI fails wh
 points `publish`, `site` and `rederive` at another checkout-shaped directory. `week.toml` is
 published as given, so its bundle paths must be relative and free of local paths.
 
-**Reproducing a week.** `bakeoff rederive <week>` needs only the checkout: it re-publishes
+**Reproducing a week.** `bakeoff rederive <week>` needs only the checkout, plus read access to
+`https://data.bakeoff.si` for a week that `results/layout.toml` puts in a split range (from 2026-11-30):
+those bundles keep their small files in git and their larger files in the store, which rederive
+downloads once, checks against the bundle's hashes and caches (`BAKEOFF_CACHE`). It re-publishes
 `results/<week>/week.toml` in a temporary directory, with each `[[run]]` mapped to
 `results/<week>/runs/<dir>` and each `[[judge]]` to `results/<week>/judge/<dir>`, the earlier weeks'
 `week.json` (for the picks) and the tiers the week lists, then compares the new `week.json` byte for
