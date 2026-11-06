@@ -17,11 +17,14 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from bakeoff import safejson
+from bakeoff import __version__, safejson
 from bakeoff.hashing import bad_relpath
 from bakeoff.ledger import Withdrawal, load_withdrawn
 
 PUBLIC_URL = "https://data.bakeoff.si"
+# Every public read names the harness: Cloudflare's Browser Integrity Check refuses urllib's
+# default "Python-urllib/3.x" with error 1010.
+USER_AGENT = f"bakeoff/{__version__} (+https://bakeoff.si)"
 DEFAULT_CACHE = "~/.cache/bakeoff/store"
 BACKOFF = (1, 2, 4)
 TIMEOUT = 60
@@ -132,7 +135,7 @@ class Store:
         url = self._url(sha)
 
         def head() -> bool:
-            req = urllib.request.Request(url, method="HEAD")
+            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
             try:
                 with urllib.request.urlopen(req, timeout=TIMEOUT):
                     return True
@@ -235,7 +238,8 @@ class Store:
         except OSError as e:
             raise StoreError(f"cannot write to cache {path.parent}: {e}") from None
         try:
-            with tmp, urllib.request.urlopen(url, timeout=TIMEOUT) as resp:
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with tmp, urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
                 expected = resp.headers.get("Content-Length")
                 got = 0
                 while chunk := resp.read(CHUNK):
