@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from bakeoff.archive import ArchiveError, build_archive, download_record, load_archive_rows
-from bakeoff.bundle import GENERIC_USERNAMES, verify_bundle
+from bakeoff.bundle import GENERIC_USERNAMES, verify_bundle, week_findings
 from bakeoff.client import EndpointClient
 from bakeoff.config import ConfigError, RunConfig, load_config
 from bakeoff.env import capture_env
@@ -227,8 +227,16 @@ def _verify_changed(args: argparse.Namespace, username, denylist: Path, skip_out
                 except (OSError, ValueError):
                     meta = {}
                 kept = layout.kept(week, bundle_kind(meta if isinstance(meta, dict) else {}))
-            findings = verify_bundle(
-                bundle, username, denylist, username_skip_output=skip_output, kept=kept, store=store
+            findings = week_findings(
+                bundle,
+                verify_bundle(
+                    bundle,
+                    username,
+                    denylist,
+                    username_skip_output=skip_output,
+                    kept=kept,
+                    store=store,
+                ),
             )
         except (LedgerError, StoreError, OSError) as e:
             print(f"{bundle.relative_to(root).as_posix()}: {e}")
@@ -540,11 +548,12 @@ def _cmd_store_push(args: argparse.Namespace) -> int:
         bundle = Path(b)
         try:
             _, listed = _listed(bundle)
-            findings = verify_bundle(
-                bundle, username, denylist, username_skip_output=skip_output, kept=None
+            findings = week_findings(
+                bundle,
+                verify_bundle(
+                    bundle, username, denylist, username_skip_output=skip_output, kept=None
+                ),
             )
-            # publish puts incomplete bundles in the week: their status is not a finding here
-            findings = [f for f in findings if f.kind != "incomplete"]
             if findings:
                 for f in findings:
                     print(f"{f.file}:{f.line} {f.kind} {f.detail}")

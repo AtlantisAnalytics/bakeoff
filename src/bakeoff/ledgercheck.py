@@ -5,7 +5,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from bakeoff.bundle import Finding, verify_bundle
+from bakeoff.bundle import Finding, verify_bundle, week_findings
 from bakeoff.ledger import LedgerError, bundle_kind, load_layout, load_withdrawn
 from bakeoff.store import valid_sha
 
@@ -83,7 +83,8 @@ def check_ledger(
             except LedgerError as e:
                 found.append(_ledger_finding("results/layout.toml", str(e)))
                 continue
-        for f in verify_bundle(bundle, username, denylist, kept=kept, offline=True):
+        findings = verify_bundle(bundle, username, denylist, kept=kept, offline=True)
+        for f in week_findings(bundle, findings):
             found.append((name, f))
     for sha, row in withdrawn.items():
         for rel in row.bundles:
