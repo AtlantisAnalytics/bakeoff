@@ -543,6 +543,8 @@ def _cmd_store_push(args: argparse.Namespace) -> int:
             findings = verify_bundle(
                 bundle, username, denylist, username_skip_output=skip_output, kept=None
             )
+            # publish puts incomplete bundles in the week: their status is not a finding here
+            findings = [f for f in findings if f.kind != "incomplete"]
             if findings:
                 for f in findings:
                     print(f"{f.file}:{f.line} {f.kind} {f.detail}")
