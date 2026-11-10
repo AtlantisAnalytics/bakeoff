@@ -8,7 +8,7 @@ import pytest
 from fake_openai import FakeOpenAI, FakeReply
 from test_runner import make_cfg, make_client
 
-from bakeoff import cli
+from bakeoff import cli, judge
 from bakeoff.bundle import verify_bundle
 from bakeoff.client import EndpointClient
 from bakeoff.judge import (
@@ -63,6 +63,12 @@ def make_bundle(tmp_path, tag, label, model, outputs=None, fail_ids=()):
             )
 
     return asyncio.run(inner())
+
+
+@pytest.fixture
+def cap400(monkeypatch):
+    # the budget tests' dollar figures are sized for a 400-token reply cap
+    monkeypatch.setattr(judge, "JUDGE_MAX_TOKENS", 400)
 
 
 @pytest.fixture(scope="module")
@@ -136,7 +142,7 @@ def test_refuses_over_budget_before_any_call(bundles, tmp_path):
     assert fake.requests == [] and not list(tmp_path.iterdir())
 
 
-def test_partial_stops_at_cap(bundles, tmp_path):
+def test_partial_stops_at_cap(bundles, tmp_path, cap400):
     fake = judge_fake(prompt_tokens=1000, completion_tokens=400)
     out = run(bundles, tmp_path, fake, max_usd=0.02, allow_partial=True)
     meta = json.loads((out / "bundle.json").read_text())
@@ -146,7 +152,7 @@ def test_partial_stops_at_cap(bundles, tmp_path):
     assert meta["estimate_usd"] > 0.02
 
 
-def test_cap_enforced_even_without_partial(bundles, tmp_path):
+def test_cap_enforced_even_without_partial(bundles, tmp_path, cap400):
     # usage far above the estimate: the cap is still checked before every call
     fake = judge_fake(prompt_tokens=100000, completion_tokens=400)
     out = run(bundles, tmp_path, fake, max_usd=0.5)
@@ -202,7 +208,8 @@ def test_blind_prompt(bundles, tmp_path):
         for s in secrets:
             assert s not in text, s
         assert req["messages"][0] == {"role": "system", "content": JUDGE_SYSTEM}
-        assert req["temperature"] == 0 and req["seed"] == 0
+        # the hosted judge rejects sampling fields (temperature is a 400 on current models)
+        assert "temperature" not in req and "seed" not in req
         assert req["max_tokens"] == JUDGE_MAX_TOKENS
     assert out.name.startswith("judge-")
 
@@ -402,13 +409,13 @@ def test_cli_judge(bundles, tmp_path, monkeypatch, capsys):
     assert cli.main(["judge", *base]) == 1  # exists
 
 
-def test_normal_run_stays_under_cap(bundles, tmp_path):
+def test_normal_run_stays_under_cap(bundles, tmp_path, cap400):
     fake = judge_fake(prompt_tokens=1000, completion_tokens=400)
     meta = json.loads((run(bundles, tmp_path, fake, max_usd=1.0) / "bundle.json").read_text())
     assert meta["cost_usd"] <= 1.0 and meta["estimate_usd"] > 0
 
 
-def test_adversarial_usage_overshoots_by_at_most_one_calls_excess(bundles, tmp_path):
+def test_adversarial_usage_overshoots_by_at_most_one_calls_excess(bundles, tmp_path, cap400):
     fake = judge_fake(prompt_tokens=200000, completion_tokens=400)  # ~10x+ the estimate
     out = run(bundles, tmp_path, fake, max_usd=0.05, allow_partial=True)
     meta = json.loads((out / "bundle.json").read_text())

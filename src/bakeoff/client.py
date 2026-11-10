@@ -142,8 +142,8 @@ class EndpointClient:
         self,
         messages: list[dict],
         max_tokens: int,
-        temperature: float = 0.0,
-        seed: int = 0,
+        temperature: float | None = 0.0,
+        seed: int | None = 0,
         extra: dict | None = None,
     ) -> ChatResult:
         last = ChatResult()
@@ -178,10 +178,13 @@ class EndpointClient:
             "model": self.model,
             "messages": messages,
             "max_tokens": max_tokens,
-            "temperature": temperature,
-            "seed": seed,
             "stream": True,
         }
+        # None leaves a field out: hosted APIs reject sampling fields on some models
+        if temperature is not None:
+            body["temperature"] = temperature
+        if seed is not None:
+            body["seed"] = seed
         if with_usage:
             body["stream_options"] = {"include_usage": True}
         if extra:

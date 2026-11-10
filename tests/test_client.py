@@ -52,6 +52,19 @@ def test_stream_timing_and_usage():
     assert fake.requests[0]["seed"] == 0 and fake.requests[0]["temperature"] == 0.0
 
 
+def test_unset_sampling_fields_are_omitted():
+    # hosted APIs reject sampling fields on some models, so None leaves them out
+    fake = FakeOpenAI(responder=lambda m: FakeReply("ok"))
+
+    async def go():
+        async with make(fake) as c:
+            return await c.chat(MSGS, 16, temperature=None, seed=None)
+
+    r = run(go())
+    assert r.error is None and r.content == "ok"
+    assert "temperature" not in fake.requests[0] and "seed" not in fake.requests[0]
+
+
 def test_reasoning_and_inline_think_separated():
     fake = FakeOpenAI(responder=lambda m: FakeReply("<think>x</think>y", reasoning="r1 r2"))
     _, (r,) = run(_chat(fake))

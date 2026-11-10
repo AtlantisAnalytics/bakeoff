@@ -23,7 +23,8 @@ JUDGE_SYSTEM = (
     "correctness and clarity for the question. Ignore length and style flourishes. "
     'Reply only with JSON: {"winner": "1" | "2" | "tie", "reason": "<one sentence>"}'
 )
-JUDGE_MAX_TOKENS = 400
+# thinking counts against the cap on current judge models; a cut-off reply scores as a tie
+JUDGE_MAX_TOKENS = 4000
 FATAL_KINDS = frozenset(
     {"missing_file", "hash_mismatch", "unlisted_file", "bundle_hash", "unreadable"}
 )
@@ -195,8 +196,9 @@ async def run_judge(
             r = await client.chat(
                 [{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": user}],
                 JUDGE_MAX_TOKENS,
-                temperature=0.0,
-                seed=0,
+                # the hosted judge takes no sampling fields: temperature is a 400 on current models
+                temperature=None,
+                seed=None,
             )
         except (KeyboardInterrupt, asyncio.CancelledError):
             spent += worst
