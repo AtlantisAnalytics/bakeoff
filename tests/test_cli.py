@@ -499,6 +499,21 @@ def test_push_refuses_incomplete_bundle_with_other_findings(
     assert not any(r[0] == "PUT" for r in fake_store.requests)
 
 
+def test_push_refuses_unknown_status(fake_store, tmp_path, monkeypatch, capsys):
+    _store_env(monkeypatch, fake_store)
+    a = make_bundle(
+        tmp_path / "a",
+        label="A",
+        weights="w1",
+        envelope="e",
+        grades={"general/x": [True]},
+        status="partial",
+    )
+    assert _push([a], tmp_path) == 1
+    assert "refusing to push" in capsys.readouterr().out
+    assert not any(r[0] == "PUT" for r in fake_store.requests)
+
+
 def test_push_is_idempotent(fake_store, tmp_path, monkeypatch, capsys):
     _store_env(monkeypatch, fake_store)
     a, _ = _two(tmp_path)

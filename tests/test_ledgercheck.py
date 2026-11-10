@@ -46,6 +46,32 @@ def test_ledger_split_bundle_clean(tmp_path):
     assert check_ledger(root, username=None, denylist=None) == []
 
 
+def _status_root(tmp_path, status):
+    root = tmp_path / "repo"
+    run = make_bundle(
+        root / "results" / "2026-11-09" / "runs",
+        label="A",
+        weights="w",
+        envelope="e",
+        grades={"general/x": [True]},
+        status=status,
+    )
+    (root / "results" / "layout.toml").write_text(SPLIT_LAYOUT)
+    return root, run
+
+
+def test_ledger_accepts_incomplete_bundle(tmp_path):
+    # publish puts incomplete bundles in the week, so the ledger must accept them
+    root, _ = _status_root(tmp_path, "incomplete")
+    assert check_ledger(root, username=None, denylist=None) == []
+
+
+def test_ledger_flags_unknown_status(tmp_path):
+    root, run = _status_root(tmp_path, "partial")
+    found = check_ledger(root, username=None, denylist=None)
+    assert _kinds(found) == [(run.relative_to(root).as_posix(), "bundle.json", "incomplete")]
+
+
 def test_ledger_flags_committed_stored_file(tmp_path):
     root, run = _split_root(tmp_path)
     split(run, KEPT_RUN | {"bundle.json"})
@@ -212,6 +238,30 @@ def test_cli_changed_mode_fetches_from_store(fake_store, tmp_path, capsys, monke
     shutil.rmtree(tmp_path / "cache")
     assert cli.main(argv) == 1
     assert cli.main(["verify", "--changed", "nope", "--root", str(root), "--no-username"]) == 1
+
+
+def test_cli_changed_mode_accepts_incomplete_bundle(fake_store, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli.getpass, "getuser", lambda: "root")
+    root = tmp_path / "repo"
+    (root / "results").mkdir(parents=True)
+    (root / "results" / "layout.toml").write_text(SPLIT_LAYOUT)
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "base")
+    _git(root, "checkout", "-q", "-b", "feature")
+    for label, status in (("A", "incomplete"), ("B", "partial")):
+        make_bundle(
+            root / "results" / "2026-11-09" / "runs",
+            label=label,
+            weights="w",
+            envelope="e",
+            grades={"general/x": [True]},
+            status=status,
+        )
+        _git(root, "add", "-A")
+        _git(root, "commit", "-q", "-m", label)
+        argv = ["verify", "--changed", "main", "--root", str(root), "--no-username"]
+        assert cli.main(argv) == (0 if status == "incomplete" else 1)
 
 
 # ---- store audit ----

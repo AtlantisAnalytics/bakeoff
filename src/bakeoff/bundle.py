@@ -178,6 +178,18 @@ def _has_symlink(run_dir: Path, rel: str) -> bool:
     return False
 
 
+def week_findings(run_dir: Path, findings: list[Finding]) -> list[Finding]:
+    """The findings that keep a bundle out of a published week. Publish puts a bundle whose
+    status is 'incomplete' in the week as it is, so that finding is dropped for it alone."""
+    try:
+        meta = safejson.loads((Path(run_dir) / "bundle.json").read_bytes().decode("utf-8"))
+    except (ValueError, OSError):
+        return findings
+    if not isinstance(meta, dict) or meta.get("status") != "incomplete":
+        return findings
+    return [f for f in findings if f.kind != "incomplete"]
+
+
 def verify_bundle(
     run_dir: Path,
     username: str | None,
