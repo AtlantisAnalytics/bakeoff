@@ -464,6 +464,41 @@ def test_push_refuses_bad_bundle(fake_store, tmp_path, monkeypatch, capsys):
     assert not any(r[0] == "PUT" for r in fake_store.requests)
 
 
+def test_push_accepts_incomplete_bundle(fake_store, tmp_path, monkeypatch, capsys):
+    # publish puts incomplete bundles in the week, so push must store them too
+    _store_env(monkeypatch, fake_store)
+    a = make_bundle(
+        tmp_path / "a",
+        label="A",
+        weights="w1",
+        envelope="e",
+        grades={"general/x": [True]},
+        status="incomplete",
+    )
+    assert _push([a], tmp_path) == 0
+    assert f"uploaded {len(_listed(a))}, skipped 0" in capsys.readouterr().out
+
+
+def test_push_refuses_incomplete_bundle_with_other_findings(
+    fake_store, tmp_path, monkeypatch, capsys
+):
+    _store_env(monkeypatch, fake_store)
+    a = make_bundle(
+        tmp_path / "a",
+        label="A",
+        weights="w1",
+        envelope="e",
+        grades={"general/x": [True]},
+        status="incomplete",
+    )
+    with (a / "speed.jsonl").open("a") as f:
+        f.write("{}\n")
+    assert _push([a], tmp_path) == 1
+    out = capsys.readouterr().out
+    assert "hash_mismatch" in out and "refusing to push" in out
+    assert not any(r[0] == "PUT" for r in fake_store.requests)
+
+
 def test_push_is_idempotent(fake_store, tmp_path, monkeypatch, capsys):
     _store_env(monkeypatch, fake_store)
     a, _ = _two(tmp_path)
