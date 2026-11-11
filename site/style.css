@@ -27,6 +27,8 @@ li { margin: 0.35rem 0; }
 ul li::before { content: "•"; color: var(--blue); font-weight: 700; margin-right: 0.5rem; }
 .holding main ul { text-align: center; }
 .muted { color: var(--muted); }
+.note { border-left: 3px solid var(--blue); padding: 0.1rem 0 0.1rem 1rem; margin: 1.5rem 0 2rem; }
+.note p { margin: 0.4rem 0; }
 .small { font-size: 0.9rem; }
 
 /* tables scroll inside their wrapper at phone width */
