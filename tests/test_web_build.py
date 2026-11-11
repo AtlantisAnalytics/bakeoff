@@ -49,7 +49,10 @@ def root(tmp_path):
     r.mkdir()
     shutil.copy(REPO / "tiers.toml", r / "tiers.toml")
     set_site(r, launched=False)
-    shutil.copytree(REPO / "site_src", r / "site_src")
+    # the live home note names real weeks; a test that wants one writes its own
+    shutil.copytree(
+        REPO / "site_src", r / "site_src", ignore=shutil.ignore_patterns("home-note.html")
+    )
     (r / "site").mkdir()
     for name in ("style.css", "logo.webp", "favicon-32.png", "apple-touch-icon.png", "og.jpg"):
         shutil.copy(REPO / "site" / name, r / "site" / name)
@@ -317,3 +320,21 @@ def test_week_page_never_links_javascript(two_weeks):
     html = week_page(doc, load_site(two_weeks / "site.toml"))
     assert 'href="javascript:' not in html and 'href="data:' not in html
     assert "Source" in html
+
+
+def test_home_note_is_on_the_home_page_only(two_weeks):
+    (two_weeks / "site_src" / "home-note.html").write_text(
+        '<p><strong>Thanks</strong>, <a href="https://example.org/x">X</a>.</p>\n', encoding="utf-8"
+    )
+    files = render_site(two_weeks)
+    home = files["index.html"].decode("utf-8")
+    assert '<aside class="note">\n<p><strong>Thanks</strong>' in home
+    assert_balanced(home)
+    assert "Thanks" not in files[f"weeks/{W2}/index.html"].decode("utf-8")
+    assert home.index('class="note"') < home.index("<section")  # above the tiers
+
+
+def test_blank_home_note_adds_nothing(two_weeks):
+    (two_weeks / "site_src" / "home-note.html").write_text("\n  \n", encoding="utf-8")
+    files = render_site(two_weeks)
+    assert files["index.html"] == files[f"weeks/{W2}/index.html"]

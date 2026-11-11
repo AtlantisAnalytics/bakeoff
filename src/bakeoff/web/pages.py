@@ -447,7 +447,9 @@ def _agreement_section(doc: dict) -> str:
     return f'<h2>Same model, several cards</h2>\n<ul class="flat">{"".join(items)}</ul>'
 
 
-def week_page(doc: dict, site: SiteConfig) -> str:
+def week_page(doc: dict, site: SiteConfig, note: str = "") -> str:
+    """One week's page. `note` is hand-written HTML (site_src/home-note.html) that only the home
+    page carries, above the tiers; trusted like the method page, never built from week data."""
     week = doc["week"]
     rules = doc.get("rules", {})
     meta = f"Published {_e(doc['published_at'])}, revision {_e(doc['revision'])}."
@@ -469,7 +471,9 @@ def week_page(doc: dict, site: SiteConfig) -> str:
     sections = "\n".join(_tier_section(t, site, picks.get(t["id"], {}), week) for t in doc["tiers"])
     main = (
         f'<h1 class="title">Week of {_e(week)}</h1>\n<p class="muted">{meta}</p>\n'
-        f'<p class="small muted">{rules_line}</p>\n{corr}\n{sections}{_agreement_section(doc)}'
+        f'<p class="small muted">{rules_line}</p>\n{corr}\n'
+        + (f'<aside class="note">\n{note.strip()}\n</aside>\n' if note.strip() else "")
+        + f"{sections}{_agreement_section(doc)}"
     )
     return _layout(f"bakeoff.si, week of {week}", f"/weeks/{week}/", site, main, week=week)
 

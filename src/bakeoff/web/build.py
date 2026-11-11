@@ -140,9 +140,11 @@ def render_site(root: Path, *, launched: bool | None = None) -> dict[str, bytes]
         site = dataclasses.replace(site, launched=launched)
     files: dict[str, bytes] = {}
     docs = week_docs(root) if site.launched else []
-    files["index.html"] = (week_page(docs[-1], site) if docs else holding_page(site)).encode(
-        "utf-8"
-    )
+    note_path = root / "site_src" / "home-note.html"
+    note = note_path.read_text(encoding="utf-8") if note_path.is_file() else ""
+    files["index.html"] = (
+        week_page(docs[-1], site, note=note) if docs else holding_page(site)
+    ).encode("utf-8")
     files["_headers"] = headers_file(site).encode("utf-8")
     files["method/index.html"] = _static_page(root, "method", "bakeoff.si, method", site)
     files["privacy/index.html"] = _static_page(root, "privacy", "bakeoff.si, privacy", site)
