@@ -137,13 +137,9 @@ def test_repo_page_matches_its_bundles():
     assert_balanced(h)
     for bad in ("<style", "style=", "<script"):
         assert bad not in h
-    rows = {(r[0], r[1], r[3]): r for r in cells_all(h)}
-    assert rows[("2× RTX 3060 12 GB", "tensor parallel", "across sockets")][4] == "78.7"
-    assert rows[("3× RTX 3060 12 GB", "layer split", "across sockets")][2] == "2 of 3"
-
-
-def cells_all(html):
-    out = []
-    for table in html.split("<table>")[1:]:
-        out += cells(table.split("</table>")[0])
-    return out
+    # one table per group, in experiment.toml order: granite-3b, granite-8b, qwen-27b, gemma-12b
+    tables = [cells(t.split("</table>")[0]) for t in h.split("<table>")[1:]]
+    granite, _, qwen, _ = ({(r[0], r[1], r[3]): r for r in t} for t in tables)
+    assert granite[("2× RTX 3060 12 GB", "tensor parallel", "across sockets")][4] == "78.7"
+    assert qwen[("2× RTX 3060 12 GB", "tensor parallel", "across sockets")][4] == "32.6"
+    assert qwen[("3× RTX 3060 12 GB", "layer split", "across sockets")][2] == "2 of 3"

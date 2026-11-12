@@ -26,6 +26,8 @@ bundles = [
   "results/experiments/2026-11-multi-gpu/runs/20261103T090143Z-qwen3-8-27b-exl3-fit-speed-1ecaf552",
   "results/experiments/2026-11-multi-gpu/runs/20261103T092144Z-qwen3-8-27b-exl3-fit-speed-1ab3fc12",
   "results/experiments/2026-11-multi-gpu/runs/20261103T084445Z-qwen3-8-27b-exl3-fit-speed-ce2cea26",
+  "results/experiments/2026-11-multi-gpu/runs/20261112T065155Z-qwen3-8-27b-exl3-fit-speed-2d52761f",
+  "results/experiments/2026-11-multi-gpu/runs/20261112T063614Z-qwen3-8-27b-exl3-fit-speed-a7fc3d78",
   "results/experiments/2026-11-multi-gpu/runs/20261103T094135Z-qwen3-8-27b-exl3-fit-speed-cfa24f07",
   "results/2026-11-02/runs/20261031T160519Z-qwen3-8-27b-exl3-939898fc",
 ]
