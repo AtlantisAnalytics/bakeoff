@@ -17,7 +17,7 @@ like every other result.</p>
     by layers was 1.7&times; slower than tensor parallelism on the same two cards, and a pipeline
     over three cards was no faster than one card.</li>
   <li><strong>Crossing CPU sockets cost almost nothing</strong> on this machine: 0.5% of decode
-    speed.</li>
+    speed on the 3B model, and nothing we could measure on the 27B.</li>
 </ul>
 
 <h2>The machine</h2>
@@ -64,6 +64,11 @@ layer split put the whole model on the first two cards and left the third empty.
 automatic split fills cards in order. Tensor parallelism over three cards gained 8% in decode and
 11% in four-stream throughput over two, for 35% more power. Two cards reach 69% of the
 3090&nbsp;Ti's decode speed.</p>
+<p>A third card cuts each card's share of the weights by a third, yet decode gained only 8%. We
+checked whether the cause was the third card itself or the trip between sockets that any three
+cards on this machine must make. On 2026-11-12 we ran two cards in tensor parallel across sockets, and reran the
+same-socket pair the same night as a control. The three two-card runs decode within 1.3% of each
+other. Crossing sockets isn't what holds three cards back.</p>
 <!-- runs: qwen-27b -->
 
 <h2>Gemma 4 12B IT EXL3 (ExLlamaV3)</h2>
@@ -90,9 +95,14 @@ automatic split fills cards in order. Tensor parallelism over three cards gained
 <h2>Limits</h2>
 <ul class="flat">
   <li>One machine, one run of five repeats per setup. Another board, another PCIe generation or
-    NVLink would change the link results. The socket result was measured only on the 3B model.</li>
+    NVLink would change the link results. The socket result was measured on the 3B and 27B models
+    only.</li>
   <li>Speed and fit only: no quality suites were run. A split changes the order of floating-point
     sums, so outputs can differ slightly from a single card's, as they do between cards.</li>
+  <li>Power is averaged over the whole speed test, idle moments included. About a fifth of the
+    2026-11-03 speed tests was idle, and almost none of the 2026-11-12 ones, so the same
+    same-socket pair shows 270&nbsp;W one night and 312&nbsp;W the next. Counting only the busy
+    samples, the two runs drew the same, 312 and 315&nbsp;W.</li>
   <li>The multi-GPU vLLM runs used 0.90 of card memory and the single-card runs 0.92, as noted
     above.</li>
   <li>The 3090&nbsp;Ti rows are from a different machine and week, and serve as a reference point,
