@@ -1,0 +1,5028 @@
+{
+  "corrections": [],
+  "harness": [
+    {
+      "git_commit": "2a8617386ca208af91889da378bc851e4ecef5df",
+      "version": "0.1.0"
+    }
+  ],
+  "picks_after": {
+    "12gb": {
+      "format": {
+        "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "format",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "general": {
+        "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "general",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "longctx": {
+        "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "longctx",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      },
+      "structured": {
+        "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+        "label": "Granite 4.2 3B",
+        "quant": "bf16",
+        "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "12gb",
+        "track": "structured",
+        "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+      }
+    },
+    "24gb": {
+      "format": {
+        "bundle_sha256": "3922e69e5e0eb5c707d70c6af331a20da395e67fd37749cf691753ab8fd8e27e",
+        "label": "Qwen3.8 27B EXL3",
+        "quant": "exl3-4bpw",
+        "run_id": "20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "format",
+        "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
+      },
+      "general": {
+        "bundle_sha256": "402816239f75a0c12f0058fc175c31cd506bdc6df9f1e70483b68056d34418b9",
+        "label": "Gemma 4 26B A4B IT EXL3",
+        "quant": "exl3-4.1bpw",
+        "run_id": "20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295",
+        "runtime": "exllamav3",
+        "since_week": "2026-11-16",
+        "tier": "24gb",
+        "track": "general",
+        "weights": "hf:turboderp/gemma-4-26B-A4B-it-exl3@7102602329b793263e5490c7a575d5364e6052cb"
+      },
+      "longctx": {
+        "bundle_sha256": "c64dd7543b7ee68eb660afe6b2205ace9f6250a924421b20c1a283087f8bd67f",
+        "label": "Granite 4.2 8B FP8",
+        "quant": "fp8",
+        "run_id": "20261114T120024Z-granite-4-2-8b-fp8-6ef71a3b",
+        "runtime": "vllm",
+        "since_week": "2026-11-02",
+        "tier": "24gb",
+        "track": "longctx",
+        "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+      }
+    },
+    "36gb-unified": {
+      "general": {
+        "bundle_sha256": "61de488865583f6eeb5628fde4dead1effc45dbab06e932a61ed8d67d6d7ae0e",
+        "label": "Gemma 4 12B IT GGUF",
+        "quant": "Q4_K_M",
+        "run_id": "20261114T110228Z-gemma-4-12b-it-gguf-c24fa8ae",
+        "runtime": "llamacpp",
+        "since_week": "2026-11-16",
+        "tier": "36gb-unified",
+        "track": "general",
+        "weights": "hf:bartowski/gemma-4-12B-it-GGUF@2ae7d41be21ca62de00a2d320ee9cec50daa3aa6"
+      },
+      "longctx": {
+        "bundle_sha256": "224605716eb1203425a3963aaed5bfd0bf9476f67a903fc0a487a33ab32d4b82",
+        "label": "Qwen3.6 35B A3B GGUF",
+        "quant": "Q4_K_M",
+        "run_id": "20261114T130536Z-qwen3-6-35b-a3b-gguf-d5568ec3",
+        "runtime": "llamacpp",
+        "since_week": "2026-11-16",
+        "tier": "36gb-unified",
+        "track": "longctx",
+        "weights": "hf:ggml-org/Qwen3.6-35B-A3B-GGUF@7878dc9a905c7c9379e5e8d6a1aa9affdd6839c5"
+      }
+    }
+  },
+  "published_at": "2026-11-16T15:00:00Z",
+  "revision": 1,
+  "rules": {
+    "ci": 0.95,
+    "context_cap": 32768,
+    "min_context": 16384,
+    "min_decode_tps": 10.0,
+    "resamples": 10000,
+    "saturated_score": 1.0,
+    "speed_ratio": 0.8,
+    "version": 1
+  },
+  "schema": "bakeoff.week.v1",
+  "tiers": [
+    {
+      "envelope": "1× RTX 3060 12 GB",
+      "id": "12gb",
+      "judge": [
+        {
+          "a": "20261114T110507Z-granite-4-2-3b-53cf2049",
+          "b": "20261114T114452Z-gemma-4-12b-it-exl3-13799ce9",
+          "bundle_sha256": "f2b3f2d03729d662f958db9760c1f49b91e75953e9776cf22162fdeb69d9c255",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 11,
+          "ties": 5,
+          "wins": 4
+        },
+        {
+          "a": "20261114T110507Z-granite-4-2-3b-53cf2049",
+          "b": "20261114T123757Z-qwen3-5-9b-exl3-1a17c1a3",
+          "bundle_sha256": "b919e57c0b8e0c350f38ae20ca9d38022303c2ef150e8d88d4ac531039f1a1cd",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 4,
+          "ties": 5,
+          "wins": 11
+        },
+        {
+          "a": "20261114T110507Z-granite-4-2-3b-53cf2049",
+          "b": "20261114T142937Z-ministral-3-14b-instruct-2512-exl3-80cbc30c",
+          "bundle_sha256": "3e4c423f8ec547b2f0a56800a5ff3449a15dfd6b25b9fe5f405457364a38dc34",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 6,
+          "ties": 8,
+          "wins": 6
+        },
+        {
+          "a": "20261114T110507Z-granite-4-2-3b-53cf2049",
+          "b": "20261114T145855Z-granite-4-2-8b-nvfp4-073d079f",
+          "bundle_sha256": "1d2ce32f101e7b22dee8b90476b45da1439344ddd8c4674696bc6f4936757fc4",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 4,
+          "ties": 6,
+          "wins": 10
+        }
+      ],
+      "name": "12 GB",
+      "pick_status": {
+        "format": "re-measured",
+        "general": "re-measured",
+        "grounding": "saturated",
+        "longctx": "re-measured",
+        "structured": "re-measured"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T110507Z-granite-4-2-3b-53cf2049",
+          "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 44784,
+            "kv_fraction_at_max": 0.7317,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 3B",
+            "license": "Apache-2.0",
+            "quant": "bf16",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-3b",
+            "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
+          },
+          "pick_tracks": [
+            "format",
+            "general",
+            "longctx",
+            "structured"
+          ],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.81,
+                "suites": [
+                  {
+                    "accuracy": 0.84,
+                    "ci95": [
+                      0.7557955544110557,
+                      0.8990479765052628
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 84,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.78,
+                    "ci95": [
+                      0.6892946528499969,
+                      0.849988254963442
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 78,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7037037037037037,
+                "suites": [
+                  {
+                    "accuracy": 0.7037037037037037,
+                    "ci95": [
+                      0.515189666191624,
+                      0.8414714668235244
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 19,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "extractable_accuracy": 0.9666666666666667,
+                    "extractable_ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "pick",
+          "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 43.78965972285189,
+                "median": 43.70153416000718,
+                "min": 43.62678189864711,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 44.09201218416249,
+                "median": 44.02321130687377,
+                "min": 43.93144802471645,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 28660.851885949647,
+                "median": 28372.26039524585,
+                "min": 24443.753781248994,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.07359753399987312,
+                "median": 0.06340700300006574,
+                "min": 0.06276854599991566,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 141.24453231691268,
+                "median": 141.15883168941608,
+                "min": 140.48628109017568,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 35.89968194903488,
+                "median": 35.86177136162958,
+                "min": 35.688989663316704,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 16625.174887786765,
+                "median": 12787.028621906942,
+                "min": 11555.12553444915,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.15568848600014462,
+                "median": 0.14069030599989674,
+                "min": 0.10820938799997748,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 45.609337520991254,
+                "median": 45.581405815168246,
+                "min": 45.55853167869957,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 45.76546884651527,
+                "median": 45.74492489308207,
+                "min": 45.71511433748697,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 3151.9190532586385,
+                "median": 3143.1603551346866,
+                "min": 3076.088479258635,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.04193637500020486,
+                "median": 0.04104149500017229,
+                "min": 0.04092744699983086,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 154.3337975883786,
+                "median": 154.25320666796424,
+                "min": 153.14408480668672,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 38.95392778909516,
+                "median": 38.94119382732866,
+                "min": 38.647520771568686,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2198.22881036033,
+                "median": 1523.828291532298,
+                "min": 1385.8215203656032,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.09308558000020639,
+                "median": 0.08465527199996359,
+                "min": 0.058683609000127035,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {}
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T114452Z-gemma-4-12b-it-exl3-13799ce9",
+          "bundle_sha256": "87ccea276735aaf34fe5944a5f99ffca2c8eb3b358d262fb46c63630b002cb7e",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/gemma-4-12B-it-exl3",
+            "weights": "hf:turboderp/gemma-4-12B-it-exl3@e8d17ffbe696accdba72a47dac858d7e880d709e"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.9199999999999999,
+                "suites": [
+                  {
+                    "accuracy": 0.96,
+                    "ci95": [
+                      0.9016278276739262,
+                      0.984336949448152
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 96,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.88,
+                    "ci95": [
+                      0.8018773199709163,
+                      0.9300066263473222
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 88,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.95,
+                "suites": [
+                  {
+                    "accuracy": 0.95,
+                    "ci95": [
+                      0.834958291820748,
+                      0.9861796228538989
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 38,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7407407407407407,
+                "suites": [
+                  {
+                    "accuracy": 0.7407407407407407,
+                    "ci95": [
+                      0.553210695973843,
+                      0.8682979157713322
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 20,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T114452Z-gemma-4-12b-it-exl3-13799ce9",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 26.656580871621692,
+                "median": 26.498854820987113,
+                "min": 26.159589882153853,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 28.1639739667499,
+                "median": 28.04390878392807,
+                "min": 27.927592650099548,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 4359.659638943995,
+                "median": 4284.606467985272,
+                "min": 3284.424732612318,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.6938810249998824,
+                "median": 0.5319041590000779,
+                "min": 0.5227472299998226,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 83.63528907021006,
+                "median": 82.81207410097578,
+                "min": 82.75555980182729,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 24.908050717121025,
+                "median": 24.748915737151663,
+                "min": 24.734955396023942,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 1179.46122491729,
+                "median": 1106.2515424665191,
+                "min": 1096.9994389033202,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 2.077485109999998,
+                "median": 2.0601101375000326,
+                "min": 1.9322381710003356,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 27.747463081235246,
+                "median": 27.569060850929905,
+                "min": 27.29538882051035,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 28.85937184000606,
+                "median": 28.69580577500277,
+                "min": 28.471170097345347,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 389.6261823874208,
+                "median": 380.51803058774175,
+                "min": 354.2231338443403,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.4291080550001425,
+                "median": 0.39945544700003666,
+                "min": 0.3901175199998761,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 94.10353033568073,
+                "median": 93.97111317757577,
+                "min": 93.80143895950812,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 26.791225634816332,
+                "median": 26.698068132335983,
+                "min": 26.643848568261266,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 114.46611520703013,
+                "median": 113.01561082384234,
+                "min": 110.22333362665613,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.3790183529999922,
+                "median": 1.3449469404999945,
+                "min": 1.3279038929999842,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.1,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "general": {
+              "computed": "watch",
+              "diff": 0.11,
+              "diff_ci95": [
+                0.055,
+                0.16999999999999998
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "watch",
+              "diff": 0.037037037037037035,
+              "diff_ci95": [
+                -0.18518518518518517,
+                0.25925925925925924
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "slower_than_ratio"
+              ]
+            },
+            "structured": {
+              "computed": "watch",
+              "diff": 0.03333333333333333,
+              "diff_ci95": [
+                0.0,
+                0.1
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T123757Z-qwen3-5-9b-exl3-1a17c1a3",
+          "bundle_sha256": "cde25e576a0416a9ab41f8e43d71b2600d587670ad9bf8a344d7a766f5cf6eed",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.5 9B EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-6bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Qwen3.5-9B-exl3",
+            "weights": "hf:turboderp/Qwen3.5-9B-exl3@12be39d7c7e43be1c7ce5aaebb210869be1586bb"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.575,
+                "suites": [
+                  {
+                    "accuracy": 0.76,
+                    "ci95": [
+                      0.6676748127670786,
+                      0.8330878873454004
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 76,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.39,
+                    "ci95": [
+                      0.300167219319702,
+                      0.48797163832501844
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 39,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.825,
+                "suites": [
+                  {
+                    "accuracy": 0.825,
+                    "ci95": [
+                      0.6804970794560755,
+                      0.9125469700311694
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 33,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.6296296296296297,
+                "suites": [
+                  {
+                    "accuracy": 0.6296296296296297,
+                    "ci95": [
+                      0.442289046234463,
+                      0.7846771293206314
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 17,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.8,
+                "suites": [
+                  {
+                    "accuracy": 0.8,
+                    "ci95": [
+                      0.6269395261897256,
+                      0.9049502189759876
+                    ],
+                    "extractable_accuracy": 0.8,
+                    "extractable_ci95": [
+                      0.6269395261897256,
+                      0.9049502189759876
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T123757Z-qwen3-5-9b-exl3-1a17c1a3",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 38.02430534927236,
+                "median": 37.96053133679013,
+                "min": 37.38313781229282,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 38.44480160703348,
+                "median": 38.34672551969583,
+                "min": 37.77439818911604,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 24837.211346063654,
+                "median": 24403.927994785194,
+                "min": 23221.385615840536,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.09964952299924335,
+                "median": 0.09482080099951418,
+                "min": 0.09316665900041698,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 138.05904165834542,
+                "median": 137.15556183193092,
+                "min": 136.82681168399,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 35.52639660872545,
+                "median": 35.307670890362246,
+                "min": 35.26978317106788,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 10286.74542933461,
+                "median": 9804.455411457722,
+                "min": 9005.694572326975,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.256948532000024,
+                "median": 0.236015427500206,
+                "min": 0.22494967100101348,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 37.0833467977751,
+                "median": 36.655563400115234,
+                "min": 36.48958495536824,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 38.40563214746314,
+                "median": 38.02197080408153,
+                "min": 37.84874208329408,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 587.9830661033031,
+                "median": 572.583226401659,
+                "min": 483.9466545813232,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.31201786099882156,
+                "median": 0.26371712100080913,
+                "min": 0.25681011699998635,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 130.24782093131284,
+                "median": 128.9955036272933,
+                "min": 128.14237437905254,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 36.42034469705127,
+                "median": 36.13231967195928,
+                "min": 35.75561620695649,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 176.17290591815424,
+                "median": 175.51712427971398,
+                "min": 171.73796557863952,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.8792464699999982,
+                "median": 0.860314971499065,
+                "min": 0.8571125010003016,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.16666666666666666,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.23500000000000001,
+              "diff_ci95": [
+                -0.31,
+                -0.16
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.07407407407407407,
+              "diff_ci95": [
+                -0.3333333333333333,
+                0.18518518518518517
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "structured": {
+              "computed": "hold",
+              "diff": -0.16666666666666666,
+              "diff_ci95": [
+                -0.3333333333333333,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T142937Z-ministral-3-14b-instruct-2512-exl3-80cbc30c",
+          "bundle_sha256": "1955dbd27d1a1eb35fcb6b2a366fb49ac53841cea488963c5176cce75b22c2fb",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 16384,
+            "server_context": 16384
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Ministral 3 14B Instruct 2512 EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Ministral-3-14B-Instruct-2512-exl3",
+            "weights": "hf:turboderp/Ministral-3-14B-Instruct-2512-exl3@47d36766b5532e1f7a2f6f08cddefd91f5a6fea4"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.7333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.7333333333333333,
+                    "ci95": [
+                      0.5555169795568831,
+                      0.8581750444608938
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 22,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.86,
+                "suites": [
+                  {
+                    "accuracy": 0.96,
+                    "ci95": [
+                      0.9016278276739262,
+                      0.984336949448152
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 96,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.76,
+                    "ci95": [
+                      0.6676748127670786,
+                      0.8330878873454004
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 76,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7694792561952611,
+                      0.9604211124044252
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 36,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.4444444444444444,
+                "suites": [
+                  {
+                    "accuracy": 0.4444444444444444,
+                    "ci95": [
+                      0.2758559767007283,
+                      0.6268728052042312
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 12,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T142937Z-ministral-3-14b-instruct-2512-exl3-80cbc30c",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 27.314534624918288,
+                "median": 27.20680968863887,
+                "min": 26.677829896209015,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 27.450400175760837,
+                "median": 27.348489614740778,
+                "min": 26.839260250718958,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 35145.98558804647,
+                "median": 34394.57673173629,
+                "min": 30018.141128243267,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.09497590099999798,
+                "median": 0.08289097499982745,
+                "min": 0.08111879500029318,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 97.38441610460288,
+                "median": 97.27121191661729,
+                "min": 95.41850415402686,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 24.531536601774555,
+                "median": 24.484883255304503,
+                "min": 24.070185032599948,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 25937.01728002549,
+                "median": 24335.077107135774,
+                "min": 20791.12528895003,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.1371258149993082,
+                "median": 0.11715801250011282,
+                "min": 0.10992011800044565,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 27.857310214052124,
+                "median": 27.621319936974725,
+                "min": 27.465364578302957,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 27.98848638097009,
+                "median": 27.751606570784524,
+                "min": 27.60172363827641,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 8621.155007916293,
+                "median": 8510.823177418404,
+                "min": 8228.328657531014,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.08227673300098104,
+                "median": 0.07954577199961932,
+                "min": 0.07852776099935,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 106.86460249676921,
+                "median": 105.72088709314609,
+                "min": 104.66196406963485,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 26.905184862729612,
+                "median": 26.607012602934088,
+                "min": 26.37528852078142,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 6913.294058219988,
+                "median": 6701.413867741301,
+                "min": 5873.455949109513,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.11526433600010932,
+                "median": 0.10102355050003098,
+                "min": 0.09792726799969387,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.23333333333333334,
+              "diff_ci95": [
+                -0.4,
+                -0.1
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio",
+                "less_context"
+              ]
+            },
+            "general": {
+              "computed": "watch",
+              "diff": 0.049999999999999996,
+              "diff_ci95": [
+                -0.009999999999999995,
+                0.11
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "slower_than_ratio",
+                "less_context"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.25925925925925924,
+              "diff_ci95": [
+                -0.4444444444444444,
+                -0.07407407407407407
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio",
+                "less_context"
+              ]
+            },
+            "structured": {
+              "computed": "watch",
+              "diff": 0.03333333333333333,
+              "diff_ci95": [
+                0.0,
+                0.1
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "slower_than_ratio",
+                "less_context"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T145855Z-granite-4-2-8b-nvfp4-073d079f",
+          "bundle_sha256": "7398939a8bf0d2ec06bb2de8998c52bd2bcddea6799014db4a2120a9f471a727",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 26336,
+            "kv_fraction_at_max": 0.6221,
+            "max_context_passed": 16384,
+            "server_context": 16384
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 8B NVFP4",
+            "license": "Apache-2.0",
+            "quant": "w4a4",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b-nvfp4",
+            "weights": "hf:ibm-granite/granite-4.2-8b-nvfp4@fd3b6082de9225a8e866d7f80d96cdc22f1ae89e"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.78,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.8256326956323347,
+                      0.9447714583868639
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 90,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.66,
+                    "ci95": [
+                      0.5627754565831095,
+                      0.74538620502457
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 66,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8518518518518519,
+                "suites": [
+                  {
+                    "accuracy": 0.8518518518518519,
+                    "ci95": [
+                      0.6752093665317052,
+                      0.9408416814035512
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 23,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T145855Z-granite-4-2-8b-nvfp4-073d079f",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 50.998106167825334,
+                "median": 50.79294152666245,
+                "min": 50.61153735739919,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 51.38437664681206,
+                "median": 51.1905842960565,
+                "min": 50.99388613901064,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 31671.61740440257,
+                "median": 31267.512480423098,
+                "min": 30104.369456891778,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.05975876699812943,
+                "median": 0.05753575699782232,
+                "min": 0.05680164599834825,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 168.1342827435663,
+                "median": 166.97846824554998,
+                "min": 166.0566181657226,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 42.770050024574665,
+                "median": 42.58588431218225,
+                "min": 42.21709134456263,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 18025.143983811602,
+                "median": 14582.477874591168,
+                "min": 11796.935126209426,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.1524972359984531,
+                "median": 0.12337175399989064,
+                "min": 0.09980502799953683,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 54.89609352549576,
+                "median": 54.69503315083641,
+                "min": 54.61612717398848,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 55.107044375850315,
+                "median": 54.90417267817923,
+                "min": 54.82287618232147,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 3673.7895844078876,
+                "median": 3583.5406810888826,
+                "min": 3551.923672264967,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.03631834800034994,
+                "median": 0.03599791699889465,
+                "min": 0.035113606001687,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 205.13638979075665,
+                "median": 204.889357903892,
+                "min": 204.2344715214516,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 51.87301234010708,
+                "median": 51.82282925412058,
+                "min": 51.629140908705004,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2473.257140370944,
+                "median": 1818.5809946982067,
+                "min": 1691.5901050006341,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.07625960900259088,
+                "median": 0.07093471900043369,
+                "min": 0.05215794099785853,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.06666666666666667,
+              "diff_ci95": [
+                -0.2,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "less_context"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.03,
+              "diff_ci95": [
+                -0.085,
+                0.025
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "less_context"
+              ]
+            },
+            "longctx": {
+              "computed": "watch",
+              "diff": 0.14814814814814814,
+              "diff_ci95": [
+                -0.07407407407407407,
+                0.37037037037037035
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "less_context"
+              ]
+            },
+            "structured": {
+              "computed": "watch",
+              "diff": 0.03333333333333333,
+              "diff_ci95": [
+                0.0,
+                0.1
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "less_context"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "id": "24gb",
+      "judge": [
+        {
+          "a": "20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+          "b": "20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295",
+          "bundle_sha256": "1ff97aed1f90e3a8d758673ddbe2062c8e7c337377a7f398afb88a710a10fa4f",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 10,
+          "ties": 5,
+          "wins": 5
+        },
+        {
+          "a": "20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+          "b": "20261114T133557Z-qwen3-5-35b-a3b-exl3-cae41a92",
+          "bundle_sha256": "a661df716e2656a4a0a0dc858d7c7dc4a3afab2add86244ee5f73cf898dafd37",
+          "errors": 0,
+          "judge_model": "claude-haiku-5-5",
+          "losses": 5,
+          "ties": 5,
+          "wins": 10
+        }
+      ],
+      "name": "24 GB",
+      "pick_status": {
+        "format": "re-measured",
+        "general": "re-measured",
+        "grounding": "saturated",
+        "longctx": "re-measured",
+        "structured": "saturated"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+          "bundle_sha256": "3922e69e5e0eb5c707d70c6af331a20da395e67fd37749cf691753ab8fd8e27e",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.8 27B EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Qwen3.8-27B-exl3",
+            "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
+          },
+          "pick_tracks": [
+            "format"
+          ],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.87,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.76,
+                    "ci95": [
+                      0.6676748127670786,
+                      0.8330878873454004
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 76,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8888888888888888,
+                "suites": [
+                  {
+                    "accuracy": 0.8888888888888888,
+                    "ci95": [
+                      0.7194181745602705,
+                      0.9614803521050127
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "pick",
+          "run_id": "20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 45.72688570864839,
+                "median": 45.711485518472905,
+                "min": 45.689601882392616,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 46.881054300360574,
+                "median": 46.87031283947707,
+                "min": 46.863306967432415,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 14813.554596094436,
+                "median": 14743.518781065299,
+                "min": 14573.071269026446,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.16166804899989984,
+                "median": 0.159799029999931,
+                "min": 0.15904352900020058,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 153.08551348994624,
+                "median": 152.91342610251854,
+                "min": 148.86400629478896,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.23785293255652,
+                "median": 41.190294990373495,
+                "min": 41.14298774715681,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 4692.034912857687,
+                "median": 4675.994740790997,
+                "min": 3408.147893598815,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.691284554999811,
+                "median": 0.5038500409999642,
+                "min": 0.5021275510000578,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 44.841777281254764,
+                "median": 44.8179582813727,
+                "min": 44.79059545864156,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 47.26566063351663,
+                "median": 47.24163385331428,
+                "min": 47.20654766397293,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 615.3980506349526,
+                "median": 614.7971369017752,
+                "min": 614.2293061213359,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.3142149000000245,
+                "median": 0.31392468900003223,
+                "min": 0.31361815300010676,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 141.24085648539884,
+                "median": 140.86710472005083,
+                "min": 140.28520091491987,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 41.65987384044433,
+                "median": 41.56200976520807,
+                "min": 39.775512591106015,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 223.81335997491715,
+                "median": 171.75002124307053,
+                "min": 164.50115261143347,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.1732440589998987,
+                "median": 1.1237262094999778,
+                "min": 0.8623256450000554,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.055,
+              "diff_ci95": [
+                -0.105,
+                -0.005
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "watch",
+              "diff": 0.037037037037037035,
+              "diff_ci95": [
+                -0.1111111111111111,
+                0.18518518518518517
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T114020Z-gemma-4-12b-it-exl3-e403374a",
+          "bundle_sha256": "cd2e4dcc4dba8426b1c5d52c8b37b8ef53511893f45bfa53c86f73699a8637be",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-6bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/gemma-4-12B-it-exl3",
+            "weights": "hf:turboderp/gemma-4-12B-it-exl3@9538a8a3faa31ad46682808a71b0ed07ac2f0d44"
+          },
+          "pick_tracks": [
+            "general"
+          ],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.925,
+                "suites": [
+                  {
+                    "accuracy": 0.97,
+                    "ci95": [
+                      0.915479219195973,
+                      0.9897456617765851
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 97,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.88,
+                    "ci95": [
+                      0.8018773199709163,
+                      0.9300066263473222
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 88,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.95,
+                "suites": [
+                  {
+                    "accuracy": 0.95,
+                    "ci95": [
+                      0.834958291820748,
+                      0.9861796228538989
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 38,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7037037037037037,
+                "suites": [
+                  {
+                    "accuracy": 0.7037037037037037,
+                    "ci95": [
+                      0.515189666191624,
+                      0.8414714668235244
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 19,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "pick",
+          "run_id": "20261114T114020Z-gemma-4-12b-it-exl3-e403374a",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 60.49427896517369,
+                "median": 60.45996402681232,
+                "min": 60.413524861999534,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 64.30255356285659,
+                "median": 64.24580522881068,
+                "min": 64.19540348540258,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 8597.527188959935,
+                "median": 8586.985435253464,
+                "min": 8561.964329655371,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.26617723600020327,
+                "median": 0.2654016380001849,
+                "min": 0.26507621900009326,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 189.63364557860567,
+                "median": 188.9957514938135,
+                "min": 187.67651537559604,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 57.66707721095365,
+                "median": 57.32538577121021,
+                "min": 54.57725382186925,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 3102.735857831625,
+                "median": 2349.6987427628674,
+                "min": 2283.4638292665213,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.9980451500000527,
+                "median": 0.9699299824999343,
+                "min": 0.7345130570001857,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 63.739285384418054,
+                "median": 63.710624717912054,
+                "min": 63.64766251587249,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 66.15136098509805,
+                "median": 66.12310881614651,
+                "min": 66.04074438733065,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 946.1796518151932,
+                "median": 940.7958414847573,
+                "min": 936.9148885616258,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.16223458700005722,
+                "median": 0.16156533999992462,
+                "min": 0.16064602500000547,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 217.33593978893185,
+                "median": 216.4907477860762,
+                "min": 216.11199789359878,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 61.43964617055127,
+                "median": 61.158845990369315,
+                "min": 59.3419320843205,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 360.03485061572076,
+                "median": 276.3148985380878,
+                "min": 262.56144024068675,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.5789121200000409,
+                "median": 0.5500970374998815,
+                "min": 0.422181351999825,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.13333333333333333,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.14814814814814814,
+              "diff_ci95": [
+                -0.37037037037037035,
+                0.07407407407407407
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T120024Z-granite-4-2-8b-fp8-6ef71a3b",
+          "bundle_sha256": "c64dd7543b7ee68eb660afe6b2205ace9f6250a924421b20c1a283087f8bd67f",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": "auto",
+            "kv_capacity_tokens": 79856,
+            "kv_fraction_at_max": 0.8207,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Granite 4.2 8B FP8",
+            "license": "Apache-2.0",
+            "quant": "fp8",
+            "runtime": "vllm",
+            "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b-fp8",
+            "weights": "hf:ibm-granite/granite-4.2-8b-fp8@6eb3735036ce2010f4ec8319820172a1c06508d7"
+          },
+          "pick_tracks": [
+            "longctx"
+          ],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.785,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.8256326956323347,
+                      0.9447714583868639
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 90,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.67,
+                    "ci95": [
+                      0.5730516033971139,
+                      0.7543701620610456
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 67,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8518518518518519,
+                "suites": [
+                  {
+                    "accuracy": 0.8518518518518519,
+                    "ci95": [
+                      0.6752093665317052,
+                      0.9408416814035512
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 23,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "pick",
+          "run_id": "20261114T120024Z-granite-4-2-8b-fp8-6ef71a3b",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 82.75950096358453,
+                "median": 82.73265312081571,
+                "min": 82.72284642810578,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 83.24460848198368,
+                "median": 83.22441952092692,
+                "min": 83.2092912306452,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 60572.51702048892,
+                "median": 59373.52711104797,
+                "min": 58722.52428895626,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.030635604000053718,
+                "median": 0.030299698999442626,
+                "min": 0.0296999379997942,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 300.3909397990401,
+                "median": 300.2590937479555,
+                "min": 300.10861651794556,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 76.2265592557568,
+                "median": 76.19781602758606,
+                "min": 76.08678862161713,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 39770.70761134611,
+                "median": 28891.664112736034,
+                "min": 27461.12678290314,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.06551078600023175,
+                "median": 0.06226842499972918,
+                "min": 0.045234297000206425,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 85.8412810299381,
+                "median": 85.81569117621858,
+                "min": 85.7847936531501,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 86.13947331059693,
+                "median": 86.13114298852858,
+                "min": 86.11568728747041,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 5914.104644466472,
+                "median": 5733.842753457377,
+                "min": 5530.749358535979,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.023324145000515273,
+                "median": 0.02249800099980348,
+                "min": 0.021812261999912153,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 334.61360692908397,
+                "median": 334.54413896009544,
+                "min": 332.9804991970185,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 84.41968602138758,
+                "median": 84.39129241190864,
+                "min": 84.35847142760511,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 4919.76624018459,
+                "median": 4548.315349853514,
+                "min": 2495.9718110553345,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.051683276000403566,
+                "median": 0.028364196999518754,
+                "min": 0.02622075799990853,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.06666666666666667,
+              "diff_ci95": [
+                -0.16666666666666666,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.14,
+              "diff_ci95": [
+                -0.195,
+                -0.085
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295",
+          "bundle_sha256": "402816239f75a0c12f0058fc175c31cd506bdc6df9f1e70483b68056d34418b9",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 26B A4B IT EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4.1bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/gemma-4-26B-A4B-it-exl3",
+            "weights": "hf:turboderp/gemma-4-26B-A4B-it-exl3@7102602329b793263e5490c7a575d5364e6052cb"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.96,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.94,
+                    "ci95": [
+                      0.8752303146877748,
+                      0.9722142547333433
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 94,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.975,
+                "suites": [
+                  {
+                    "accuracy": 0.975,
+                    "ci95": [
+                      0.8711834051199223,
+                      0.9955732825922052
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 39,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.9259259259259259,
+                "suites": [
+                  {
+                    "accuracy": 0.9259259259259259,
+                    "ci95": [
+                      0.7663002270926937,
+                      0.9794457783026165
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 25,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 96.65602590544286,
+                "median": 95.99676898872478,
+                "min": 90.09768548730979,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 103.33187968880085,
+                "median": 102.55533442845994,
+                "min": 96.17809873803242,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 12770.135862237503,
+                "median": 12479.179783545387,
+                "min": 11992.894670323025,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.1900291850006397,
+                "median": 0.1826241819999268,
+                "min": 0.17846325400023488,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 267.5202559479927,
+                "median": 266.0582347874652,
+                "min": 263.8000276771185,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 80.98487612107269,
+                "median": 79.99735774998913,
+                "min": 75.7822632144261,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 4553.100654257621,
+                "median": 3469.460188647366,
+                "min": 3299.7360979963314,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.6906612929997209,
+                "median": 0.6568997405001937,
+                "min": 0.5005380229995353,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 100.77768470152796,
+                "median": 93.9226823547974,
+                "min": 86.67522131239225,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 104.89398243024904,
+                "median": 97.57278748862495,
+                "min": 89.82289805177449,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1399.001030431162,
+                "median": 1365.0092960198006,
+                "min": 1325.9492152076764,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.11463485799959017,
+                "median": 0.11135455300063768,
+                "min": 0.10864895499980776,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 285.61175922118105,
+                "median": 281.6127382453279,
+                "min": 281.3399415751754,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 79.7774986416306,
+                "median": 78.36824790707155,
+                "min": 76.45807237338293,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 527.2424107077967,
+                "median": 404.56662054424646,
+                "min": 378.55528256633437,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.40152655899964884,
+                "median": 0.3757107330002327,
+                "min": 0.2882924380000986,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.13333333333333333,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "replace",
+              "diff": 0.034999999999999996,
+              "diff_ci95": [
+                0.005,
+                0.06999999999999999
+              ],
+              "final": "replace",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "watch",
+              "diff": 0.07407407407407407,
+              "diff_ci95": [
+                -0.1111111111111111,
+                0.25925925925925924
+              ],
+              "final": "watch",
+              "new_pick": false,
+              "reasons": [
+                "ci_includes_zero"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T133557Z-qwen3-5-35b-a3b-exl3-cae41a92",
+          "bundle_sha256": "8e3d41377c5e7a48d18fa4871f5c13fe8d87e50b8d6c99d2fead5994f1c044d8",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.5 35B A3B EXL3",
+            "license": "Apache-2.0",
+            "quant": "exl3-4bpw",
+            "runtime": "exllamav3",
+            "source_url": "https://huggingface.co/turboderp/Qwen3.5-35B-A3B-exl3",
+            "weights": "hf:turboderp/Qwen3.5-35B-A3B-exl3@8a68a1aca688b768853bad4d926c0136ff62286c"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.665,
+                "suites": [
+                  {
+                    "accuracy": 0.85,
+                    "ci95": [
+                      0.7671626666784216,
+                      0.906940968088377
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 85,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.48,
+                    "ci95": [
+                      0.38464384320080547,
+                      0.5768359490982345
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 48,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.85,
+                "suites": [
+                  {
+                    "accuracy": 0.85,
+                    "ci95": [
+                      0.7092737396097997,
+                      0.9293890829149256
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 34,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7407407407407407,
+                "suites": [
+                  {
+                    "accuracy": 0.7407407407407407,
+                    "ci95": [
+                      0.553210695973843,
+                      0.8682979157713322
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 20,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "extractable_accuracy": 0.9,
+                    "extractable_ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T133557Z-qwen3-5-35b-a3b-exl3-cae41a92",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 139.03989291114024,
+                "median": 138.80664452117531,
+                "min": 137.70713884962035,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 143.21786967716002,
+                "median": 142.9268520862162,
+                "min": 142.70907783157472,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 38462.36506668992,
+                "median": 37912.12519906639,
+                "min": 32065.1186303825,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.0721656459991209,
+                "median": 0.061035881999487174,
+                "min": 0.060162706999108195,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 360.1630163513843,
+                "median": 355.2975209777374,
+                "min": 352.1114020837764,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 96.7262490815237,
+                "median": 95.16465785397092,
+                "min": 93.77832605368087,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 14439.279112320093,
+                "median": 11434.2461715744,
+                "min": 10518.880702232946,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.21998538299885695,
+                "median": 0.20237461749911745,
+                "min": 0.16025730799992743,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 135.30383396097076,
+                "median": 135.08175958572627,
+                "min": 134.85915254277177,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 143.4880982080969,
+                "median": 143.27804044206195,
+                "min": 143.17330094756244,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1323.514016305908,
+                "median": 1314.3331934334917,
+                "min": 1268.328075656778,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.11905436999950325,
+                "median": 0.11488715399900684,
+                "min": 0.11409021600047708,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 334.76623175321276,
+                "median": 331.3731311725871,
+                "min": 330.7449731300198,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 96.82129793659837,
+                "median": 95.72415777342212,
+                "min": 92.70405774340789,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 470.4208805453717,
+                "median": 363.3948961790089,
+                "min": 342.1005068987589,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.441390752001098,
+                "median": 0.4155259519993706,
+                "min": 0.3209891530004825,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "format": {
+              "computed": "hold",
+              "diff": -0.03333333333333333,
+              "diff_ci95": [
+                -0.13333333333333333,
+                0.06666666666666667
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "general": {
+              "computed": "hold",
+              "diff": -0.26,
+              "diff_ci95": [
+                -0.325,
+                -0.2
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.1111111111111111,
+              "diff_ci95": [
+                -0.3333333333333333,
+                0.1111111111111111
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "coming": true,
+      "envelope": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
+      "id": "36gb-unified",
+      "judge": [],
+      "name": "36 GB unified",
+      "pick_status": {
+        "format": "saturated",
+        "general": "none",
+        "grounding": "saturated",
+        "longctx": "none",
+        "structured": "saturated"
+      },
+      "runs": [
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T090348Z-gemma-4-12b-it-gguf-ccb95ab7",
+          "bundle_sha256": "8aa2ebbea1595eb02607e318c0f021051b0430c11689bbdc41bce7c27e3368dd",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q6_K",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/gemma-4-12B-it-GGUF",
+            "weights": "hf:bartowski/gemma-4-12B-it-GGUF@2ae7d41be21ca62de00a2d320ee9cec50daa3aa6"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.94,
+                "suites": [
+                  {
+                    "accuracy": 0.97,
+                    "ci95": [
+                      0.915479219195973,
+                      0.9897456617765851
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 97,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.91,
+                    "ci95": [
+                      0.8377362530335634,
+                      0.9519280048361151
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 91,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.95,
+                "suites": [
+                  {
+                    "accuracy": 0.95,
+                    "ci95": [
+                      0.834958291820748,
+                      0.9861796228538989
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 38,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7407407407407407,
+                "suites": [
+                  {
+                    "accuracy": 0.7407407407407407,
+                    "ci95": [
+                      0.553210695973843,
+                      0.8682979157713322
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 20,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T090348Z-gemma-4-12b-it-gguf-ccb95ab7",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 22.84615536790332,
+                "median": 22.757490195154872,
+                "min": 22.733242037738027,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 22.878339093365394,
+                "median": 22.788516949813232,
+                "min": 22.767077913141442,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 38498.30205495916,
+                "median": 37935.91341318463,
+                "min": 37570.70799700367,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.06065895804204047,
+                "median": 0.06007500004488975,
+                "min": 0.0591974159469828,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 34.13984745302159,
+                "median": 33.42094709356946,
+                "min": 32.9110174148119,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 15.828240049067178,
+                "median": 12.999767252899566,
+                "min": 8.427842904201873,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 15520.66414888457,
+                "median": 259.019474779567,
+                "min": 159.08007092225182,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 14.326118833036162,
+                "median": 10.136820917017758,
+                "min": 0.14683649991638958,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 22.802031586778746,
+                "median": 22.222493896066304,
+                "min": 21.56464038318448,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 22.944091667587145,
+                "median": 22.35439440563883,
+                "min": 21.71898066421969,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1348.6411069321628,
+                "median": 1343.9736206627147,
+                "min": 1165.6184726052493,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.13040287501644343,
+                "median": 0.11309745791368186,
+                "min": 0.11270604107994586,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 65.7263037633057,
+                "median": 65.55576112866963,
+                "min": 65.24894119778307,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 17.781810800982008,
+                "median": 17.70839709758006,
+                "min": 17.568586563908454,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 135.65765069612038,
+                "median": 128.34082727896592,
+                "min": 121.21328926293485,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.2539879160467535,
+                "median": 1.1848060834454373,
+                "min": 1.1204675830667838,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                -0.025,
+                0.025
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.14814814814814814,
+              "diff_ci95": [
+                -0.2962962962962963,
+                -0.037037037037037035
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T110228Z-gemma-4-12b-it-gguf-c24fa8ae",
+          "bundle_sha256": "61de488865583f6eeb5628fde4dead1effc45dbab06e932a61ed8d67d6d7ae0e",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Gemma 4 12B IT GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q4_K_M",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/gemma-4-12B-it-GGUF",
+            "weights": "hf:bartowski/gemma-4-12B-it-GGUF@2ae7d41be21ca62de00a2d320ee9cec50daa3aa6"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.94,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.8256326956323347,
+                      0.9447714583868639
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 90,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.95,
+                "suites": [
+                  {
+                    "accuracy": 0.95,
+                    "ci95": [
+                      0.834958291820748,
+                      0.9861796228538989
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 38,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7407407407407407,
+                "suites": [
+                  {
+                    "accuracy": 0.7407407407407407,
+                    "ci95": [
+                      0.553210695973843,
+                      0.8682979157713322
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 20,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T110228Z-gemma-4-12b-it-gguf-c24fa8ae",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 27.434597610433222,
+                "median": 27.32501365141816,
+                "min": 27.265405142450316,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 27.485772508675744,
+                "median": 27.375316390978647,
+                "min": 27.315837241020574,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 42404.372177660545,
+                "median": 42372.80257904899,
+                "min": 39087.86387335374,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.058304541977122426,
+                "median": 0.053784499992616475,
+                "min": 0.053744458011351526,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 35.1765177369341,
+                "median": 34.50751034567426,
+                "min": 34.151993176396886,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 16.719653579729176,
+                "median": 13.702500714735514,
+                "min": 8.697415742601374,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 16908.441058668537,
+                "median": 259.85357878696243,
+                "min": 159.9173103302327,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 14.251115125021897,
+                "median": 10.11137856246205,
+                "min": 0.13478474994190037,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 27.185819415441426,
+                "median": 26.634556073506765,
+                "min": 25.992505020584264,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 27.3813620944823,
+                "median": 26.824218803277475,
+                "min": 26.208057297529137,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1464.7790468057717,
+                "median": 1444.32975896828,
+                "min": 1275.5873583218781,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.11916079209186137,
+                "median": 0.10523912496864796,
+                "min": 0.10376991692464799,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 68.9568107567446,
+                "median": 68.56346419049292,
+                "min": 68.06354180275316,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 18.6906728044866,
+                "median": 18.594559998850023,
+                "min": 18.42081933670981,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 135.45444803863919,
+                "median": 128.32446674364488,
+                "min": 121.39105773502295,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 1.2521515409462154,
+                "median": 1.1847937919665128,
+                "min": 1.1221484580310062,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.14814814814814814,
+              "diff_ci95": [
+                -0.2962962962962963,
+                -0.037037037037037035
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T130536Z-qwen3-6-35b-a3b-gguf-d5568ec3",
+          "bundle_sha256": "224605716eb1203425a3963aaed5bfd0bf9476f67a903fc0a487a33ab32d4b82",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.6 35B A3B GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q4_K_M",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/ggml-org/Qwen3.6-35B-A3B-GGUF",
+            "weights": "hf:ggml-org/Qwen3.6-35B-A3B-GGUF@7878dc9a905c7c9379e5e8d6a1aa9affdd6839c5"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9,
+                "suites": [
+                  {
+                    "accuracy": 0.9,
+                    "ci95": [
+                      0.7437855868473339,
+                      0.9654007400402839
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 27,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.87,
+                "suites": [
+                  {
+                    "accuracy": 0.99,
+                    "ci95": [
+                      0.9455124752390653,
+                      0.9982326134344526
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 99,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.75,
+                    "ci95": [
+                      0.6569535362992417,
+                      0.8245490599627573
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 75,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8888888888888888,
+                "suites": [
+                  {
+                    "accuracy": 0.8888888888888888,
+                    "ci95": [
+                      0.7194181745602705,
+                      0.9614803521050127
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T130536Z-qwen3-6-35b-a3b-gguf-d5568ec3",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 66.8867935950398,
+                "median": 66.51918117046445,
+                "min": 66.12757482155591,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 67.31178265059877,
+                "median": 66.98276256107988,
+                "min": 66.54425712404498,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 59301.084189223715,
+                "median": 59201.143139882624,
+                "min": 44857.16831016916,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.051585957990027964,
+                "median": 0.03908708307426423,
+                "min": 0.03902120899874717,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 134.23783577128188,
+                "median": 134.21957063547265,
+                "min": 130.12010447283708,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 34.56266443024055,
+                "median": 34.001771222472506,
+                "min": 33.966318242556056,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 19463.81969862565,
+                "median": 18376.984880808188,
+                "min": 4737.404026047733,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.48845316702499986,
+                "median": 0.12591839651577175,
+                "min": 0.11888725007884204,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 67.99696051259743,
+                "median": 67.72277154406747,
+                "min": 66.88971148965858,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 68.40103068295346,
+                "median": 68.18529732769392,
+                "min": 67.8641811523584,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 4278.170857227437,
+                "median": 4096.56321122797,
+                "min": 1638.2319150106662,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.09217254200484604,
+                "median": 0.03686016600113362,
+                "min": 0.03529545804485679,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 142.85836855435625,
+                "median": 142.37059165792132,
+                "min": 140.76295917405656,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 36.067648483656406,
+                "median": 36.03734465552432,
+                "min": 35.90679399051591,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 1621.2168192892186,
+                "median": 1342.31347883865,
+                "min": 876.3976923918797,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 0.1722962090279907,
+                "median": 0.11249235400464386,
+                "min": 0.09313991700764745,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.06999999999999999,
+              "diff_ci95": [
+                -0.11499999999999999,
+                -0.025
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better"
+              ]
+            },
+            "longctx": {
+              "computed": "initial_pick",
+              "diff": null,
+              "diff_ci95": null,
+              "final": "initial_pick",
+              "new_pick": true,
+              "reasons": []
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T150117Z-qwen3-8-27b-gguf-338b649b",
+          "bundle_sha256": "8e915160d06ee8fa7d8f215b5d074a9392c677b281c6cdcd9e20023e62768f9d",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.8 27B GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q6_K",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF",
+            "weights": "hf:bartowski/Qwen3.8-27B-GGUF@87410e7b9a5c21e6ca70c0c9cc5237de909fe621"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9333333333333333,
+                "suites": [
+                  {
+                    "accuracy": 0.9333333333333333,
+                    "ci95": [
+                      0.7867618227892791,
+                      0.9815233646723066
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 28,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.8999999999999999,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.82,
+                    "ci95": [
+                      0.7333246397578691,
+                      0.8829986834574896
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 82,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.5185185185185185,
+                "suites": [
+                  {
+                    "accuracy": 0.5185185185185185,
+                    "ci95": [
+                      0.3398532458621043,
+                      0.6925704935029092
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 14,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T150117Z-qwen3-8-27b-gguf-338b649b",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 11.092723561663169,
+                "median": 10.832666637997761,
+                "min": 10.513384172183141,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 11.115139804429301,
+                "median": 10.85477352534917,
+                "min": 10.533776109278993,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 17258.824673444233,
+                "median": 16848.799976128816,
+                "min": 16583.281955503637,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.14207079191692173,
+                "median": 0.13983191701117903,
+                "min": 0.13650987506844103,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 15.22330200771771,
+                "median": 15.16526941965838,
+                "min": 14.998608390208302,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 7.483087561834058,
+                "median": 5.278932985745486,
+                "min": 3.841023508953009,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 1996.1274891367566,
+                "median": 585.3997978253909,
+                "min": 70.25540120871712,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 33.5347882079659,
+                "median": 15.678362104459666,
+                "min": 1.1802853338886052,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 11.346294352977143,
+                "median": 11.04607929688684,
+                "min": 10.440177385785423,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 11.367165807786126,
+                "median": 11.066814658256085,
+                "min": 10.855169393393293,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1491.4996998031152,
+                "median": 1442.6311235265796,
+                "min": 187.46160309438594,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 1.0295441669877619,
+                "median": 0.13378333300352097,
+                "min": 0.12939995899796486,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 30.059109153992527,
+                "median": 29.350786682041324,
+                "min": 28.790844151421037,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 8.34975548536191,
+                "median": 7.883136109742601,
+                "min": 7.446133248556629,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 185.49532296583712,
+                "median": 116.2421404764089,
+                "min": 53.490800138599795,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 3.6080970839830115,
+                "median": 2.2927217080141418,
+                "min": 1.040457500028424,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.04,
+              "diff_ci95": [
+                -0.085,
+                0.005
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.37037037037037035,
+              "diff_ci95": [
+                -0.5555555555555556,
+                -0.18518518518518517
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T180313Z-qwen3-8-27b-gguf-af06eaaf",
+          "bundle_sha256": "8b1ce6472aa1cca4a2c5a84a70bc7834d7626f3a065a4e0960a4165f891660d6",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 65536,
+            "server_context": 65536
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "Qwen3.8 27B GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q4_K_M",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF",
+            "weights": "hf:bartowski/Qwen3.8-27B-GGUF@87410e7b9a5c21e6ca70c0c9cc5237de909fe621"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.9099999999999999,
+                "suites": [
+                  {
+                    "accuracy": 0.97,
+                    "ci95": [
+                      0.915479219195973,
+                      0.9897456617765851
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 97,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.85,
+                    "ci95": [
+                      0.7671626666784216,
+                      0.906940968088377
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 85,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.9123754607496077,
+                      1.0
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 40,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.8888888888888888,
+                "suites": [
+                  {
+                    "accuracy": 0.8888888888888888,
+                    "ci95": [
+                      0.7194181745602705,
+                      0.9614803521050127
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 24,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T180313Z-qwen3-8-27b-gguf-af06eaaf",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 12.937703362409,
+                "median": 12.647107431766287,
+                "min": 12.305197399357564,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 12.979687082360828,
+                "median": 12.686996928345742,
+                "min": 12.344227373048742,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 16703.73097734048,
+                "median": 16537.564390227177,
+                "min": 16050.326413518631,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.14678829198237509,
+                "median": 0.14246354205533862,
+                "min": 0.14104633289389312,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 20.697552055734,
+                "median": 20.58146781978643,
+                "min": 20.488053239110364,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 8.010255881271869,
+                "median": 5.248650511088834,
+                "min": 5.21777572049173,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2615.350828005246,
+                "median": 2578.0456505202465,
+                "min": 133.57406651064198,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 17.63815433299169,
+                "median": 0.9138705625082366,
+                "min": 0.9008351670345291,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 13.199277001417599,
+                "median": 12.80291348991779,
+                "min": 12.539443580833362,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 13.24356025878839,
+                "median": 12.84717601303407,
+                "min": 12.611373418745695,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1375.0299013915235,
+                "median": 1327.1354503068344,
+                "min": 986.0261849967263,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.19573516701348126,
+                "median": 0.14542600000277162,
+                "min": 0.14036058401688933,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 31.29472269253988,
+                "median": 30.625594270432565,
+                "min": 30.098060192933858,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 8.737009125847802,
+                "median": 8.241104162497493,
+                "min": 7.783017390529327,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 192.77396461145966,
+                "median": 119.83266621677954,
+                "min": 53.30838427254715,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 3.6204436250263825,
+                "median": 2.2873009164468385,
+                "min": 1.0011725410586223,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.030000000000000002,
+              "diff_ci95": [
+                -0.075,
+                0.015
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": 0.0,
+              "diff_ci95": [
+                -0.1111111111111111,
+                0.1111111111111111
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261114T214007Z-nousresearch-arete-27b-gguf-814e5d93",
+          "bundle_sha256": "70bdb3a0e154408035ca27bda5298d366ebfe88940defd7b1765d8873e1904bb",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 32768,
+            "server_context": 32768
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "NousResearch Arete 27B GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q6_K",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
+            "weights": "hf:bartowski/NousResearch_Arete-27B-GGUF@9762c8502a79bd2b8634735d75f426b9febe092c"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 0.9666666666666667,
+                "suites": [
+                  {
+                    "accuracy": 0.9666666666666667,
+                    "ci95": [
+                      0.8332924860304112,
+                      0.9940915620051425
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 29,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.8999999999999999,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.82,
+                    "ci95": [
+                      0.7333246397578691,
+                      0.8829986834574896
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 82,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.975,
+                "suites": [
+                  {
+                    "accuracy": 0.975,
+                    "ci95": [
+                      0.8711834051199223,
+                      0.9955732825922052
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 39,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.5185185185185185,
+                "suites": [
+                  {
+                    "accuracy": 0.5185185185185185,
+                    "ci95": [
+                      0.3398532458621043,
+                      0.6925704935029092
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 14,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261114T214007Z-nousresearch-arete-27b-gguf-814e5d93",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 10.419942349128776,
+                "median": 10.070432067694737,
+                "min": 9.659518967342322,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 10.439853849873078,
+                "median": 10.090795710354394,
+                "min": 9.678055774238446,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 16516.546384024838,
+                "median": 15664.815502316393,
+                "min": 15289.99721915253,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.1540876670042053,
+                "median": 0.15040074998978525,
+                "min": 0.1426448329584673,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 14.064575955325084,
+                "median": 13.993225842643396,
+                "min": 13.909991099854572,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 6.818838412520923,
+                "median": 4.845951101309382,
+                "min": 3.5532040435684435,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 1892.7128647731806,
+                "median": 497.1274370266917,
+                "min": 65.88784324324976,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 35.75773441698402,
+                "median": 16.9022553130053,
+                "min": 1.244774124934338,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 10.494307683745538,
+                "median": 10.104205772986246,
+                "min": 9.37818932274288,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 10.513088194606448,
+                "median": 10.125142325545857,
+                "min": 9.843917830643727,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1391.5212732452055,
+                "median": 1259.559887668955,
+                "min": 138.54392488167758,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 1.3930600000312552,
+                "median": 0.1532281250692904,
+                "min": 0.13869712501764297,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 28.051679022696284,
+                "median": 26.607673792513506,
+                "min": 25.441916150303747,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 7.7729057691399674,
+                "median": 7.130016807474392,
+                "min": 6.572895491410915,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 172.159555090938,
+                "median": 106.08729168783505,
+                "min": 50.408995752136214,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 3.8286817088956013,
+                "median": 2.4510663130204193,
+                "min": 1.1210530829848722,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.04,
+              "diff_ci95": [
+                -0.085,
+                0.005
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.37037037037037035,
+              "diff_ci95": [
+                -0.5555555555555556,
+                -0.18518518518518517
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        },
+        {
+          "bundle_path": "results/2026-11-16/runs/20261115T090525Z-nousresearch-arete-27b-gguf-6b8d1744",
+          "bundle_sha256": "9c6f7961a935df4416048c3602c53f12d960d36a074620dbdfcb19d1491f822d",
+          "eligible": true,
+          "fit": {
+            "kv_cache_dtype": null,
+            "kv_capacity_tokens": null,
+            "kv_fraction_at_max": null,
+            "max_context_passed": 131072,
+            "server_context": 131072
+          },
+          "ineligible_reasons": [],
+          "memory": {},
+          "model": {
+            "label": "NousResearch Arete 27B GGUF",
+            "license": "Apache-2.0",
+            "quant": "Q4_K_M",
+            "runtime": "llamacpp",
+            "source_url": "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF",
+            "weights": "hf:bartowski/NousResearch_Arete-27B-GGUF@9762c8502a79bd2b8634735d75f426b9febe092c"
+          },
+          "pick_tracks": [],
+          "quality": {
+            "tracks": {
+              "format": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+                    "key": "format/exact-reply",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              },
+              "general": {
+                "score": 0.9199999999999999,
+                "suites": [
+                  {
+                    "accuracy": 0.98,
+                    "ci95": [
+                      0.9299868370580063,
+                      0.9944981477650318
+                    ],
+                    "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+                    "key": "general/gsm8k",
+                    "n": 100,
+                    "passed": 98,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": 0.86,
+                    "ci95": [
+                      0.7786263961619276,
+                      0.914737342455351
+                    ],
+                    "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+                    "key": "general/ifeval",
+                    "n": 100,
+                    "passed": 86,
+                    "version": 1
+                  },
+                  {
+                    "accuracy": null,
+                    "ci95": null,
+                    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+                    "key": "general/open-ended",
+                    "n": 20,
+                    "passed": null,
+                    "version": 1
+                  }
+                ]
+              },
+              "grounding": {
+                "score": 0.975,
+                "suites": [
+                  {
+                    "accuracy": 0.975,
+                    "ci95": [
+                      0.8711834051199223,
+                      0.9955732825922052
+                    ],
+                    "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+                    "key": "grounding/context-only",
+                    "n": 40,
+                    "passed": 39,
+                    "version": 2
+                  }
+                ]
+              },
+              "longctx": {
+                "score": 0.7777777777777778,
+                "suites": [
+                  {
+                    "accuracy": 0.7777777777777778,
+                    "ci95": [
+                      0.5924270453692919,
+                      0.8939290451059105
+                    ],
+                    "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+                    "key": "longctx/needle",
+                    "n": 27,
+                    "passed": 21,
+                    "version": 2
+                  }
+                ]
+              },
+              "structured": {
+                "score": 1.0,
+                "suites": [
+                  {
+                    "accuracy": 1.0,
+                    "ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "extractable_accuracy": 1.0,
+                    "extractable_ci95": [
+                      0.8864829086095221,
+                      1.0
+                    ],
+                    "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+                    "key": "structured/json",
+                    "n": 30,
+                    "passed": 30,
+                    "version": 2
+                  }
+                ]
+              }
+            }
+          },
+          "role": "candidate",
+          "run_id": "20261115T090525Z-nousresearch-arete-27b-gguf-6b8d1744",
+          "speed": {
+            "long@1": {
+              "aggregate_tps": {
+                "max": 14.127948287267495,
+                "median": 13.779774523305614,
+                "min": 13.537514213429606,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 14.175514812596843,
+                "median": 13.826139539006627,
+                "min": 13.579181485262904,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 18422.867867280635,
+                "median": 17937.22546785769,
+                "min": 17500.247674046765,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.13462666608393192,
+                "median": 0.13134695799089968,
+                "min": 0.12788454093970358,
+                "n": 5
+              }
+            },
+            "long@4": {
+              "aggregate_tps": {
+                "max": 16.541989653754552,
+                "median": 16.501002724871192,
+                "min": 16.45041256355515,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 8.584053152779335,
+                "median": 5.925622763906883,
+                "min": 4.20215001559552,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 2200.3257618543807,
+                "median": 618.0982259027925,
+                "min": 73.13468043998124,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 32.21453879098408,
+                "median": 15.131254791514948,
+                "min": 1.0707505410537124,
+                "n": 20
+              }
+            },
+            "short@1": {
+              "aggregate_tps": {
+                "max": 14.586740650478122,
+                "median": 14.194005131345195,
+                "min": 13.475834817554194,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 14.63499840482661,
+                "median": 14.240018021640935,
+                "min": 14.02163582390854,
+                "n": 5
+              },
+              "prefill_tps": {
+                "max": 1529.3220794645852,
+                "median": 1501.915812452999,
+                "min": 234.51461795839938,
+                "n": 5
+              },
+              "ttft_s": {
+                "max": 0.8229764169082046,
+                "median": 0.12850254215300083,
+                "min": 0.1261997080873698,
+                "n": 5
+              }
+            },
+            "short@4": {
+              "aggregate_tps": {
+                "max": 33.70348077767581,
+                "median": 33.18055718318353,
+                "min": 32.57394221618076,
+                "n": 5
+              },
+              "decode_tps": {
+                "max": 9.416909749121974,
+                "median": 8.90861566169485,
+                "min": 8.424355941165947,
+                "n": 20
+              },
+              "prefill_tps": {
+                "max": 207.64610140152803,
+                "median": 129.6282982931218,
+                "min": 56.607621132486074,
+                "n": 20
+              },
+              "ttft_s": {
+                "max": 3.409434915985912,
+                "median": 2.1308075829874724,
+                "min": 0.9294660419691354,
+                "n": 20
+              }
+            }
+          },
+          "verdicts": {
+            "general": {
+              "computed": "hold",
+              "diff": -0.02,
+              "diff_ci95": [
+                -0.06,
+                0.02
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            },
+            "longctx": {
+              "computed": "hold",
+              "diff": -0.1111111111111111,
+              "diff_ci95": [
+                -0.25925925925925924,
+                0.0
+              ],
+              "final": "hold",
+              "new_pick": false,
+              "reasons": [
+                "not_better",
+                "slower_than_ratio"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "week": "2026-11-16"
+}

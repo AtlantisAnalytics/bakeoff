@@ -1,0 +1,122 @@
+week = "2026-11-16"
+published_at = "2026-11-16T15:00:00Z"
+
+[[run]]
+bundle = "runs/20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.8-27B-exl3"
+
+[[run]]
+bundle = "runs/20261114T114020Z-gemma-4-12b-it-exl3-e403374a"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-12B-it-exl3"
+
+[[run]]
+bundle = "runs/20261114T120024Z-granite-4-2-8b-fp8-6ef71a3b"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-8b-fp8"
+
+[[run]]
+bundle = "runs/20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-26B-A4B-it-exl3"
+
+[[run]]
+bundle = "runs/20261114T133557Z-qwen3-5-35b-a3b-exl3-cae41a92"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.5-35B-A3B-exl3"
+
+[[run]]
+bundle = "runs/20261114T110507Z-granite-4-2-3b-53cf2049"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-3b"
+
+[[run]]
+bundle = "runs/20261114T114452Z-gemma-4-12b-it-exl3-13799ce9"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-12B-it-exl3"
+
+[[run]]
+bundle = "runs/20261114T123757Z-qwen3-5-9b-exl3-1a17c1a3"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.5-9B-exl3"
+
+[[run]]
+bundle = "runs/20261114T142937Z-ministral-3-14b-instruct-2512-exl3-80cbc30c"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Ministral-3-14B-Instruct-2512-exl3"
+
+[[run]]
+bundle = "runs/20261114T145855Z-granite-4-2-8b-nvfp4-073d079f"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-8b-nvfp4"
+
+[[run]]
+bundle = "runs/20261114T090348Z-gemma-4-12b-it-gguf-ccb95ab7"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/gemma-4-12B-it-GGUF"
+
+[[run]]
+bundle = "runs/20261114T110228Z-gemma-4-12b-it-gguf-c24fa8ae"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/gemma-4-12B-it-GGUF"
+
+[[run]]
+bundle = "runs/20261114T130536Z-qwen3-6-35b-a3b-gguf-d5568ec3"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ggml-org/Qwen3.6-35B-A3B-GGUF"
+
+[[run]]
+bundle = "runs/20261114T150117Z-qwen3-8-27b-gguf-338b649b"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF"
+
+[[run]]
+bundle = "runs/20261114T180313Z-qwen3-8-27b-gguf-af06eaaf"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF"
+
+[[run]]
+bundle = "runs/20261114T214007Z-nousresearch-arete-27b-gguf-814e5d93"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF"
+
+[[run]]
+bundle = "runs/20261115T090525Z-nousresearch-arete-27b-gguf-6b8d1744"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/NousResearch_Arete-27B-GGUF"
+
+[[judge]]
+bundle = "judge/judge-3922e69e-vs-40281623"
+
+[[judge]]
+bundle = "judge/judge-3922e69e-vs-8e3d4137"
+
+[[judge]]
+bundle = "judge/judge-e1432ea7-vs-87ccea27"
+
+[[judge]]
+bundle = "judge/judge-e1432ea7-vs-cde25e57"
+
+[[judge]]
+bundle = "judge/judge-e1432ea7-vs-1955dbd2"
+
+[[judge]]
+bundle = "judge/judge-e1432ea7-vs-7398939a"

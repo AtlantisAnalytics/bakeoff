@@ -1,0 +1,610 @@
+{
+  "bundle_format": "m2",
+  "run_id": "20261114T214007Z-nousresearch-arete-27b-gguf-814e5d93",
+  "started_at": "2026-11-14T21:40:07Z",
+  "ended_at": "2026-11-15T00:58:52Z",
+  "status": "complete",
+  "status_reason": null,
+  "config": {
+    "endpoint": {
+      "model": "i196-nousresearch-arete-27b-gguf",
+      "timeout_s": 600.0
+    },
+    "model": {
+      "label": "NousResearch Arete 27B GGUF",
+      "weights": "hf:bartowski/NousResearch_Arete-27B-GGUF@9762c8502a79bd2b8634735d75f426b9febe092c",
+      "weights_file": "NousResearch_Arete-27B-Q6_K.gguf",
+      "quant": "Q6_K",
+      "runtime": "llamacpp",
+      "runtime_version": "llama.cpp b11960",
+      "envelope": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
+      "parallel": ""
+    },
+    "quality": {
+      "suites": [
+        "general",
+        "format",
+        "structured",
+        "grounding",
+        "longctx"
+      ],
+      "private_suites": []
+    },
+    "speed": {
+      "concurrency": [
+        1,
+        4
+      ],
+      "repeats": 5,
+      "warmup": 1
+    },
+    "fit": {
+      "steps": [
+        4096,
+        8192,
+        16384,
+        32768,
+        65536,
+        131072
+      ],
+      "max_context": 0
+    }
+  },
+  "env": {
+    "host": {
+      "os": {
+        "value": "macOS",
+        "source": "measured"
+      },
+      "os_version": {
+        "value": "26.7.2",
+        "source": "measured"
+      },
+      "cpu": {
+        "value": "Apple M4 Max",
+        "source": "measured"
+      },
+      "cpu_cores": {
+        "value": 14,
+        "source": "measured"
+      },
+      "ram_bytes": {
+        "value": 38654705664,
+        "source": "measured"
+      },
+      "power_state": {
+        "power_source": {
+          "value": "AC Power",
+          "source": "measured"
+        },
+        "low_power_mode": {
+          "value": false,
+          "source": "measured"
+        },
+        "thermal_warning": {
+          "value": 0,
+          "source": "measured"
+        },
+        "gpu_wired_limit_mb": {
+          "value": 32768,
+          "source": "measured"
+        }
+      },
+      "thermal_warning_end": {
+        "value": 0,
+        "source": "measured"
+      }
+    },
+    "gpus": [
+      {
+        "name": {
+          "value": "Apple M4 Max",
+          "source": "measured"
+        },
+        "unified_memory_bytes": {
+          "value": 38654705664,
+          "source": "measured"
+        }
+      }
+    ],
+    "gpu_links": [],
+    "runtime": {
+      "name": {
+        "value": "llamacpp",
+        "source": "operator"
+      },
+      "version": {
+        "value": "b11960-8642541b2",
+        "source": "reported"
+      },
+      "served_model": {
+        "value": "i196-nousresearch-arete-27b-gguf",
+        "source": "reported"
+      }
+    },
+    "model": {
+      "label": {
+        "value": "NousResearch Arete 27B GGUF",
+        "source": "operator"
+      },
+      "weights": {
+        "value": "hf:bartowski/NousResearch_Arete-27B-GGUF@9762c8502a79bd2b8634735d75f426b9febe092c",
+        "source": "operator"
+      },
+      "weights_file": {
+        "value": "NousResearch_Arete-27B-Q6_K.gguf",
+        "source": "operator"
+      },
+      "quant": {
+        "value": "Q6_K",
+        "source": "operator"
+      },
+      "envelope": {
+        "value": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
+        "source": "operator"
+      },
+      "parallel": {
+        "value": null,
+        "source": "not_captured"
+      }
+    },
+    "harness": {
+      "version": {
+        "value": "0.1.0",
+        "source": "measured"
+      },
+      "git_commit": {
+        "value": "2a8617386ca208af91889da378bc851e4ecef5df",
+        "source": "reported"
+      },
+      "git_dirty": {
+        "value": false,
+        "source": "reported"
+      },
+      "python": {
+        "value": "3.12.4",
+        "source": "measured"
+      }
+    }
+  },
+  "suites": [
+    {
+      "key": "format/exact-reply",
+      "version": 2,
+      "split": "public",
+      "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b"
+    },
+    {
+      "key": "general/gsm8k",
+      "version": 1,
+      "split": "public",
+      "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf"
+    },
+    {
+      "key": "general/ifeval",
+      "version": 1,
+      "split": "public",
+      "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5"
+    },
+    {
+      "key": "general/open-ended",
+      "version": 1,
+      "split": "public",
+      "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62"
+    },
+    {
+      "key": "grounding/context-only",
+      "version": 2,
+      "split": "public",
+      "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68"
+    },
+    {
+      "key": "longctx/needle",
+      "version": 2,
+      "split": "public",
+      "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7"
+    },
+    {
+      "key": "structured/json",
+      "version": 2,
+      "split": "public",
+      "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd"
+    }
+  ],
+  "quality": {
+    "suites": [
+      {
+        "key": "format/exact-reply",
+        "track": "format",
+        "name": "exact-reply",
+        "version": 2,
+        "split": "public",
+        "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+        "n": 30,
+        "items_total": 30,
+        "passed": 29,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.9666666666666667,
+        "ci95": [
+          0.8332924860304112,
+          0.9940915620051425
+        ]
+      },
+      {
+        "key": "general/gsm8k",
+        "track": "general",
+        "name": "gsm8k",
+        "version": 1,
+        "split": "public",
+        "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+        "n": 100,
+        "items_total": 100,
+        "passed": 98,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.98,
+        "ci95": [
+          0.9299868370580063,
+          0.9944981477650318
+        ]
+      },
+      {
+        "key": "general/ifeval",
+        "track": "general",
+        "name": "ifeval",
+        "version": 1,
+        "split": "public",
+        "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+        "n": 100,
+        "items_total": 100,
+        "passed": 82,
+        "errors": 0,
+        "truncated": 16,
+        "accuracy": 0.82,
+        "ci95": [
+          0.7333246397578691,
+          0.8829986834574896
+        ]
+      },
+      {
+        "key": "general/open-ended",
+        "track": "general",
+        "name": "open-ended",
+        "version": 1,
+        "split": "public",
+        "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+        "n": 20,
+        "items_total": 20,
+        "passed": null,
+        "errors": 0,
+        "truncated": 1,
+        "accuracy": null,
+        "ci95": null
+      },
+      {
+        "key": "grounding/context-only",
+        "track": "grounding",
+        "name": "context-only",
+        "version": 2,
+        "split": "public",
+        "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+        "n": 40,
+        "items_total": 40,
+        "passed": 39,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.975,
+        "ci95": [
+          0.8711834051199223,
+          0.9955732825922052
+        ]
+      },
+      {
+        "key": "longctx/needle",
+        "track": "longctx",
+        "name": "needle",
+        "version": 2,
+        "split": "public",
+        "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+        "n": 27,
+        "items_total": 27,
+        "passed": 14,
+        "errors": 12,
+        "truncated": 0,
+        "accuracy": 0.5185185185185185,
+        "ci95": [
+          0.3398532458621043,
+          0.6925704935029092
+        ]
+      },
+      {
+        "key": "structured/json",
+        "track": "structured",
+        "name": "json",
+        "version": 2,
+        "split": "public",
+        "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+        "n": 30,
+        "items_total": 30,
+        "passed": 30,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 1.0,
+        "ci95": [
+          0.8864829086095221,
+          1.0
+        ],
+        "extractable_accuracy": 1.0,
+        "extractable_ci95": [
+          0.8864829086095221,
+          1.0
+        ]
+      }
+    ],
+    "tracks": {
+      "format": 0.9666666666666667,
+      "general": 0.8999999999999999,
+      "grounding": 0.975,
+      "longctx": 0.5185185185185185,
+      "structured": 1.0
+    }
+  },
+  "speed": {
+    "short@1": {
+      "ttft_s": {
+        "median": 0.1532281250692904,
+        "min": 0.13869712501764297,
+        "max": 1.3930600000312552,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 1259.559887668955,
+        "min": 138.54392488167758,
+        "max": 1391.5212732452055,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 10.125142325545857,
+        "min": 9.843917830643727,
+        "max": 10.513088194606448,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 10.104205772986246,
+        "min": 9.37818932274288,
+        "max": 10.494307683745538,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "short@4": {
+      "ttft_s": {
+        "median": 2.4510663130204193,
+        "min": 1.1210530829848722,
+        "max": 3.8286817088956013,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 106.08729168783505,
+        "min": 50.408995752136214,
+        "max": 172.159555090938,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 7.130016807474392,
+        "min": 6.572895491410915,
+        "max": 7.7729057691399674,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 26.607673792513506,
+        "min": 25.441916150303747,
+        "max": 28.051679022696284,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@1": {
+      "ttft_s": {
+        "median": 0.15040074998978525,
+        "min": 0.1426448329584673,
+        "max": 0.1540876670042053,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 15664.815502316393,
+        "min": 15289.99721915253,
+        "max": 16516.546384024838,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 10.090795710354394,
+        "min": 9.678055774238446,
+        "max": 10.439853849873078,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 10.070432067694737,
+        "min": 9.659518967342322,
+        "max": 10.419942349128776,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@4": {
+      "ttft_s": {
+        "median": 16.9022553130053,
+        "min": 1.244774124934338,
+        "max": 35.75773441698402,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 497.1274370266917,
+        "min": 65.88784324324976,
+        "max": 1892.7128647731806,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 4.845951101309382,
+        "min": 3.5532040435684435,
+        "max": 6.818838412520923,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 13.993225842643396,
+        "min": 13.909991099854572,
+        "max": 14.064575955325084,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    }
+  },
+  "fit": {
+    "max_context_passed": 32768,
+    "server_context": 32768,
+    "server_context_probe": "pre_fit",
+    "limit_source": "reported",
+    "truncation_check": "measured",
+    "incomplete": false,
+    "steps": {
+      "4096": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "8192": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "16384": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "32768": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "65536": {
+        "status": "skipped",
+        "reason": "above context limit"
+      },
+      "131072": {
+        "status": "skipped",
+        "reason": "above context limit"
+      }
+    },
+    "kv": {
+      "capacity_tokens": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "block_size": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "cache_dtype": {
+        "value": null,
+        "source": "not_captured"
+      }
+    }
+  },
+  "memory": {
+    "platform": {
+      "value": "darwin",
+      "source": "measured"
+    },
+    "baseline": {
+      "value": {
+        "mem_used_bytes": 31198806016,
+        "power_w_mean": 0.0405802,
+        "mem_over_baseline_bytes": 25993117696
+      },
+      "source": "measured"
+    },
+    "peaks": {
+      "value": {
+        "baseline": {
+          "mem_used_bytes": 31198806016,
+          "power_w_mean": 0.0405802,
+          "mem_over_baseline_bytes": 25993117696
+        },
+        "quality": {
+          "mem_used_bytes": 36085317632,
+          "power_w_mean": 14.855832095831289,
+          "mem_over_baseline_bytes": 30879629312
+        },
+        "speed": {
+          "mem_used_bytes": 35858137088,
+          "power_w_mean": 15.0203186622245,
+          "mem_over_baseline_bytes": 30652448768
+        },
+        "fit:calibrate": {
+          "mem_used_bytes": 35619241984,
+          "power_w_mean": 21.169385980392153,
+          "mem_over_baseline_bytes": 30413553664
+        },
+        "fit:4096": {
+          "mem_used_bytes": 35726327808,
+          "power_w_mean": 16.802621472868214,
+          "mem_over_baseline_bytes": 30520639488
+        },
+        "fit:8192": {
+          "mem_used_bytes": 35694526464,
+          "power_w_mean": 19.06020928104575,
+          "mem_over_baseline_bytes": 30488838144
+        },
+        "fit:16384": {
+          "mem_used_bytes": 35842932736,
+          "power_w_mean": 19.867843308931185,
+          "mem_over_baseline_bytes": 30637244416
+        },
+        "fit:32768": {
+          "mem_used_bytes": 35813523456,
+          "power_w_mean": 19.971439999999998,
+          "mem_over_baseline_bytes": 30607835136
+        }
+      },
+      "source": "measured"
+    },
+    "runtime_reported": {
+      "size_vram": {
+        "value": null,
+        "source": "not_captured"
+      }
+    },
+    "mem_baseline_bytes": {
+      "value": 5205688320,
+      "source": "measured (system-wide)"
+    },
+    "mem_over_baseline_bytes": {
+      "value": {
+        "baseline": 25993117696,
+        "quality": 30879629312,
+        "speed": 30652448768,
+        "fit:calibrate": 30413553664,
+        "fit:4096": 30520639488,
+        "fit:8192": 30488838144,
+        "fit:16384": 30637244416,
+        "fit:32768": 30607835136
+      },
+      "source": "measured (system-wide)"
+    }
+  },
+  "files": {
+    "quality/format.exact-reply.jsonl": "e93bccb54fab949a3b3ee7023a6146ab538943bc8ae20fbbd7a3b267352a686e",
+    "quality/general.gsm8k.jsonl": "0e715ef9e628f1d939c84f78bcf46dfe68a0cade16f06dd625a89fcd9cdad907",
+    "quality/general.ifeval.jsonl": "4a787d2db5981ffd95dd38e98ea07a9e747eb5a621a392fc5d36d70579fce15f",
+    "quality/general.open-ended.jsonl": "b4208d89cb508ef4b35ac666242b86606206ce9c9819167a8a2742b197463205",
+    "quality/grounding.context-only.jsonl": "0c1f3e1e2c95ffce732cb48ed00c9b7b8692cb657c5a0a8efd3a0f173efcf380",
+    "quality/longctx.needle.jsonl": "e8c1484c4d0f277586f19d8acfd96b2ccc64a077a94bd44087c1a682cc804fa2",
+    "quality/structured.json.jsonl": "f53b101b3fd6d20361862feed61d466b5307b45209e5861c450c14c2254f89ab",
+    "speed.jsonl": "7f96bd266d82ea7d0542ed886b8a0becce368bc86daba97c904893310d569159",
+    "fit.jsonl": "986884cfec98fc10ecfe594ded58a7cbfdebcec9034b5e359cbbea84c313bb32",
+    "samples.jsonl": "4501f09072545e5664234ef36a626d5f2a05e270ced8f3d190de0022687e8018"
+  },
+  "bundle_sha256": "70bdb3a0e154408035ca27bda5298d366ebfe88940defd7b1765d8873e1904bb"
+}
