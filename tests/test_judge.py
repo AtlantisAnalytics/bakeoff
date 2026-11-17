@@ -555,3 +555,43 @@ def test_cli_client_does_not_retry(bundles, tmp_path):
     user = fake.requests[0]["messages"][-1]["content"]
     worst = per_call_worst_case(JUDGE_SYSTEM + "\n" + user, PRICES)
     assert recs[0]["cost_usd"] >= worst and meta["status"] == "complete"
+
+
+def test_cut_off_reply_without_a_verdict_is_an_error_not_a_tie(bundles, tmp_path):
+    fake = judge_fake()
+    inner, n = fake.responder, {"n": 0}
+
+    def responder(messages):
+        n["n"] += 1
+        if n["n"] == 3:  # item 1's first order: thinking used the whole cap, no JSON yet
+            return FakeReply(content="Let me weigh both answers", finish_reason="length",
+                             prompt_tokens=100, completion_tokens=JUDGE_MAX_TOKENS)  # fmt: skip
+        return inner(messages)
+
+    fake.responder = responder
+    out = run(bundles, tmp_path, fake)
+    meta = json.loads((out / "bundle.json").read_text())
+    recs = [json.loads(x) for x in (out / "items.jsonl").read_text().splitlines()]
+    assert meta["status"] == "complete" and meta["call_errors"] == 1
+    assert meta["counts"] == {"a": 19, "b": 0, "tie": 0}
+    bad = recs[1]
+    assert bad["result"] == "error" and bad["second"] is None  # the second order is not paid for
+    assert bad["reasons"] == ["cut off at the length cap"]
+    assert bad["cost_usd"] == pytest.approx((100 * 1.0 + JUDGE_MAX_TOKENS * 10.0) / 1e6)
+    assert len(fake.requests) == 39
+
+
+def test_cut_off_reply_that_already_gave_a_verdict_counts(bundles, tmp_path):
+    out = run(bundles, tmp_path, judge_fake(finish_reason="length"))
+    meta = json.loads((out / "bundle.json").read_text())
+    assert meta["call_errors"] == 0 and meta["counts"]["a"] == 20
+
+
+def test_cut_off_replies_in_bulk_stop_the_judge_as_incomplete(bundles, tmp_path):
+    fake = FakeOpenAI(
+        models=["judge-m"], responder=lambda m: FakeReply(content="hmm", finish_reason="length")
+    )
+    out = run(bundles, tmp_path, fake)
+    meta = json.loads((out / "bundle.json").read_text())
+    assert meta["status"] == "incomplete" and meta["status_reason"] == "error"
+    assert meta["counts"] == {"a": 0, "b": 0, "tie": 0}
