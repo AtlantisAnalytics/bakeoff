@@ -48,6 +48,7 @@ class ChatResult:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     reasoning_tokens: int | None = None
+    cached_tokens: int | None = None  # prompt tokens the engine reused from its cache, if it says
     usage_source: str = "estimated"
     chunk_count: int = 0
     t_start: float = 0.0
@@ -193,6 +194,7 @@ class EndpointClient:
         raw_content: list[str] = []
         reasoning: list[str] = []
         usage: dict | None = None
+        timings: dict | None = None
         res.t_start = time.perf_counter()
         try:
             async with self._http.stream(
@@ -227,6 +229,8 @@ class EndpointClient:
                         return res
                     if isinstance(obj.get("usage"), dict) and obj["usage"]:
                         usage = obj["usage"]
+                    if isinstance(obj.get("timings"), dict):  # llama.cpp's own counters
+                        timings = obj["timings"]
                     for choice in obj.get("choices") or []:
                         if not isinstance(choice, dict):
                             continue
@@ -274,6 +278,7 @@ class EndpointClient:
             res.usage_source = "estimated"
             res.completion_tokens = res.chunk_count
             res.prompt_tokens = None
+        res.cached_tokens = _cached_tokens(usage, timings)
         return res
 
     async def runtime_info(self, runtime: str) -> dict:
@@ -326,6 +331,20 @@ class EndpointClient:
         except httpx.HTTPError:
             return None
         return None
+
+
+def _count(v) -> int | None:
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else None
+
+
+def _cached_tokens(usage: dict | None, timings: dict | None) -> int | None:
+    """OpenAI's usage.prompt_tokens_details.cached_tokens (vLLM, recent llama.cpp), else llama.cpp's
+    timings.cache_n; None when the engine reports neither."""
+    details = (usage or {}).get("prompt_tokens_details")
+    cached = _count(details.get("cached_tokens")) if isinstance(details, dict) else None
+    if cached is None and timings is not None:
+        cached = _count(timings.get("cache_n"))
+    return cached
 
 
 def _unescape_label(value: str) -> str:
