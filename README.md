@@ -167,6 +167,12 @@ variable values, or GPU serials and UUIDs.
 - The `structured/json` suite checks values on unambiguous fields only. Output must be one JSON value,
   optionally in a code fence. A model that wraps its JSON in other tags fails the item.
 - The IFEval slice implements 16 instruction types, in strict mode only.
+- Every speed request, warmups included, sends its own prompt: the same shape and length, different
+  records. Engines reuse the work for a prompt they have seen before, so a repeated prompt would time
+  a cache hit, not prefill. Bundles from before the week of 2026-11-23 repeated one prompt per shape,
+  so their time to first token and prefill rates are cache hits; decode rates are unaffected.
+  `cached_tokens` records the prompt tokens the engine says it reused (vLLM reports it only when
+  started with `--enable-prompt-tokens-details`).
 - Concurrency numbers depend on the server's own parallelism setting. A server that queues requests
   serially shows the queueing in time to first token.
 

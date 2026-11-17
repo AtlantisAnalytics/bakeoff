@@ -3,10 +3,10 @@ import asyncio
 import pytest
 from fake_openai import FakeOpenAI, FakeReply
 
-from bakeoff.client import ChatResult, EndpointClient
+from bakeoff.client import ChatResult, EndpointClient, _cached_tokens
 from bakeoff.config import SpeedConfig
 from bakeoff.errors import AbortRun
-from bakeoff.speed import SHAPES, _cell_summary, _record, run_speed
+from bakeoff.speed import SHAPES, _cell_summary, _record, run_speed, shape_messages
 
 WORDS = "w " * 11
 
@@ -27,17 +27,35 @@ def run_s(fake, cfg, runtime="vllm", sampler=None):
 
 def test_shapes():
     assert set(SHAPES) == {"short", "long"}
-    short = SHAPES["short"][0]["content"]
+    short = shape_messages("short", 0)[0]["content"]
     assert short.endswith(
         "\n\nWrite a numbered list of 60 practical tips for keeping these depots organised. "
         "Number every tip and keep going until you reach 60."
     )
     assert short.count("Record ") == 4
-    long = SHAPES["long"][0]["content"]
+    long = shape_messages("long", 0)[0]["content"]
     assert long.endswith(
         "\n\nSummarise the records above as a numbered list of at least 40 observations."
     )
     assert long.count("Record ") == 80
+
+
+def test_shape_prompts_are_distinct_and_repeatable():
+    for shape in SHAPES:
+        prompts = [shape_messages(shape, i)[0]["content"] for i in range(50)]
+        assert len(set(prompts)) == 50
+        assert shape_messages(shape, 7) == shape_messages(shape, 7)
+        # they differ from the first record on, so no engine can reuse a cached prefix
+        assert len({p.split("\n")[0] for p in prompts}) > 1
+    assert shape_messages("short", 0) != shape_messages("long", 0)
+
+
+def test_every_request_gets_its_own_prompt():
+    fake = FakeOpenAI(responder=reply())
+    run_s(fake, SpeedConfig(concurrency=[1, 4], repeats=3, warmup=1))
+    contents = [b["messages"][0]["content"] for b in fake.requests]
+    assert len(contents) == 2 * (1 * 4 + 4 * 4)  # warmups included
+    assert len(set(contents)) == len(contents)
 
 
 def test_cells_and_record_counts():
@@ -50,7 +68,8 @@ def test_cells_and_record_counts():
     assert {r["round"] for r in recs} == {0, 1, 2}
     assert set(recs[0]) == {
         "shape", "concurrency", "round", "prompt_tokens", "completion_tokens",
-        "usage_source", "ttft_s", "decode_s", "total_s", "ignore_eos", "error", "attempts",
+        "usage_source", "cached_tokens", "ttft_s", "decode_s", "total_s", "ignore_eos", "error",
+        "attempts",
     }  # fmt: skip
     assert {r["attempts"] for r in recs} == {1}
     assert [r["shape"] for r in recs][:1] == ["short"] and recs[-1]["shape"] == "long"
@@ -215,3 +234,40 @@ def test_warmup_errors_not_recorded_or_budgeted():
     recs, summ = run_s(fake, SpeedConfig(concurrency=[1], repeats=3, warmup=15))
     assert len(recs) == 6 and all(r["error"] is None for r in recs[:3])
     assert summ["short@1"]["decode_tps"]["n"] == 3
+
+
+def _usage_chunks(usage: dict, timings: dict | None = None) -> list[dict]:
+    chunks = [{"choices": [{"index": 0, "delta": {"content": w}}]} for w in ["a ", "b ", "c"]]
+    last = {"choices": [{"index": 0, "delta": {}, "finish_reason": "length"}], "usage": usage}
+    if timings is not None:
+        last["timings"] = timings
+    return chunks + [last]
+
+
+def test_cached_tokens_recorded_and_summarised():
+    usage = {
+        "prompt_tokens": 2000,
+        "completion_tokens": 3,
+        "prompt_tokens_details": {"cached_tokens": 16},
+    }
+    fake = FakeOpenAI(responder=lambda m: FakeReply(chunks=_usage_chunks(usage)))
+    recs, summ = run_s(fake, SpeedConfig(concurrency=[1], repeats=2, warmup=0))
+    assert {r["cached_tokens"] for r in recs} == {16}
+    assert summ["long@1"]["cached_tokens"] == {"median": 16, "min": 16, "max": 16, "n": 2}
+
+
+def test_cached_tokens_unknown_when_not_reported():
+    recs, summ = run_s(
+        FakeOpenAI(responder=reply()), SpeedConfig(concurrency=[1], repeats=1, warmup=0)
+    )
+    assert {r["cached_tokens"] for r in recs} == {None}
+    assert summ["short@1"]["cached_tokens"]["n"] == 0
+
+
+def test_cached_tokens_sources():
+    assert _cached_tokens({"prompt_tokens_details": {"cached_tokens": 32}}, {"cache_n": 5}) == 32
+    assert _cached_tokens({"prompt_tokens_details": None}, {"cache_n": 5}) == 5  # llama.cpp timings
+    assert _cached_tokens(None, {"cache_n": 0}) == 0
+    assert _cached_tokens({"prompt_tokens": 9}, None) is None
+    assert _cached_tokens({"prompt_tokens_details": {"cached_tokens": True}}, None) is None
+    assert _cached_tokens(None, {"cache_n": -1}) is None

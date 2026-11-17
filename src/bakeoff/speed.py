@@ -1,6 +1,7 @@
 """Speed pass: TTFT, prefill, decode and aggregate throughput per (shape x concurrency) cell."""
 
 import asyncio
+import itertools
 
 from bakeoff.client import ChatResult, EndpointClient
 from bakeoff.config import SpeedConfig
@@ -31,10 +32,21 @@ def _messages(n_lines: int, seed: int, instruction: str) -> list[dict]:
     return [{"role": "user", "content": text}]
 
 
-SHAPES: dict[str, list[dict]] = {
-    "short": _messages(4, 1, _SHORT_INSTRUCTION),
-    "long": _messages(80, 2, _LONG_INSTRUCTION),
+# shape -> (haystack lines, seed block, instruction). Every request, warmups included, gets its own
+# haystack: engines reuse the work for a prompt they have already seen (vLLM's prefix cache,
+# llama.cpp's slot cache, ExLlamaV3's page reuse), so repeating one prompt timed a cache hit, not
+# prefill. The seed blocks sit far from the small seeds the quality suites and the fit pass use.
+SHAPES: dict[str, tuple[int, int, str]] = {
+    "short": (4, 1, _SHORT_INSTRUCTION),
+    "long": (80, 2, _LONG_INSTRUCTION),
 }
+SEED_BLOCK = 1_000_000
+
+
+def shape_messages(shape: str, index: int) -> list[dict]:
+    """The `index`-th distinct prompt of a shape (deterministic, so a run can be repeated)."""
+    n_lines, block, instruction = SHAPES[shape]
+    return _messages(n_lines, block * SEED_BLOCK + index, instruction)
 
 
 def _decode_s(r: ChatResult) -> float | None:
@@ -51,6 +63,7 @@ def _record(shape: str, c: int, rnd: int, r: ChatResult, ignore_eos: bool) -> di
         "prompt_tokens": r.prompt_tokens,
         "completion_tokens": r.completion_tokens,
         "usage_source": r.usage_source,
+        "cached_tokens": r.cached_tokens,
         "ttft_s": r.ttft_s,
         "decode_s": _decode_s(r),
         "total_s": r.total_s,
@@ -78,6 +91,7 @@ def _cell_summary(
         and rec["decode_s"] is not None
         and rec["decode_s"] > 0
     ]
+    cached = [rec["cached_tokens"] for rec, _ in ok if isinstance(rec.get("cached_tokens"), int)]
     aggregate = []
     for rnd in rounds:
         good = [
@@ -100,6 +114,7 @@ def _cell_summary(
         "prefill_tps": summarize(prefill),
         "decode_tps": summarize(decode),
         "aggregate_tps": summarize(aggregate),
+        "cached_tokens": summarize(cached),  # prompt tokens the engine says it reused
         "usage_source": usage_source,
         "ignore_eos": ignore_eos,
     }
@@ -120,26 +135,28 @@ async def run_speed(
     records: list[dict] = []
     summary: dict = {}
 
-    async def fire(messages: list[dict], c: int) -> list[ChatResult]:
+    async def fire(shape: str, next_index: itertools.count, c: int) -> list[ChatResult]:
+        prompts = [shape_messages(shape, next(next_index)) for _ in range(c)]
         return list(
             await asyncio.gather(
                 *(
                     client.chat(messages, MAX_TOKENS, temperature=0.0, seed=0, extra=extra)
-                    for _ in range(c)
+                    for messages in prompts
                 )
             )
         )
 
     try:
-        for shape, messages in SHAPES.items():
+        for shape in SHAPES:
+            next_index = itertools.count()
             for c in cfg.concurrency:
                 for _ in range(cfg.warmup):
-                    await fire(messages, c)
+                    await fire(shape, next_index, c)
                 items: list[tuple[dict, ChatResult]] = []
                 rounds: list[list[ChatResult]] = []
                 key = f"{shape}@{c}"
                 for rnd in range(cfg.repeats):
-                    results = await fire(messages, c)
+                    results = await fire(shape, next_index, c)
                     rounds.append(results)
                     tripped: AbortRun | None = None
                     for r in results:

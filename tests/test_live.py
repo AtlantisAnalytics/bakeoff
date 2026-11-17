@@ -58,7 +58,7 @@ steps = [4096, 8192]
 def test_live_decode_matches_runtime_counters(capsys):
     """Our client-side decode tok/s should agree with the runtime's own counters (Ollama)."""
     api_base, root = normalize_base_url(ENDPOINT)
-    messages = speed.SHAPES["short"]
+    messages = speed.shape_messages("short", 0)
     n = 3
 
     payload = {
