@@ -270,3 +270,77 @@ def test_abort_records_items_in_order_and_sends_no_more_requests():
     recs = ei.value.partial.records["general/s"]
     assert [r["id"] for r in recs] == [f"i{k}" for k in range(10)]  # as one at a time
     assert len(client.calls) < 40  # the rest were never sent
+
+
+# --- 2026-11-16: llama.cpp shares one KV pool, the size of its context, across its slots. At 32K
+# four long-context items in flight together overflowed it and failed with "Context size has been
+# exceeded", though each fit alone.
+
+
+class PoolClient(OverlapClient):
+    """Tracks the worst-case tokens in flight, as the quality pass estimates them."""
+
+    def __init__(self, capacity=None):
+        super().__init__(slow_first=False)
+        self.capacity = capacity
+        self.tokens, self.peak_tokens, self.alone = 0, 0, []
+
+    async def chat(self, messages, max_tokens, temperature=None, seed=None):
+        from bakeoff.quality import worst_case_tokens
+
+        n = worst_case_tokens(messages, max_tokens)
+        if self.capacity is not None:
+            n = min(n, self.capacity)  # an oversized request holds the whole pool
+        self.tokens += n
+        self.peak_tokens = max(self.peak_tokens, self.tokens)
+        if n == self.capacity:
+            self.alone.append(self.in_flight == 0)
+        try:
+            return await super().chat(messages, max_tokens, temperature, seed)
+        finally:
+            self.tokens -= n
+
+
+def sized_suite(sizes, max_tokens=1000):
+    s = make_suite("ctx", n=len(sizes), max_tokens=max_tokens)
+    items = []
+    for it, c in zip(s.items, sizes, strict=True):
+        content = "x" * c + it.messages[0]["content"]
+        items.append(replace(it, messages=[{"role": "user", "content": content}]))
+    return replace(s, items=items)
+
+
+def test_worst_case_tokens_errs_high_for_the_needle_suite():
+    from bakeoff.quality import worst_case_tokens
+
+    assert worst_case_tokens([{"role": "user", "content": "x" * 3000}], 4096) == 1000 + 256 + 4096
+    # the largest needle item: 37,579 characters that llama.cpp counted as about 11.5K tokens
+    assert worst_case_tokens([{"content": "x" * 37579}], 4096) > 11_500 + 4096
+
+
+def test_context_pool_keeps_requests_in_flight_within_the_server_context():
+    from bakeoff.quality import worst_case_tokens
+
+    sizes = [9000] * 6 + [300] * 10 + [30000] * 2 + [300] * 4
+    suite = sized_suite(sizes)
+    client = PoolClient(capacity=8192)
+    res = asyncio.run(run_quality(client, [suite], context_tokens=8192))
+    assert client.peak_tokens <= 8192
+    each = [worst_case_tokens(it.messages, 1000) for it in suite.items]
+    assert max(n for n in each if n <= 8192) * 2 > 8192  # so the big ones ran one at a time
+    assert client.alone == [True, True]  # larger than the pool: sent with nothing else in flight
+    assert [r["id"] for r in res.records["general/ctx"]] == [f"i{k}" for k in range(len(sizes))]
+    assert res.suites[0]["passed"] == len(sizes)
+
+
+def test_small_requests_still_overlap_under_a_context_pool():
+    client = OverlapClient()
+    asyncio.run(run_quality(client, [make_suite("a", n=20)], context_tokens=131072))
+    assert client.peak == 8
+
+
+def test_no_context_pool_by_default_or_for_a_useless_size():
+    for ctx in (None, 0):
+        client = PoolClient()
+        asyncio.run(run_quality(client, [sized_suite([9000] * 10)], context_tokens=ctx))
+        assert client.peak == 8

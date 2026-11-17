@@ -583,3 +583,30 @@ def test_no_thermal_end_off_darwin(tmp_path):
     assert "thermal_warning_end" not in meta["env"]["host"]
     assert "mem_baseline_bytes" not in meta["memory"]
     assert "mem_over_baseline_bytes" not in meta["memory"]
+
+
+def test_quality_context_only_for_llamacpp():
+    from bakeoff.runner import quality_context
+
+    assert quality_context("llamacpp", {"context_length": 32768}) == 32768
+    assert quality_context("vllm", {"context_length": 32768}) is None
+    assert quality_context("exllamav3", {"context_length": 32768}) is None
+    for bad in (None, 0, -1, True, "32768"):
+        assert quality_context("llamacpp", {"context_length": bad}) is None
+    assert quality_context("llamacpp", {}) is None
+
+
+def test_llamacpp_quality_stays_within_the_reported_context(tmp_path):
+    from dataclasses import replace
+
+    cfg = make_cfg(suites=("format/exact-reply",))
+    cfg = replace(cfg, model=replace(cfg.model, runtime="llamacpp"))
+    fake = FakeOpenAI(extras={"/props": {"default_generation_settings": {"n_ctx": 32768}}})
+    meta = json.loads(
+        (go(cfg, fake, tmp_path, run=fake_nvidia, platform="linux") / "bundle.json").read_text()
+    )
+    assert meta["quality"]["context_tokens"] == 32768
+    plain = make_cfg(suites=("format/exact-reply",))
+    path = go(plain, FakeOpenAI(), tmp_path / "o", run=fake_nvidia, platform="linux")
+    other = json.loads((path / "bundle.json").read_text())
+    assert "context_tokens" not in other["quality"]

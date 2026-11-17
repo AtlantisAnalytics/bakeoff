@@ -85,7 +85,9 @@ the same weights can produce different text on different hosts and occasionally 
 verdict therefore compares a candidate with the current pick re-measured on the same host, item by item,
 and never compares scores across hosts. When a model runs on several hosts in a week, the week reports how
 often their pass/fail agreed.</p>
-<p>Quality prompts go to the engine eight at a time, each at temperature 0 with a fixed seed. Like a different
+<p>Quality prompts go to the engine eight at a time, each at temperature 0 with a fixed seed. On
+llama.cpp, whose request slots share one context, fewer go at once when long prompts would not fit in
+it together. Like a different
 card, batching on the server can change an occasional token. The candidate and the pick it is compared with
 are always measured the same way.</p>
 <p>The Mac tier tests each model at the largest standard GGUF quant that fits, plus Q4_K_M.
