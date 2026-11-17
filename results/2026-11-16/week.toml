@@ -1,5 +1,5 @@
 week = "2026-11-16"
-published_at = "2026-11-16T15:00:00Z"
+published_at = "2026-11-17T16:00:00Z"
 
 [[run]]
 bundle = "runs/20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d"
@@ -120,3 +120,6 @@ bundle = "judge/judge-e1432ea7-vs-1955dbd2"
 
 [[judge]]
 bundle = "judge/judge-e1432ea7-vs-7398939a"
+
+[correction]
+note = """Qwen3.8 27B and Arete 27B at Q6_K were served with a 32K context, which the server shares between the requests it runs at once. Our harness sent up to four long-context questions together, which overfilled it, and 12 of the 27 long-context questions were rejected with a context error before the model answered. Those count as misses, so the 51.9% long-context scores understate both models: each question fits in 32K on its own. At Q4_K_M, served with 64K and 128K, the same models scored 88.9% and 77.8%. From the week of 2026-11-23 the harness keeps the requests in flight within the server's context. Picks and verdicts are unchanged."""

@@ -2,16 +2,16 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>bakeoff.si</title>
   <id>tag:bakeoff.si,2026:feed</id>
-  <updated>2026-11-16T15:00:00Z</updated>
+  <updated>2026-11-17T16:00:00Z</updated>
   <link rel="self" href="https://bakeoff.si/feed.xml"/>
   <link rel="alternate" href="https://bakeoff.si/"/>
   <author><name>bakeoff.si</name></author>
   <entry>
     <title>Week of 2026-11-16</title>
     <id>tag:bakeoff.si,2026:week/2026-11-16</id>
-    <updated>2026-11-16T15:00:00Z</updated>
+    <updated>2026-11-17T16:00:00Z</updated>
     <link rel="alternate" href="https://bakeoff.si/weeks/2026-11-16/"/>
-    <summary>Results for the week of 2026-11-16, revision 1. Picks: 12 GB: format Granite 4.2 3B, general Granite 4.2 3B, longctx Granite 4.2 3B, structured Granite 4.2 3B; 24 GB: format Qwen3.8 27B EXL3, general Gemma 4 26B A4B IT EXL3, longctx Granite 4.2 8B FP8; 36 GB unified: general Gemma 4 12B IT GGUF, longctx Qwen3.6 35B A3B GGUF.</summary>
+    <summary>Results for the week of 2026-11-16, revision 2. Picks: 12 GB: format Granite 4.2 3B, general Granite 4.2 3B, longctx Granite 4.2 3B, structured Granite 4.2 3B; 24 GB: format Qwen3.8 27B EXL3, general Gemma 4 26B A4B IT EXL3, longctx Granite 4.2 8B FP8; 36 GB unified: general Gemma 4 12B IT GGUF, longctx Qwen3.6 35B A3B GGUF.</summary>
   </entry>
   <entry>
     <title>Week of 2026-11-09</title>
