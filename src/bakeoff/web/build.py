@@ -26,6 +26,7 @@ OWNED = (
     "feed.xml",
     "_headers",
     "method",
+    "independence",
     "privacy",
     "topology",
 )
@@ -147,6 +148,9 @@ def render_site(root: Path, *, launched: bool | None = None) -> dict[str, bytes]
     ).encode("utf-8")
     files["_headers"] = headers_file(site).encode("utf-8")
     files["method/index.html"] = _static_page(root, "method", "bakeoff.si, method", site)
+    files["independence/index.html"] = _static_page(
+        root, "independence", "bakeoff.si, independence", site
+    )
     files["privacy/index.html"] = _static_page(root, "privacy", "bakeoff.si, privacy", site)
     topology = topology_page(root, site)
     if topology is not None:

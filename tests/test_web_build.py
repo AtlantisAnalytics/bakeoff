@@ -86,6 +86,7 @@ def test_unlaunched_has_only_holding_files(root):
         "index.html",
         "_headers",
         "method/index.html",
+        "independence/index.html",
         "privacy/index.html",
         "topology/index.html",
     }
@@ -98,6 +99,7 @@ def test_unlaunched_ignores_published_weeks(root):
         "index.html",
         "_headers",
         "method/index.html",
+        "independence/index.html",
         "privacy/index.html",
         "topology/index.html",
     }
@@ -117,6 +119,7 @@ def test_launched_keys(two_weeks):
         "feed.xml",
         "_headers",
         "method/index.html",
+        "independence/index.html",
         "privacy/index.html",
         "topology/index.html",
     } <= keys

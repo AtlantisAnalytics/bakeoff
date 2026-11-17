@@ -281,7 +281,7 @@ def test_feed_link_only_when_launched(doc):
     assert "/feed.xml" in wrap_static("<p>x</p>", "T", SITE)
 
 
-@pytest.mark.parametrize("name", ["method", "privacy", "topology"])
+@pytest.mark.parametrize("name", ["method", "independence", "privacy", "topology"])
 def test_site_src_fragments_wrap_cleanly(name):
     from pathlib import Path
 
@@ -444,6 +444,11 @@ def test_footer_credits_atlantis_on_every_page(doc):
         assert '<img src="/atlantis.webp" width="40" height="40" alt="">' in h
         assert "A project of Atlantis Analytics" in h
         assert_balanced(h)
+
+
+def test_footer_links_the_independence_page(doc):
+    for h in (wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
+        assert '<a href="/independence/">Independence</a><a href="/privacy/">Privacy</a>' in h
 
 
 def test_atlantis_emblem_is_a_shipped_asset():
