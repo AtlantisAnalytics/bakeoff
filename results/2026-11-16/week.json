@@ -1,5 +1,11 @@
 {
-  "corrections": [],
+  "corrections": [
+    {
+      "note": "Qwen3.8 27B and Arete 27B at Q6_K were served with a 32K context, which the server shares between the requests it runs at once. Our harness sent up to four long-context questions together, which overfilled it, and 12 of the 27 long-context questions were rejected with a context error before the model answered. Those count as misses, so the 51.9% long-context scores understate both models: each question fits in 32K on its own. At Q4_K_M, served with 64K and 128K, the same models scored 88.9% and 77.8%. From the week of 2026-11-23 the harness keeps the requests in flight within the server's context. Picks and verdicts are unchanged.",
+      "published_at": "2026-11-17T16:00:00Z",
+      "revision": 2
+    }
+  ],
   "harness": [
     {
       "git_commit": "2a8617386ca208af91889da378bc851e4ecef5df",
@@ -114,7 +120,7 @@
     }
   },
   "published_at": "2026-11-16T15:00:00Z",
-  "revision": 1,
+  "revision": 2,
   "rules": {
     "ci": 0.95,
     "context_cap": 32768,
@@ -3090,7 +3096,6 @@
       ]
     },
     {
-      "coming": true,
       "envelope": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
       "id": "36gb-unified",
       "judge": [],
