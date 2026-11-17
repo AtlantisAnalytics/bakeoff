@@ -162,6 +162,11 @@ variable values, or GPU serials and UUIDs.
   that needs more thinking than that is scored as truncated (a fail) in quality; in the fit pass a
   truncated depth without the key is inconclusive and ends the run as incomplete, never a fail.
   Each fit step keeps room for the whole 4096-token answer, so a 4096 step is skipped as too small.
+- llama.cpp's server shares one KV pool, the size of its context, across its slots. On llama.cpp the
+  quality pass keeps the worst case of the requests in flight (the prompt at 3 characters per token,
+  plus the whole answer budget) within that context, and records it as `quality.context_tokens`.
+  Before the week of 2026-11-23 it did not: at 32K, long-context items sent together overflowed the
+  pool, and the ones rejected with "Context size has been exceeded" counted as misses.
 - A judge call that fails is recorded as an `error` item, not a tie, and the judge stops as
   incomplete when more than 20% of its calls fail.
 - The `structured/json` suite checks values on unambiguous fields only. Output must be one JSON value,

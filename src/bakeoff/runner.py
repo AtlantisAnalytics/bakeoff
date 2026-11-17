@@ -207,6 +207,14 @@ async def _runtime_reported(client: EndpointClient, runtime: str) -> dict:
     return {"size_vram": field(size_vram, "reported")}
 
 
+def quality_context(runtime: str, info: dict) -> int | None:
+    """The shared KV pool the quality pass must stay within: llama.cpp's context, else None."""
+    n = info.get("context_length")
+    if runtime == "llamacpp" and isinstance(n, int) and not isinstance(n, bool) and n > 0:
+        return n
+    return None
+
+
 async def _fit_probe(client: EndpointClient, runtime: str, first: dict) -> tuple[dict, str | None]:
     """Probe again right before the fit pass: Ollama only reports context for a loaded model."""
     try:
@@ -264,6 +272,7 @@ async def execute_run(
         baseline_mem_bytes=mem_baseline,
     )
     quality = QualityResult()
+    quality_ctx = quality_context(runtime_name, info)
     speed_out: tuple[list[dict], dict] | None = None
     fit_out: tuple[list[dict], dict] | None = None
     status, reason = "complete", None
@@ -275,7 +284,7 @@ async def execute_run(
         if "quality" in wanted:
             sampler.mark("quality")
             try:
-                quality = await run_quality(client, suites)
+                quality = await run_quality(client, suites, context_tokens=quality_ctx)
             except (AbortRun, asyncio.CancelledError, KeyboardInterrupt) as exc:
                 quality = getattr(exc, "partial", quality)
                 raise
@@ -343,7 +352,12 @@ async def execute_run(
         "suites": [
             {"key": s.key, "version": s.version, "split": s.split, "hash": s.hash} for s in suites
         ],
-        "quality": {"suites": quality.suites, "tracks": quality.tracks},
+        "quality": {
+            "suites": quality.suites,
+            "tracks": quality.tracks,
+            # the KV pool requests in flight were kept within (llama.cpp); absent when unlimited
+            **({"context_tokens": quality_ctx} if quality_ctx and suites else {}),
+        },
         "speed": speed_out[1] if speed_out else {},
         "fit": fit_out[1] if fit_out else {},
         "memory": {
