@@ -11,8 +11,8 @@ from bakeoff.needle import needle_messages
 from bakeoff.sampler import Sampler
 
 DEPTHS = (0.1, 0.5, 0.9)
-MAX_TOKENS = 2048  # reasoning models burn tight output budgets
-HEADROOM = 2304  # the 2048 output tokens plus a margin; the intercept covers the question
+MAX_TOKENS = 4096  # the needle suite's budget: Muse Glimmer's reasoning ran out at 2048
+HEADROOM = 4352  # the 4096 output tokens plus a margin; the intercept covers the question
 DEFAULT_TOKENS_PER_LINE = 25.0
 DEFAULT_INTERCEPT = 50.0
 TOLERANCE = 0.05

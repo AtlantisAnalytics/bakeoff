@@ -48,7 +48,7 @@ def make_cfg(
         model=ModelConfig(label="Demo Model", weights="hf:demo/demo@rev", runtime="other"),
         quality=QualityConfig(suites=list(suites), private_suites=list(private)),
         speed=SpeedConfig(concurrency=[1], repeats=1, warmup=0),
-        fit=FitConfig(steps=[4096]),
+        fit=FitConfig(steps=[8192]),
     )
 
 
@@ -483,7 +483,7 @@ def test_run_records_kv_capacity(tmp_path):
     meta = json.loads((path / "bundle.json").read_text())
     assert meta["fit"]["kv"]["capacity_tokens"] == {"value": 16000, "source": "reported"}
     ran = [s for s in meta["fit"]["steps"].values() if s["status"] in ("pass", "fail")]
-    assert ran and all(s["kv_fraction"] == 0.256 for s in ran)
+    assert ran and all(s["kv_fraction"] == 0.512 for s in ran)
     assert verify_bundle(path, username="alice", denylist=None) == []
 
 

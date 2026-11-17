@@ -158,9 +158,10 @@ variable values, or GPU serials and UUIDs.
 - Run bundles and judge output should go through `bakeoff verify` before they are shared. A bundle
   with a `private/` folder holds private-suite outputs and must not be shared.
 - Output caps are 4096 tokens for the reasoning-heavy suites (`gsm8k`, `ifeval`, `structured/json`,
-  `grounding/context-only`) and 2048 for the rest and for the fit pass. A model that needs more
-  thinking than that is scored as truncated (a fail) in quality; in the fit pass a truncated depth
-  without the key is inconclusive and ends the run as incomplete, never a fail.
+  `grounding/context-only`, `longctx/needle`) and for the fit pass, and 2048 for the rest. A model
+  that needs more thinking than that is scored as truncated (a fail) in quality; in the fit pass a
+  truncated depth without the key is inconclusive and ends the run as incomplete, never a fail.
+  Each fit step keeps room for the whole 4096-token answer, so a 4096 step is skipped as too small.
 - A judge call that fails is recorded as an `error` item, not a tie, and the judge stops as
   incomplete when more than 20% of its calls fail.
 - The `structured/json` suite checks values on unambiguous fields only. Output must be one JSON value,
