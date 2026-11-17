@@ -168,7 +168,8 @@ variable values, or GPU serials and UUIDs.
   Before the week of 2026-11-23 it did not: at 32K, long-context items sent together overflowed the
   pool, and the ones rejected with "Context size has been exceeded" counted as misses.
 - A judge call that fails is recorded as an `error` item, not a tie, and the judge stops as
-  incomplete when more than 20% of its calls fail.
+  incomplete when more than 20% of its calls fail. A reply cut off at the judge's length cap before
+  it gives a verdict counts as a failed call (from 2026-11-17; before that it was scored as a tie).
 - The `structured/json` suite checks values on unambiguous fields only. Output must be one JSON value,
   optionally in a code fence. A model that wraps its JSON in other tags fails the item.
 - The IFEval slice implements 16 instruction types, in strict mode only.

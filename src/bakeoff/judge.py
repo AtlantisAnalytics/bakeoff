@@ -23,8 +23,11 @@ JUDGE_SYSTEM = (
     "correctness and clarity for the question. Ignore length and style flourishes. "
     'Reply only with JSON: {"winner": "1" | "2" | "tie", "reason": "<one sentence>"}'
 )
-# thinking counts against the cap on current judge models; a cut-off reply scores as a tie
+# thinking counts against the cap on current judge models. A reply cut off at the cap before it gave
+# a verdict is a call error (an "error" item), never a tie: a tie is a judgement, and counting it as
+# one would pull every win rate toward 50%.
 JUDGE_MAX_TOKENS = 4000
+CUT_OFF = "cut off at the length cap"
 FATAL_KINDS = frozenset(
     {"missing_file", "hash_mismatch", "unlisted_file", "bundle_hash", "unreadable"}
 )
@@ -220,6 +223,9 @@ async def run_judge(
             cost = worst
         spent += cost
         winner, why = parse_reply(r.content)
+        if winner is None and r.finish_reason == "length":
+            call_errors += 1
+            return None, CUT_OFF, cost, True
         return winner, why, cost, False
 
     iid, outs = None, []
