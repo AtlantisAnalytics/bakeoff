@@ -120,6 +120,7 @@ def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
         links.append(f'<a href="/api/v1/weeks/{_e(week)}.json">This week as JSON</a>')
     if site.launched:
         links.append('<a href="/feed.xml">Feed</a>')
+    links.append('<a href="/independence/">Independence</a>')
     links.append('<a href="/privacy/">Privacy</a>')
     form = newsletter_form(site)
     return f"""<div class="site-footer">
@@ -147,7 +148,7 @@ def _layout(title: str, path: str, site: SiteConfig, main: str, *, week: str | N
 
 
 def wrap_static(fragment: str, title: str, site: SiteConfig, path: str = "/") -> str:
-    """Wrap a hand-written body fragment (method, privacy) in the shared layout."""
+    """Wrap a hand-written body fragment (method, independence, privacy) in the shared layout."""
     return _layout(title, path, site, fragment)
 
 
