@@ -45,7 +45,7 @@ def write(tmp_path, text, name="week.toml"):
 def test_shipped_files_load(tiers):
     assert list(tiers) == ["12gb", "24gb", "36gb-unified"]
     assert tiers["12gb"].envelope == "1× RTX 3060 12 GB"
-    assert [t.coming for t in tiers.values()] == [False, False, True]  # the Mac: after M5
+    assert [t.coming for t in tiers.values()] == [False, False, False]  # Mac live 2026-11-16
     site = load_site(ROOT / "site.toml")
     assert site.launched is True  # launched at M5, 2026-11-02
     assert site.base_url == "https://bakeoff.si"

@@ -28,12 +28,15 @@
 <p class="small muted">Rules v1: minimum context 16K, minimum decode 10.0 tok/s, speed ratio 0.8. <a href="/method/">How verdicts work</a>.</p>
 
 <aside class="note">
-<p><strong>Thank you, Victor Cruz.</strong> In the
-<a href="/weeks/2026-11-09/#tier-24gb">week of 2026-11-09</a>, the 24 GB tier ran Victor&#x27;s EXL3
-4.50bpw quant of Nanbeige4.3 33B SAGE. Against that week&#x27;s picks it held on every track: level on
-format, 1.5 points behind on general and 33.3 points behind on long context, at 36 tok/s with a 16K
-context. More of Victor&#x27;s quants are on <a href="https://huggingface.co/vcruz305">Hugging Face</a>
-and <a href="https://github.com/vcruz305">GitHub</a>.</p>
+<p><strong>Thank you, bartowski.</strong> The
+<a href="/weeks/2026-11-16/#tier-36gb-unified">week of 2026-11-16</a> was the first for the 36 GB
+unified tier, an Apple M4 Max, and six of its seven finished runs used bartowski&#x27;s GGUF quants:
+Gemma 4 12B, Qwen3.8 27B and NousResearch Arete 27B, each at Q6_K and Q4_K_M. Gemma 4 12B at Q4_K_M
+became the tier&#x27;s first general pick. One caveat from that week: Qwen3.8 and Arete at Q6_K were
+served with a 32K context, and on 12 of the 27 long-context questions the answer, reasoning included,
+ran past it. Those count as misses, so their 51.9% understates them; at Q4_K_M, with 64K and 128K of
+context, the same models scored 88.9% and 77.8%. More of bartowski&#x27;s quants are on
+<a href="https://huggingface.co/bartowski">Hugging Face</a>.</p>
 </aside>
 <section class="tier" id="tier-12gb">
 <h2>12 GB</h2>

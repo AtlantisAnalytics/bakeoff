@@ -155,12 +155,14 @@ def test_rederive_with_a_tier_added_later(root):
 
 def test_rederive_after_a_coming_tier_launches(root):
     """`coming` is a fact of the week it was published in, not of today's tiers.toml."""
+    path = root / "tiers.toml"
+    text = path.read_text(encoding="utf-8")
+    assert text.rstrip().endswith('(GPU limit raised to 32 GB)"')  # the Mac tier is the last table
+    path.write_text(text + "coming = true\n", encoding="utf-8")
     two_weeks(root)
     doc = json.loads((root / "results" / W1 / "week.json").read_text(encoding="utf-8"))
     assert next(t for t in doc["tiers"] if t["id"] == "36gb-unified")["coming"] is True
-    path = root / "tiers.toml"
     text = path.read_text(encoding="utf-8")
-    assert "coming = true\n" in text
     path.write_text(text.replace("coming = true\n", ""), encoding="utf-8")
     assert rederive(root, W1) == []
     assert rederive(root, W2) == []
