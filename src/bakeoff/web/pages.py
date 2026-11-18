@@ -152,7 +152,7 @@ def _layout(title: str, path: str, site: SiteConfig, main: str, *, week: str | N
 
 
 def wrap_static(fragment: str, title: str, site: SiteConfig, path: str = "/") -> str:
-    """Wrap a hand-written body fragment (method, independence, why, privacy) in the shared layout."""
+    """Wrap a hand-written site_src/ body fragment in the shared layout."""
     return _layout(title, path, site, fragment)
 
 
