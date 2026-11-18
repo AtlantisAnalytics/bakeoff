@@ -113,7 +113,11 @@ def newsletter_form(site: SiteConfig) -> str:
 
 
 def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
-    links = ['<a href="/method/">Method</a>', '<a href="/topology/">Multi-GPU</a>']
+    links = [
+        '<a href="/why/">Why bakeoff</a>',
+        '<a href="/method/">Method</a>',
+        '<a href="/topology/">Multi-GPU</a>',
+    ]
     if site.launched:
         links.append('<a href="/weeks/">Archive</a>')
     if week is not None:
@@ -148,7 +152,7 @@ def _layout(title: str, path: str, site: SiteConfig, main: str, *, week: str | N
 
 
 def wrap_static(fragment: str, title: str, site: SiteConfig, path: str = "/") -> str:
-    """Wrap a hand-written body fragment (method, independence, privacy) in the shared layout."""
+    """Wrap a hand-written site_src/ body fragment in the shared layout."""
     return _layout(title, path, site, fragment)
 
 
