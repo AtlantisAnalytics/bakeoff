@@ -131,3 +131,22 @@ for any week is at <code>/api/v1/weeks/&lt;week&gt;.json</code> and is described
 <p>Each split week keeps its large files outside git, by hash.
 <code>uv run bakeoff store fetch results/&lt;week&gt;/runs/&lt;id&gt;</code> downloads them and
 checks every hash against the bundle.</p>
+
+<h2>Thanks</h2>
+<p>Every week here runs on other people&#x27;s open work. Most of the models we test are quantizations
+made and shared for free:</p>
+<ul class="flat">
+  <li><a href="https://huggingface.co/turboderp">turboderp</a>, for the EXL3 quants behind most of
+    our 12&nbsp;GB and 24&nbsp;GB runs, and for ExLlamaV3 itself.</li>
+  <li><a href="https://huggingface.co/bartowski">bartowski</a>, for the GGUF quants behind most of
+    the first Mac week.</li>
+  <li><a href="https://huggingface.co/vcruz305">Victor Cruz</a>, for the EXL3 quant of Nanbeige4.3
+    33B SAGE in the week of 2026-11-09.</li>
+  <li><a href="https://huggingface.co/ggml-org">ggml-org</a>, for GGUF quants and for llama.cpp.</li>
+</ul>
+<p>And the engines and tools every run depends on:
+<a href="https://github.com/vllm-project/vllm">vLLM</a>,
+<a href="https://github.com/ggml-org/llama.cpp">llama.cpp</a>,
+<a href="https://github.com/turboderp-org/exllamav3">ExLlamaV3</a> with
+<a href="https://github.com/theroyallab/tabbyAPI">TabbyAPI</a>, and the authors of GSM8K and IFEval,
+whose test sets we use slices of.</p>
