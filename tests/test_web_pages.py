@@ -281,7 +281,7 @@ def test_feed_link_only_when_launched(doc):
     assert "/feed.xml" in wrap_static("<p>x</p>", "T", SITE)
 
 
-@pytest.mark.parametrize("name", ["method", "independence", "privacy", "topology"])
+@pytest.mark.parametrize("name", ["method", "independence", "why", "privacy", "topology"])
 def test_site_src_fragments_wrap_cleanly(name):
     from pathlib import Path
 
@@ -449,6 +449,11 @@ def test_footer_credits_atlantis_on_every_page(doc):
 def test_footer_links_the_independence_page(doc):
     for h in (wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
         assert '<a href="/independence/">Independence</a><a href="/privacy/">Privacy</a>' in h
+
+
+def test_footer_links_the_why_page_first(doc):
+    for h in (holding_page(QUIET), wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
+        assert '<p class="footer-links"><a href="/why/">Why bakeoff</a><a href="/method/">' in h
 
 
 def test_atlantis_emblem_is_a_shipped_asset():

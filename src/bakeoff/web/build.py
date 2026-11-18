@@ -27,6 +27,7 @@ OWNED = (
     "_headers",
     "method",
     "independence",
+    "why",
     "privacy",
     "topology",
 )
@@ -151,6 +152,7 @@ def render_site(root: Path, *, launched: bool | None = None) -> dict[str, bytes]
     files["independence/index.html"] = _static_page(
         root, "independence", "bakeoff.si, independence", site
     )
+    files["why/index.html"] = _static_page(root, "why", "bakeoff.si, why bakeoff", site)
     files["privacy/index.html"] = _static_page(root, "privacy", "bakeoff.si, privacy", site)
     topology = topology_page(root, site)
     if topology is not None:
