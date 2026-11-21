@@ -10,6 +10,8 @@
 
 **Spec:** `docs/specs/2026-11-20-mechanical-design-track-design.md`
 
+**Execution:** subagent-driven (owner, 2026-11-20), after the 2026-12-07 launch. Task 3 (the sandbox) gets the strictest review: it runs model-written code on lab hosts.
+
 **Later plans (not this one):**
 - **Part 2:** K5 system tasks: the catalog, wiring and consistency checks, temperature zones, the controller simulator and the safety gate.
 - **Part 3:** the calibration anchor; the site's information-only display; enabling the pass in weekend runs (an athena change), plus host setup (`bwrap` and the extra on the Linux lab hosts, done by the owner).
