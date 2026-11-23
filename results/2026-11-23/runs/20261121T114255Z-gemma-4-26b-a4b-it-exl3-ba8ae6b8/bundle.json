@@ -1,0 +1,662 @@
+{
+  "bundle_format": "m2",
+  "run_id": "20261121T114255Z-gemma-4-26b-a4b-it-exl3-ba8ae6b8",
+  "started_at": "2026-11-21T11:42:55Z",
+  "ended_at": "2026-11-21T11:55:17Z",
+  "status": "complete",
+  "status_reason": null,
+  "config": {
+    "endpoint": {
+      "model": "i201-gemma-4-26b-a4b-it-exl3",
+      "timeout_s": 600.0
+    },
+    "model": {
+      "label": "Gemma 4 26B A4B IT EXL3",
+      "weights": "hf:turboderp/gemma-4-26B-A4B-it-exl3@7102602329b793263e5490c7a575d5364e6052cb",
+      "weights_file": "",
+      "quant": "exl3-4.1bpw",
+      "runtime": "exllamav3",
+      "runtime_version": "exllamav3 1.6.3 (TabbyAPI a270c55)",
+      "envelope": "1× RTX 3090 Ti 24 GB",
+      "parallel": ""
+    },
+    "quality": {
+      "suites": [
+        "general",
+        "format",
+        "structured",
+        "grounding",
+        "longctx"
+      ],
+      "private_suites": []
+    },
+    "speed": {
+      "concurrency": [
+        1,
+        4
+      ],
+      "repeats": 5,
+      "warmup": 1
+    },
+    "fit": {
+      "steps": [
+        4096,
+        8192,
+        16384,
+        32768,
+        65536,
+        131072
+      ],
+      "max_context": 0
+    }
+  },
+  "env": {
+    "host": {
+      "os": {
+        "value": "Linux",
+        "source": "measured"
+      },
+      "os_version": {
+        "value": "Ubuntu 24.04.5 LTS",
+        "source": "measured"
+      },
+      "cpu": {
+        "value": "Intel(R) Xeon(R) Gold 6150 CPU @ 2.70GHz",
+        "source": "measured"
+      },
+      "cpu_cores": {
+        "value": 18,
+        "source": "measured"
+      },
+      "ram_bytes": {
+        "value": 61603049472,
+        "source": "measured"
+      }
+    },
+    "gpus": [
+      {
+        "name": {
+          "value": "NVIDIA GeForce RTX 3090 Ti",
+          "source": "measured"
+        },
+        "vram_mib": {
+          "value": 24564,
+          "source": "measured"
+        },
+        "driver": {
+          "value": "570.207",
+          "source": "measured"
+        },
+        "cuda": {
+          "value": "12.8",
+          "source": "measured"
+        },
+        "power_limit_w": {
+          "value": 450.0,
+          "source": "measured"
+        },
+        "pcie_gen_max": {
+          "value": 3,
+          "source": "measured"
+        },
+        "pcie_width_max": {
+          "value": 16,
+          "source": "measured"
+        },
+        "pcie_width": {
+          "value": 16,
+          "source": "measured"
+        },
+        "numa_node": {
+          "value": null,
+          "source": "not_captured"
+        },
+        "tensor_unlock": {
+          "value": "off",
+          "source": "measured"
+        }
+      }
+    ],
+    "gpu_links": [],
+    "runtime": {
+      "name": {
+        "value": "exllamav3",
+        "source": "operator"
+      },
+      "version": {
+        "value": "exllamav3 1.6.3 (TabbyAPI a270c55)",
+        "source": "operator"
+      },
+      "served_model": {
+        "value": "i201-gemma-4-26b-a4b-it-exl3",
+        "source": "reported"
+      }
+    },
+    "model": {
+      "label": {
+        "value": "Gemma 4 26B A4B IT EXL3",
+        "source": "operator"
+      },
+      "weights": {
+        "value": "hf:turboderp/gemma-4-26B-A4B-it-exl3@7102602329b793263e5490c7a575d5364e6052cb",
+        "source": "operator"
+      },
+      "weights_file": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "quant": {
+        "value": "exl3-4.1bpw",
+        "source": "operator"
+      },
+      "envelope": {
+        "value": "1× RTX 3090 Ti 24 GB",
+        "source": "operator"
+      },
+      "parallel": {
+        "value": null,
+        "source": "not_captured"
+      }
+    },
+    "harness": {
+      "version": {
+        "value": "0.1.0",
+        "source": "measured"
+      },
+      "git_commit": {
+        "value": "62393bccc252e4729254ee4dde0ece100ff5e5ce",
+        "source": "reported"
+      },
+      "git_dirty": {
+        "value": false,
+        "source": "reported"
+      },
+      "python": {
+        "value": "3.12.3",
+        "source": "measured"
+      }
+    }
+  },
+  "suites": [
+    {
+      "key": "format/exact-reply",
+      "version": 2,
+      "split": "public",
+      "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b"
+    },
+    {
+      "key": "general/gsm8k",
+      "version": 1,
+      "split": "public",
+      "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf"
+    },
+    {
+      "key": "general/ifeval",
+      "version": 1,
+      "split": "public",
+      "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5"
+    },
+    {
+      "key": "general/open-ended",
+      "version": 1,
+      "split": "public",
+      "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62"
+    },
+    {
+      "key": "grounding/context-only",
+      "version": 2,
+      "split": "public",
+      "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68"
+    },
+    {
+      "key": "longctx/needle",
+      "version": 2,
+      "split": "public",
+      "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7"
+    },
+    {
+      "key": "structured/json",
+      "version": 2,
+      "split": "public",
+      "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd"
+    }
+  ],
+  "quality": {
+    "suites": [
+      {
+        "key": "format/exact-reply",
+        "track": "format",
+        "name": "exact-reply",
+        "version": 2,
+        "split": "public",
+        "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+        "n": 30,
+        "items_total": 30,
+        "passed": 28,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.9333333333333333,
+        "ci95": [
+          0.7867618227892791,
+          0.9815233646723066
+        ]
+      },
+      {
+        "key": "general/gsm8k",
+        "track": "general",
+        "name": "gsm8k",
+        "version": 1,
+        "split": "public",
+        "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+        "n": 100,
+        "items_total": 100,
+        "passed": 98,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.98,
+        "ci95": [
+          0.9299868370580063,
+          0.9944981477650318
+        ]
+      },
+      {
+        "key": "general/ifeval",
+        "track": "general",
+        "name": "ifeval",
+        "version": 1,
+        "split": "public",
+        "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+        "n": 100,
+        "items_total": 100,
+        "passed": 94,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.94,
+        "ci95": [
+          0.8752303146877748,
+          0.9722142547333433
+        ]
+      },
+      {
+        "key": "general/open-ended",
+        "track": "general",
+        "name": "open-ended",
+        "version": 1,
+        "split": "public",
+        "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+        "n": 20,
+        "items_total": 20,
+        "passed": null,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": null,
+        "ci95": null
+      },
+      {
+        "key": "grounding/context-only",
+        "track": "grounding",
+        "name": "context-only",
+        "version": 2,
+        "split": "public",
+        "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+        "n": 40,
+        "items_total": 40,
+        "passed": 39,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.975,
+        "ci95": [
+          0.8711834051199223,
+          0.9955732825922052
+        ]
+      },
+      {
+        "key": "longctx/needle",
+        "track": "longctx",
+        "name": "needle",
+        "version": 2,
+        "split": "public",
+        "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+        "n": 27,
+        "items_total": 27,
+        "passed": 25,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.9259259259259259,
+        "ci95": [
+          0.7663002270926937,
+          0.9794457783026165
+        ]
+      },
+      {
+        "key": "structured/json",
+        "track": "structured",
+        "name": "json",
+        "version": 2,
+        "split": "public",
+        "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+        "n": 30,
+        "items_total": 30,
+        "passed": 30,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 1.0,
+        "ci95": [
+          0.8864829086095221,
+          1.0
+        ],
+        "extractable_accuracy": 1.0,
+        "extractable_ci95": [
+          0.8864829086095221,
+          1.0
+        ]
+      }
+    ],
+    "tracks": {
+      "format": 0.9333333333333333,
+      "general": 0.96,
+      "grounding": 0.975,
+      "longctx": 0.9259259259259259,
+      "structured": 1.0
+    }
+  },
+  "speed": {
+    "short@1": {
+      "ttft_s": {
+        "median": 0.11067709799999648,
+        "min": 0.10922818499966525,
+        "max": 0.12248498799999652,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 1373.3645238873614,
+        "min": 1273.6254666572236,
+        "max": 1428.202803154498,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 98.98342312618233,
+        "min": 83.6017072719766,
+        "max": 108.959752593588,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 94.88929690323212,
+        "min": 80.6893408396151,
+        "max": 104.45730585903921,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "short@4": {
+      "ttft_s": {
+        "median": 0.3754985109999325,
+        "min": 0.3009276749999117,
+        "max": 0.43254938200016113,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 410.1214671741676,
+        "min": 358.3405882659249,
+        "max": 521.720044525802,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 80.15235157386523,
+        "min": 73.68385297180309,
+        "max": 84.15964165593192,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 287.74300549084785,
+        "min": 267.14787240698365,
+        "max": 299.67005434446395,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "n": 20
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@1": {
+      "ttft_s": {
+        "median": 0.6825944470001559,
+        "min": 0.668906472999879,
+        "max": 0.696442544999627,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 3340.1971112130645,
+        "min": 3270.908729450496,
+        "max": 3417.518131866566,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 106.11431913655795,
+        "min": 104.29272824395767,
+        "max": 107.65051076268821,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 82.96433763978732,
+        "min": 81.53197412452704,
+        "max": 84.27475887368936,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@4": {
+      "ttft_s": {
+        "median": 2.181928450999976,
+        "min": 2.17337033900003,
+        "max": 2.19662908600003,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 1046.2776063727738,
+        "min": 1039.1382076453303,
+        "max": 1057.9818279137262,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 79.9439306255598,
+        "min": 79.38754351964654,
+        "max": 81.85487993468624,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 190.57236379796012,
+        "min": 189.78860401531412,
+        "max": 193.14862940344227,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "n": 20
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    }
+  },
+  "fit": {
+    "max_context_passed": 131072,
+    "server_context": 131072,
+    "server_context_probe": "pre_fit",
+    "limit_source": "reported",
+    "truncation_check": "measured",
+    "incomplete": false,
+    "steps": {
+      "4096": {
+        "status": "skipped",
+        "reason": "step too small for the prompt overhead"
+      },
+      "8192": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "16384": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "32768": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "65536": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "131072": {
+        "status": "pass",
+        "kv_fraction": null
+      }
+    },
+    "kv": {
+      "capacity_tokens": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "block_size": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "cache_dtype": {
+        "value": null,
+        "source": "not_captured"
+      }
+    }
+  },
+  "memory": {
+    "platform": {
+      "value": "nvidia",
+      "source": "measured"
+    },
+    "baseline": {
+      "value": {
+        "mem_used_mib_total": 17954,
+        "mem_used_mib_per_gpu": [
+          17954
+        ],
+        "power_w_mean": 105.02,
+        "power_w_max": 105.02
+      },
+      "source": "measured"
+    },
+    "peaks": {
+      "value": {
+        "baseline": {
+          "mem_used_mib_total": 17954,
+          "mem_used_mib_per_gpu": [
+            17954
+          ],
+          "power_w_mean": 105.02,
+          "power_w_max": 105.02
+        },
+        "quality": {
+          "mem_used_mib_total": 18536,
+          "mem_used_mib_per_gpu": [
+            18536
+          ],
+          "power_w_mean": 311.9872780203785,
+          "power_w_max": 405.1
+        },
+        "speed": {
+          "mem_used_mib_total": 18536,
+          "mem_used_mib_per_gpu": [
+            18536
+          ],
+          "power_w_mean": 316.40982142857143,
+          "power_w_max": 379.07
+        },
+        "fit:calibrate": {
+          "mem_used_mib_total": 18536,
+          "mem_used_mib_per_gpu": [
+            18536
+          ],
+          "power_w_mean": 358.00666666666666,
+          "power_w_max": 374.76
+        },
+        "fit:8192": {
+          "mem_used_mib_total": 18536,
+          "mem_used_mib_per_gpu": [
+            18536
+          ],
+          "power_w_mean": 364.87833333333333,
+          "power_w_max": 373.8
+        },
+        "fit:16384": {
+          "mem_used_mib_total": 18540,
+          "mem_used_mib_per_gpu": [
+            18540
+          ],
+          "power_w_mean": 328.3315789473684,
+          "power_w_max": 401.3
+        },
+        "fit:32768": {
+          "mem_used_mib_total": 18540,
+          "mem_used_mib_per_gpu": [
+            18540
+          ],
+          "power_w_mean": 390.8419047619048,
+          "power_w_max": 402.58
+        },
+        "fit:65536": {
+          "mem_used_mib_total": 18554,
+          "mem_used_mib_per_gpu": [
+            18554
+          ],
+          "power_w_mean": 377.29322580645163,
+          "power_w_max": 403.86
+        },
+        "fit:131072": {
+          "mem_used_mib_total": 18556,
+          "mem_used_mib_per_gpu": [
+            18556
+          ],
+          "power_w_mean": 382.94545197740115,
+          "power_w_max": 403.3
+        }
+      },
+      "source": "measured"
+    },
+    "runtime_reported": {
+      "size_vram": {
+        "value": null,
+        "source": "not_captured"
+      }
+    }
+  },
+  "files": {
+    "quality/format.exact-reply.jsonl": "364dd37df9036fb2caee167cda51d9ed8c775e4cb6434064033e77caf0987405",
+    "quality/general.gsm8k.jsonl": "19158b86eb4593a3a7342e587a450a2af0380ec0d500305958629d223150f461",
+    "quality/general.ifeval.jsonl": "45742113046af1d6e22f0391765d22713bd6502933f12a572f54f1bf534e9fab",
+    "quality/general.open-ended.jsonl": "d458906a40d618eaaebb5e71fc514f5a8ba2fab4b1b24eb0be38a43b6b7560cb",
+    "quality/grounding.context-only.jsonl": "82529d3ec425978529d5fea918e668eb1d2fd1fbb78c32f66dc04ee03e2d492d",
+    "quality/longctx.needle.jsonl": "b02fbd1c34c05ce80ced94573ef8bd53f2fc59d186e7da95d300a739170997a8",
+    "quality/structured.json.jsonl": "e1671c213cdc0e92454850487429df30619565ce1947e1628dd5c4e09ea0e3a6",
+    "speed.jsonl": "12bff94bd0fe76e75f0a9ebada8f6b986c239ac09427e08c3dd10e350dfdabaa",
+    "fit.jsonl": "a507e761aae92d57fb0a98f64c48bbb7c6ada2ed1684ea2832782a430d4cb208",
+    "samples.jsonl": "9d063f071e7a449f27e65dc922c01471aaf6d50322b77da7b34cd74a060347f7"
+  },
+  "bundle_sha256": "c442b0eed1229b1871160b442f2ab7b82392ff018ce61332a4197ede5cbf45fc"
+}

@@ -1,0 +1,84 @@
+week = "2026-11-23"
+published_at = "2026-11-23T15:00:00Z"
+
+[[run]]
+bundle = "runs/20261121T110641Z-qwen3-8-27b-exl3-47f3fceb"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/Qwen3.8-27B-exl3"
+
+[[run]]
+bundle = "runs/20261121T114255Z-gemma-4-26b-a4b-it-exl3-ba8ae6b8"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/turboderp/gemma-4-26B-A4B-it-exl3"
+
+[[run]]
+bundle = "runs/20261121T115801Z-granite-4-2-8b-fp8-0cf9750a"
+tier = "24gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-8b-fp8"
+
+[[run]]
+bundle = "runs/20261121T110401Z-granite-4-2-3b-b12f6b6e"
+tier = "12gb"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ibm-granite/granite-4.2-3b"
+
+[[run]]
+bundle = "runs/20261121T090215Z-gemma-4-12b-it-gguf-6193eb78"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/gemma-4-12B-it-GGUF"
+
+[[run]]
+bundle = "runs/20261121T105851Z-qwen3-6-35b-a3b-gguf-1e1394b5"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/ggml-org/Qwen3.6-35B-A3B-GGUF"
+
+[[run]]
+bundle = "runs/20261121T125339Z-muse-glimmer-30b-gguf-adf20374"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Muse-Glimmer-30B-GGUF"
+
+[[run]]
+bundle = "runs/20261122T092027Z-muse-glimmer-30b-gguf-356b4369"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Muse-Glimmer-30B-GGUF"
+
+[[run]]
+bundle = "runs/20261121T185018Z-lfm3-1-7b-gguf-7e53e3a0"
+tier = "36gb-unified"
+license = "other"
+license_url = "https://huggingface.co/LiquidAI/LFM3-1.7B/blob/main/LICENSE"
+source_url = "https://huggingface.co/ggml-org/LFM3-1.7B-GGUF"
+
+[[run]]
+bundle = "runs/20261121T204037Z-qwen3-8-27b-gguf-21915b2f"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF"
+
+[[run]]
+bundle = "runs/20261122T153211Z-qwen3-8-27b-gguf-de7ac6cc"
+tier = "36gb-unified"
+license = "Apache-2.0"
+source_url = "https://huggingface.co/bartowski/Qwen3.8-27B-GGUF"
+
+[[judge]]
+bundle = "judge/judge-b2c5e6bd-vs-cbd9e366"
+
+[[judge]]
+bundle = "judge/judge-b2c5e6bd-vs-6d137e54"
+
+[[judge]]
+bundle = "judge/judge-b2c5e6bd-vs-4a23d0d2"
+
+[[judge]]
+bundle = "judge/judge-b2c5e6bd-vs-7b93b0f3"
+
+[[judge]]
+bundle = "judge/judge-b2c5e6bd-vs-a633aef8"

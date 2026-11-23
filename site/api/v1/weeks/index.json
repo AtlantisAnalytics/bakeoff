@@ -1,5 +1,11 @@
 [
   {
+    "published_at": "2026-11-23T15:00:00Z",
+    "revision": 1,
+    "url": "https://bakeoff.si/api/v1/weeks/2026-11-23.json",
+    "week": "2026-11-23"
+  },
+  {
     "published_at": "2026-11-16T15:00:00Z",
     "revision": 2,
     "url": "https://bakeoff.si/api/v1/weeks/2026-11-16.json",
