@@ -451,6 +451,14 @@ def test_footer_links_the_independence_page(doc):
         assert '<a href="/independence/">Independence</a><a href="/privacy/">Privacy</a>' in h
 
 
+def test_footer_links_x_before_independence(doc):
+    for h in (holding_page(QUIET), wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
+        assert (
+            '<a href="https://x.com/dive_atlantis" rel="me noopener">X</a>'
+            '<a href="/independence/">Independence</a>'
+        ) in h
+
+
 def test_footer_links_the_why_page_first(doc):
     for h in (holding_page(QUIET), wrap_static("<p>x</p>", "T", SITE), week_page(doc, SITE)):
         assert '<p class="footer-links"><a href="/why/">Why bakeoff</a><a href="/method/">' in h
