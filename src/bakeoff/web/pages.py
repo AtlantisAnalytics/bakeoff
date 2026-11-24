@@ -112,6 +112,9 @@ def newsletter_form(site: SiteConfig) -> str:
 </form>"""
 
 
+X_LINK = '<a href="https://x.com/dive_atlantis" rel="me noopener">X</a>'
+
+
 def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
     links = [
         '<a href="/why/">Why bakeoff</a>',
@@ -124,6 +127,7 @@ def _footer(site: SiteConfig, week: str | None = None, lead: str = "") -> str:
         links.append(f'<a href="/api/v1/weeks/{_e(week)}.json">This week as JSON</a>')
     if site.launched:
         links.append('<a href="/feed.xml">Feed</a>')
+    links.append(X_LINK)
     links.append('<a href="/independence/">Independence</a>')
     links.append('<a href="/privacy/">Privacy</a>')
     form = newsletter_form(site)
