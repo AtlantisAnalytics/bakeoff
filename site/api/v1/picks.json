@@ -1,10 +1,10 @@
 {
   "12gb": {
     "format": {
-      "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+      "bundle_sha256": "e991a5e908623165ffb05283c1f775dbb1ac04cbb37fa767c5085879bed2e62d",
       "label": "Granite 4.2 3B",
       "quant": "bf16",
-      "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+      "run_id": "20261121T110401Z-granite-4-2-3b-b12f6b6e",
       "runtime": "vllm",
       "since_week": "2026-11-02",
       "tier": "12gb",
@@ -12,10 +12,10 @@
       "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
     },
     "general": {
-      "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+      "bundle_sha256": "e991a5e908623165ffb05283c1f775dbb1ac04cbb37fa767c5085879bed2e62d",
       "label": "Granite 4.2 3B",
       "quant": "bf16",
-      "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+      "run_id": "20261121T110401Z-granite-4-2-3b-b12f6b6e",
       "runtime": "vllm",
       "since_week": "2026-11-02",
       "tier": "12gb",
@@ -23,10 +23,10 @@
       "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
     },
     "longctx": {
-      "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+      "bundle_sha256": "e991a5e908623165ffb05283c1f775dbb1ac04cbb37fa767c5085879bed2e62d",
       "label": "Granite 4.2 3B",
       "quant": "bf16",
-      "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+      "run_id": "20261121T110401Z-granite-4-2-3b-b12f6b6e",
       "runtime": "vllm",
       "since_week": "2026-11-02",
       "tier": "12gb",
@@ -34,10 +34,10 @@
       "weights": "hf:ibm-granite/granite-4.2-3b@4e9c275e232f10211ec88644d106a1f6a1b60e06"
     },
     "structured": {
-      "bundle_sha256": "e1432ea76163b6beb412764f236ba535f14e96697ff11a47a5d91d08eda38328",
+      "bundle_sha256": "e991a5e908623165ffb05283c1f775dbb1ac04cbb37fa767c5085879bed2e62d",
       "label": "Granite 4.2 3B",
       "quant": "bf16",
-      "run_id": "20261114T110507Z-granite-4-2-3b-53cf2049",
+      "run_id": "20261121T110401Z-granite-4-2-3b-b12f6b6e",
       "runtime": "vllm",
       "since_week": "2026-11-02",
       "tier": "12gb",
@@ -47,10 +47,10 @@
   },
   "24gb": {
     "format": {
-      "bundle_sha256": "3922e69e5e0eb5c707d70c6af331a20da395e67fd37749cf691753ab8fd8e27e",
+      "bundle_sha256": "57b8252f61e4349c514b0db910058e2b0e5c3346aa78f3f8bfcc7a8c6032cd52",
       "label": "Qwen3.8 27B EXL3",
       "quant": "exl3-4bpw",
-      "run_id": "20261114T110525Z-qwen3-8-27b-exl3-4fc4b88d",
+      "run_id": "20261121T110641Z-qwen3-8-27b-exl3-47f3fceb",
       "runtime": "exllamav3",
       "since_week": "2026-11-02",
       "tier": "24gb",
@@ -58,10 +58,10 @@
       "weights": "hf:turboderp/Qwen3.8-27B-exl3@113cf7ab958054860e43fb7f3063b1af19171095"
     },
     "general": {
-      "bundle_sha256": "402816239f75a0c12f0058fc175c31cd506bdc6df9f1e70483b68056d34418b9",
+      "bundle_sha256": "c442b0eed1229b1871160b442f2ab7b82392ff018ce61332a4197ede5cbf45fc",
       "label": "Gemma 4 26B A4B IT EXL3",
       "quant": "exl3-4.1bpw",
-      "run_id": "20261114T123548Z-gemma-4-26b-a4b-it-exl3-87f16295",
+      "run_id": "20261121T114255Z-gemma-4-26b-a4b-it-exl3-ba8ae6b8",
       "runtime": "exllamav3",
       "since_week": "2026-11-16",
       "tier": "24gb",
@@ -69,10 +69,10 @@
       "weights": "hf:turboderp/gemma-4-26B-A4B-it-exl3@7102602329b793263e5490c7a575d5364e6052cb"
     },
     "longctx": {
-      "bundle_sha256": "c64dd7543b7ee68eb660afe6b2205ace9f6250a924421b20c1a283087f8bd67f",
+      "bundle_sha256": "7e19c8b94c115967edff88499ff356febd453efb720a39b133e98b2e1bc67b5e",
       "label": "Granite 4.2 8B FP8",
       "quant": "fp8",
-      "run_id": "20261114T120024Z-granite-4-2-8b-fp8-6ef71a3b",
+      "run_id": "20261121T115801Z-granite-4-2-8b-fp8-0cf9750a",
       "runtime": "vllm",
       "since_week": "2026-11-02",
       "tier": "24gb",
@@ -82,10 +82,10 @@
   },
   "36gb-unified": {
     "general": {
-      "bundle_sha256": "61de488865583f6eeb5628fde4dead1effc45dbab06e932a61ed8d67d6d7ae0e",
+      "bundle_sha256": "b2c5e6bd3e8b0b2ef449ba5f6dcb7ce998a36f87a8b168f79bf4efdfde43c480",
       "label": "Gemma 4 12B IT GGUF",
       "quant": "Q4_K_M",
-      "run_id": "20261114T110228Z-gemma-4-12b-it-gguf-c24fa8ae",
+      "run_id": "20261121T090215Z-gemma-4-12b-it-gguf-6193eb78",
       "runtime": "llamacpp",
       "since_week": "2026-11-16",
       "tier": "36gb-unified",
@@ -93,10 +93,10 @@
       "weights": "hf:bartowski/gemma-4-12B-it-GGUF@2ae7d41be21ca62de00a2d320ee9cec50daa3aa6"
     },
     "longctx": {
-      "bundle_sha256": "224605716eb1203425a3963aaed5bfd0bf9476f67a903fc0a487a33ab32d4b82",
+      "bundle_sha256": "50a4aaad6f149d64762e99248f98447cd96a8b14e2b395eeba97138d564ac672",
       "label": "Qwen3.6 35B A3B GGUF",
       "quant": "Q4_K_M",
-      "run_id": "20261114T130536Z-qwen3-6-35b-a3b-gguf-d5568ec3",
+      "run_id": "20261121T105851Z-qwen3-6-35b-a3b-gguf-1e1394b5",
       "runtime": "llamacpp",
       "since_week": "2026-11-16",
       "tier": "36gb-unified",

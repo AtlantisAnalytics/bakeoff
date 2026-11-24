@@ -1,0 +1,35 @@
+{
+  "bundle_format": "judge-m1",
+  "status": "complete",
+  "status_reason": null,
+  "a": "b2c5e6bd3e8b0b2ef449ba5f6dcb7ce998a36f87a8b168f79bf4efdfde43c480",
+  "b": "7b93b0f3bd45da4ded72953e48f94d81e1969f81205d6e1b37da6179b94614e6",
+  "suite": {
+    "key": "general/open-ended",
+    "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62"
+  },
+  "judge_model": "claude-haiku-5-5",
+  "prices": {
+    "in_per_mtok": 0.1,
+    "out_per_mtok": 0.5
+  },
+  "max_usd": 0.96022,
+  "estimate_usd": 0.0884957,
+  "cost_usd": 0.015285300000000002,
+  "counts": {
+    "a": 2,
+    "b": 10,
+    "tie": 8
+  },
+  "call_errors": 0,
+  "items_skipped": 0,
+  "win_rate_a": 0.16666666666666666,
+  "ci95": [
+    0.04696414761482223,
+    0.44803635738467273
+  ],
+  "files": {
+    "items.jsonl": "291e42fcf3294061799298db6cbecd6d2cf0de34e3d1404fcbc62f9fa31f9195"
+  },
+  "bundle_sha256": "2790f0f6e370afe6e9658704591d069741de38779717c40dcb34eda11d682335"
+}

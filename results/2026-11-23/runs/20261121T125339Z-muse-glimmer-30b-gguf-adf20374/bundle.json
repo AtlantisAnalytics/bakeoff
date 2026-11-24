@@ -1,0 +1,641 @@
+{
+  "bundle_format": "m2",
+  "run_id": "20261121T125339Z-muse-glimmer-30b-gguf-adf20374",
+  "started_at": "2026-11-21T12:53:39Z",
+  "ended_at": "2026-11-21T17:48:45Z",
+  "status": "complete",
+  "status_reason": null,
+  "config": {
+    "endpoint": {
+      "model": "i206-muse-glimmer-30b-gguf",
+      "timeout_s": 600.0
+    },
+    "model": {
+      "label": "Muse Glimmer 30B GGUF",
+      "weights": "hf:bartowski/Muse-Glimmer-30B-GGUF@01e1b7c30e19e1823ee9a73dec51d12f59ec4857",
+      "weights_file": "Muse-Glimmer-30B-Q6_K.gguf",
+      "quant": "Q6_K",
+      "runtime": "llamacpp",
+      "runtime_version": "llama.cpp b11960",
+      "envelope": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
+      "parallel": ""
+    },
+    "quality": {
+      "suites": [
+        "general",
+        "format",
+        "structured",
+        "grounding",
+        "longctx"
+      ],
+      "private_suites": []
+    },
+    "speed": {
+      "concurrency": [
+        1,
+        4
+      ],
+      "repeats": 5,
+      "warmup": 1
+    },
+    "fit": {
+      "steps": [
+        4096,
+        8192,
+        16384,
+        32768,
+        65536,
+        131072
+      ],
+      "max_context": 0
+    }
+  },
+  "env": {
+    "host": {
+      "os": {
+        "value": "macOS",
+        "source": "measured"
+      },
+      "os_version": {
+        "value": "26.7.3",
+        "source": "measured"
+      },
+      "cpu": {
+        "value": "Apple M4 Max",
+        "source": "measured"
+      },
+      "cpu_cores": {
+        "value": 14,
+        "source": "measured"
+      },
+      "ram_bytes": {
+        "value": 38654705664,
+        "source": "measured"
+      },
+      "power_state": {
+        "power_source": {
+          "value": "AC Power",
+          "source": "measured"
+        },
+        "low_power_mode": {
+          "value": false,
+          "source": "measured"
+        },
+        "thermal_warning": {
+          "value": 0,
+          "source": "measured"
+        },
+        "gpu_wired_limit_mb": {
+          "value": 32768,
+          "source": "measured"
+        }
+      },
+      "thermal_warning_end": {
+        "value": 0,
+        "source": "measured"
+      }
+    },
+    "gpus": [
+      {
+        "name": {
+          "value": "Apple M4 Max",
+          "source": "measured"
+        },
+        "unified_memory_bytes": {
+          "value": 38654705664,
+          "source": "measured"
+        }
+      }
+    ],
+    "gpu_links": [],
+    "runtime": {
+      "name": {
+        "value": "llamacpp",
+        "source": "operator"
+      },
+      "version": {
+        "value": "b11960-8642541b2",
+        "source": "reported"
+      },
+      "served_model": {
+        "value": "i206-muse-glimmer-30b-gguf",
+        "source": "reported"
+      }
+    },
+    "model": {
+      "label": {
+        "value": "Muse Glimmer 30B GGUF",
+        "source": "operator"
+      },
+      "weights": {
+        "value": "hf:bartowski/Muse-Glimmer-30B-GGUF@01e1b7c30e19e1823ee9a73dec51d12f59ec4857",
+        "source": "operator"
+      },
+      "weights_file": {
+        "value": "Muse-Glimmer-30B-Q6_K.gguf",
+        "source": "operator"
+      },
+      "quant": {
+        "value": "Q6_K",
+        "source": "operator"
+      },
+      "envelope": {
+        "value": "Apple M4 Max 36 GB unified (GPU limit raised to 32 GB)",
+        "source": "operator"
+      },
+      "parallel": {
+        "value": null,
+        "source": "not_captured"
+      }
+    },
+    "harness": {
+      "version": {
+        "value": "0.1.0",
+        "source": "measured"
+      },
+      "git_commit": {
+        "value": "62393bccc252e4729254ee4dde0ece100ff5e5ce",
+        "source": "reported"
+      },
+      "git_dirty": {
+        "value": false,
+        "source": "reported"
+      },
+      "python": {
+        "value": "3.12.4",
+        "source": "measured"
+      }
+    }
+  },
+  "suites": [
+    {
+      "key": "format/exact-reply",
+      "version": 2,
+      "split": "public",
+      "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b"
+    },
+    {
+      "key": "general/gsm8k",
+      "version": 1,
+      "split": "public",
+      "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf"
+    },
+    {
+      "key": "general/ifeval",
+      "version": 1,
+      "split": "public",
+      "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5"
+    },
+    {
+      "key": "general/open-ended",
+      "version": 1,
+      "split": "public",
+      "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62"
+    },
+    {
+      "key": "grounding/context-only",
+      "version": 2,
+      "split": "public",
+      "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68"
+    },
+    {
+      "key": "longctx/needle",
+      "version": 2,
+      "split": "public",
+      "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7"
+    },
+    {
+      "key": "structured/json",
+      "version": 2,
+      "split": "public",
+      "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd"
+    }
+  ],
+  "quality": {
+    "suites": [
+      {
+        "key": "format/exact-reply",
+        "track": "format",
+        "name": "exact-reply",
+        "version": 2,
+        "split": "public",
+        "hash": "6c24304f5a30db56e9bb058c7a65efef434e8de3adfbd295ddf54b4a7321418b",
+        "n": 30,
+        "items_total": 30,
+        "passed": 29,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 0.9666666666666667,
+        "ci95": [
+          0.8332924860304112,
+          0.9940915620051425
+        ]
+      },
+      {
+        "key": "general/gsm8k",
+        "track": "general",
+        "name": "gsm8k",
+        "version": 1,
+        "split": "public",
+        "hash": "d4ec1bc3a8d9e923b4ea9c5c93d38408dacea29ef122ec9a282e0c580e73d2cf",
+        "n": 100,
+        "items_total": 100,
+        "passed": 96,
+        "errors": 0,
+        "truncated": 1,
+        "accuracy": 0.96,
+        "ci95": [
+          0.9016278276739262,
+          0.984336949448152
+        ]
+      },
+      {
+        "key": "general/ifeval",
+        "track": "general",
+        "name": "ifeval",
+        "version": 1,
+        "split": "public",
+        "hash": "12bd8b43e444548de4682745d6bd30d6ee9625a7bbe0c0930620a6b08d9ca7d5",
+        "n": 100,
+        "items_total": 100,
+        "passed": 86,
+        "errors": 0,
+        "truncated": 8,
+        "accuracy": 0.86,
+        "ci95": [
+          0.7786263961619276,
+          0.914737342455351
+        ]
+      },
+      {
+        "key": "general/open-ended",
+        "track": "general",
+        "name": "open-ended",
+        "version": 1,
+        "split": "public",
+        "hash": "bd3b526afc44cef56caf574f6e5f2267e4f266448a7f1338535274146f628d62",
+        "n": 20,
+        "items_total": 20,
+        "passed": null,
+        "errors": 0,
+        "truncated": 1,
+        "accuracy": null,
+        "ci95": null
+      },
+      {
+        "key": "grounding/context-only",
+        "track": "grounding",
+        "name": "context-only",
+        "version": 2,
+        "split": "public",
+        "hash": "391f19a5c5e85e1937355ffba0cb3aff2292fcd8dd46ea6fac5d7f807c844e68",
+        "n": 40,
+        "items_total": 40,
+        "passed": 40,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 1.0,
+        "ci95": [
+          0.9123754607496077,
+          1.0
+        ]
+      },
+      {
+        "key": "longctx/needle",
+        "track": "longctx",
+        "name": "needle",
+        "version": 2,
+        "split": "public",
+        "hash": "088d1c665dd04cc80bd77e4863ebc97cdc33a326ad8fd4aae8c3e39a20614ea7",
+        "n": 27,
+        "items_total": 27,
+        "passed": 27,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 1.0,
+        "ci95": [
+          0.8754409628553641,
+          1.0
+        ]
+      },
+      {
+        "key": "structured/json",
+        "track": "structured",
+        "name": "json",
+        "version": 2,
+        "split": "public",
+        "hash": "77d499ef0fa8d7b8b903d3afb89f429a9a6060b94ed15128c1f1c7ee41f23bcd",
+        "n": 30,
+        "items_total": 30,
+        "passed": 30,
+        "errors": 0,
+        "truncated": 0,
+        "accuracy": 1.0,
+        "ci95": [
+          0.8864829086095221,
+          1.0
+        ],
+        "extractable_accuracy": 1.0,
+        "extractable_ci95": [
+          0.8864829086095221,
+          1.0
+        ]
+      }
+    ],
+    "tracks": {
+      "format": 0.9666666666666667,
+      "general": 0.9099999999999999,
+      "grounding": 1.0,
+      "longctx": 1.0,
+      "structured": 1.0
+    },
+    "context_tokens": 131072
+  },
+  "speed": {
+    "short@1": {
+      "ttft_s": {
+        "median": 1.4521187919890508,
+        "min": 1.419707708992064,
+        "max": 1.4654379580169916,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 117.07031197299031,
+        "min": 114.35573638750962,
+        "max": 119.44769496253163,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 12.462142602175971,
+        "min": 12.13915024579901,
+        "max": 12.705822253069604,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 11.681981908479496,
+        "min": 11.392030135531638,
+        "max": 11.912934827318816,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 49,
+        "min": 49,
+        "max": 49,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "short@4": {
+      "ttft_s": {
+        "median": 4.64481018751394,
+        "min": 4.560524667031132,
+        "max": 4.749878792033996,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 35.77737424102523,
+        "min": 35.03659064083311,
+        "max": 37.0571397676526,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 9.134743472473087,
+        "min": 8.911851578353733,
+        "max": 9.38287862830234,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 31.446152509482868,
+        "min": 30.701217186569153,
+        "max": 32.25888867057362,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0.0,
+        "min": 0,
+        "max": 49,
+        "n": 20
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@1": {
+      "ttft_s": {
+        "median": 11.933816124976147,
+        "min": 11.84115637501236,
+        "max": 12.104540750035085,
+        "n": 5
+      },
+      "prefill_tps": {
+        "median": 146.39072545652215,
+        "min": 144.75105215178493,
+        "max": 148.56113771239646,
+        "n": 5
+      },
+      "decode_tps": {
+        "median": 11.811260230205853,
+        "min": 11.653923910174061,
+        "max": 11.930285190956948,
+        "n": 5
+      },
+      "aggregate_tps": {
+        "median": 7.636460652776468,
+        "min": 7.532605838815606,
+        "max": 7.707284306524147,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "n": 5
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    },
+    "long@4": {
+      "ttft_s": {
+        "median": 46.31577162499889,
+        "min": 45.996702749980614,
+        "max": 46.959878458001185,
+        "n": 20
+      },
+      "prefill_tps": {
+        "median": 37.66585754103211,
+        "min": 37.26789384394862,
+        "max": 38.164919311437856,
+        "n": 20
+      },
+      "decode_tps": {
+        "median": 8.139186635982803,
+        "min": 8.06046412275285,
+        "max": 8.17217451331195,
+        "n": 20
+      },
+      "aggregate_tps": {
+        "median": 13.181930105241225,
+        "min": 13.03009156652911,
+        "max": 13.198815186517754,
+        "n": 5
+      },
+      "cached_tokens": {
+        "median": 0.0,
+        "min": 0,
+        "max": 49,
+        "n": 20
+      },
+      "usage_source": "reported",
+      "ignore_eos": true
+    }
+  },
+  "fit": {
+    "max_context_passed": 131072,
+    "server_context": 131072,
+    "server_context_probe": "pre_fit",
+    "limit_source": "reported",
+    "truncation_check": "measured",
+    "incomplete": false,
+    "steps": {
+      "4096": {
+        "status": "skipped",
+        "reason": "step too small for the prompt overhead"
+      },
+      "8192": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "16384": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "32768": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "65536": {
+        "status": "pass",
+        "kv_fraction": null
+      },
+      "131072": {
+        "status": "pass",
+        "kv_fraction": null
+      }
+    },
+    "kv": {
+      "capacity_tokens": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "block_size": {
+        "value": null,
+        "source": "not_captured"
+      },
+      "cache_dtype": {
+        "value": null,
+        "source": "not_captured"
+      }
+    }
+  },
+  "memory": {
+    "platform": {
+      "value": "darwin",
+      "source": "measured"
+    },
+    "baseline": {
+      "value": {
+        "mem_used_bytes": 31801753600,
+        "power_w_mean": 0.04253,
+        "mem_over_baseline_bytes": 24546590720
+      },
+      "source": "measured"
+    },
+    "peaks": {
+      "value": {
+        "baseline": {
+          "mem_used_bytes": 31801753600,
+          "power_w_mean": 0.04253,
+          "mem_over_baseline_bytes": 24546590720
+        },
+        "quality": {
+          "mem_used_bytes": 35723378688,
+          "power_w_mean": 18.20685220013467,
+          "mem_over_baseline_bytes": 28468215808
+        },
+        "speed": {
+          "mem_used_bytes": 35823239168,
+          "power_w_mean": 19.862054203954212,
+          "mem_over_baseline_bytes": 28568076288
+        },
+        "fit:calibrate": {
+          "mem_used_bytes": 35493199872,
+          "power_w_mean": 25.199201739130437,
+          "mem_over_baseline_bytes": 28238036992
+        },
+        "fit:8192": {
+          "mem_used_bytes": 35564797952,
+          "power_w_mean": 16.537189001663894,
+          "mem_over_baseline_bytes": 28309635072
+        },
+        "fit:16384": {
+          "mem_used_bytes": 35561095168,
+          "power_w_mean": 20.512610632458234,
+          "mem_over_baseline_bytes": 28305932288
+        },
+        "fit:32768": {
+          "mem_used_bytes": 35711647744,
+          "power_w_mean": 22.90347234109503,
+          "mem_over_baseline_bytes": 28456484864
+        },
+        "fit:65536": {
+          "mem_used_bytes": 35873832960,
+          "power_w_mean": 24.095860880361176,
+          "mem_over_baseline_bytes": 28618670080
+        },
+        "fit:131072": {
+          "mem_used_bytes": 35687890944,
+          "power_w_mean": 24.644270067354544,
+          "mem_over_baseline_bytes": 28432728064
+        }
+      },
+      "source": "measured"
+    },
+    "runtime_reported": {
+      "size_vram": {
+        "value": null,
+        "source": "not_captured"
+      }
+    },
+    "mem_baseline_bytes": {
+      "value": 7255162880,
+      "source": "measured (system-wide)"
+    },
+    "mem_over_baseline_bytes": {
+      "value": {
+        "baseline": 24546590720,
+        "quality": 28468215808,
+        "speed": 28568076288,
+        "fit:calibrate": 28238036992,
+        "fit:8192": 28309635072,
+        "fit:16384": 28305932288,
+        "fit:32768": 28456484864,
+        "fit:65536": 28618670080,
+        "fit:131072": 28432728064
+      },
+      "source": "measured (system-wide)"
+    }
+  },
+  "files": {
+    "quality/format.exact-reply.jsonl": "6c5fabeddaa6658050b526e0bf0c5e2453df1c77618bfaed96005d21aa7ef060",
+    "quality/general.gsm8k.jsonl": "0b74f9c3ee4232613bf98fc5eccbb69dd746309838e89de6b7db16904d70d946",
+    "quality/general.ifeval.jsonl": "201a605c8b50811bcf2a6789eb48945544b4d91a8cd34923ebbae3e5e3c0e446",
+    "quality/general.open-ended.jsonl": "537ae812ded2a794b3455d18aa49889acb39b1a6892533e8b9f356abde86a787",
+    "quality/grounding.context-only.jsonl": "329a915d3b838fbd9b7fc5098b4bc7106134972e538823eed7f7f7aaa0dda90d",
+    "quality/longctx.needle.jsonl": "4ec8e6bde2e029c82a129081a06ce519f48c7e343d32e2f99b3c8e7913925a8f",
+    "quality/structured.json.jsonl": "1194e8e1aa2ca44521afdc42271e9148c76a8ea730d53baa2eea320efb0476a5",
+    "speed.jsonl": "e0ac210bd811b74e864218815de6b2735f00d0d75edc2cdf6a1c05c9c39824dd",
+    "fit.jsonl": "bfa76bb0bbee49d57a2a60114148fe8961b5a19ff7fcbb8fd67f344aabe4d8c3",
+    "samples.jsonl": "dadb2d92aab99afbfeeb23de4613fb0792b416a21e958d895af3996be7b5be49"
+  },
+  "bundle_sha256": "cbd9e3665bcccdc9521a3d72cf56675ab971bc0ee692d3838d1be2fd59169505"
+}
